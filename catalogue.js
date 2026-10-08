@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.0.5";
+const JS_VERSION = "1.0.6";
 const HTML_VERSION = "1.0.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -298,7 +298,7 @@ function card(r, idx){
     : '';
   // data-* attributes + one shared click listener (below) instead of inline onclick,
   // so URLs containing quotes can't break the handler.
-  const coverClick = r._largeUrl ? `data-lightbox="${esc(r._largeUrl)}" role="button" tabindex="0" aria-label="View larger artwork: ${esc(r[TITLE_COL] || "")}"` : '';
+  const coverClick = r._largeUrl ? `data-lightbox="${esc(r._largeUrl)}" data-thumb="${esc(r._thumbUrl)}" role="button" tabindex="0" aria-label="View larger artwork: ${esc(r[TITLE_COL] || "")}"` : '';
   const title = r._titleHref ? `<a href="${esc(r._titleHref)}" target="_blank" rel="noopener nofollow">${esc(r[TITLE_COL] || "(untitled)")}</a>` : esc(r[TITLE_COL] || "(untitled)");
   const activeDate = window._psilodumpCat.dateMode === "catalogue" ? r._catalogue : r._released;
   const metaBits = [ activeDate, r[TYPE_COL], r[CAT_COL] ].filter(Boolean).map(esc);
@@ -403,11 +403,36 @@ function applyFilters(){
   render();
 }
 
-window.openLightbox = function(url){
+// Show the cover's thumbnail at once (the browser already has it from the
+// grid), then swap in the large image when it has downloaded. Without this the
+// previously viewed cover stayed on screen while the new one loaded.
+let lightboxRequest = 0;
+window.openLightbox = function(url, thumbUrl){
   const lb = document.getElementById("rel-lightbox");
   const img = document.getElementById("rel-lightbox-img");
-  if(img) img.src = url;
-  if(lb) lb.classList.add("active");
+  if (img) {
+    const request = ++lightboxRequest;            // ignore late loads from earlier clicks
+    if (thumbUrl) {
+      img.src = thumbUrl;
+      img.style.visibility = "visible";
+    } else {
+      img.style.visibility = "hidden";            // nothing to show yet: show nothing, not the old cover
+    }
+    if (url && url !== thumbUrl) {
+      const large = new Image();
+      large.onload = () => {
+        if (request !== lightboxRequest) return;
+        img.src = url;
+        img.style.visibility = "visible";
+      };
+      large.onerror = () => { if (request === lightboxRequest) img.style.visibility = "visible"; };
+      large.src = url;
+    } else if (url) {
+      img.src = url;
+      img.style.visibility = "visible";
+    }
+  }
+  if (lb) lb.classList.add("active");
 };
 
 window.openListenModal = function(idx){
@@ -469,7 +494,7 @@ if (!window._psilodumpModalDelegated) {
       return;
     }
     const cover = t.closest('[data-lightbox]');
-    if (cover) { window.openLightbox(cover.getAttribute('data-lightbox')); return; }
+    if (cover) { window.openLightbox(cover.getAttribute('data-lightbox'), cover.getAttribute('data-thumb')); return; }
     const listen = t.closest('[data-listen]');
     if (listen) { window.openListenModal(Number(listen.getAttribute('data-listen'))); return; }
     const pill = t.closest('[data-pill]');
