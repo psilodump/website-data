@@ -500,6 +500,7 @@ function bindUIEvents() {
       document.getElementById("rel-sort-title")?.setAttribute("aria-pressed","false");
       sortView(); render();
     });
+    attachDebugTrigger();
   }
 
   const btnTitle = document.getElementById("rel-sort-title");
