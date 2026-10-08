@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.0.3";
+const JS_VERSION = "1.0.4";
 const HTML_VERSION = "1.0.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -537,9 +537,20 @@ function bindUIEvents() {
   initDateModeToggle();
 }
 
+// The pop-ups sit inside a Bandzoogle section with its own stacking layer
+// (z-index: 1), so the site footer is drawn over them. Moving them to be
+// direct children of <body> lets their z-index apply to the whole page.
+function moveModalsToBody(){
+  ["rel-lightbox", "rel-listen-modal"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.parentElement !== document.body) document.body.appendChild(el);
+  });
+}
+
 function initApp(){
   const grid = document.getElementById("rel-grid");
   if (!grid) return;
+  moveModalsToBody();
   const cat = window._psilodumpCat;
 
   if (cat.loaded) {
