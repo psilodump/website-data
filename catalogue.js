@@ -1,4 +1,4 @@
-const JS_VERSION = "1.0.1";
+const JS_VERSION = "1.0.2";
 const HTML_VERSION = "1.0.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -27,6 +27,15 @@ function attachDebugTrigger() {
   }
 }
 
+// Safe localStorage access: private browsing, blocked cookies or sandboxed
+// embeds can make localStorage throw. Fall back to defaults instead.
+function storageGet(key){
+  try { return window.localStorage.getItem(key); } catch (e) { return null; }
+}
+function storageSet(key, value){
+  try { window.localStorage.setItem(key, value); } catch (e) { /* ignore */ }
+}
+
 // Persistent Global State to Survive Bandzoogle AJAX Page Swaps
 if (!window._psilodumpCat) {
   window._psilodumpCat = {
@@ -39,7 +48,7 @@ if (!window._psilodumpCat) {
     activeType: "",
     activeSeries: "",
     sortMode: "date",
-    dateMode: localStorage.getItem("relDateMode") === "released" ? "released" : "catalogue"
+    dateMode: storageGet("relDateMode") === "released" ? "released" : "catalogue"
   };
 }
 
@@ -155,12 +164,16 @@ function firstUrlFrom(row, cols){
   return "";
 }
 
+// Read the year straight from the text. Parsing with Date.parse() treats
+// "1996" / "2005-01-01" as midnight UTC, so visitors west of UTC got the
+// previous year from getFullYear().
 function yearFromString(raw){
-  if (!raw || !String(raw).trim()) return "Unknown";
-  const t = Date.parse(raw);
-  if (!isNaN(t)) return String(new Date(t).getFullYear());
-  const m = String(raw).match(/(\d{4})/);
-  return m ? m[1] : "Unknown";
+  const s = String(raw ?? "").trim();
+  if (!s) return "Unknown";
+  const m = s.match(/(?:^|\D)(\d{4})(?!\d)/);
+  if (m) return m[1];
+  const t = Date.parse(s);
+  return isNaN(t) ? "Unknown" : String(new Date(t).getUTCFullYear());
 }
 
 function decadeFromYear(y){
@@ -420,8 +433,8 @@ function applyView(compact, rowView){
 }
 
 function initViewToggle(){
-  const savedViewCompact = localStorage.getItem('relViewCompact') !== '0';
-  const savedViewRows = localStorage.getItem('relViewRows') === '1';
+  const savedViewCompact = storageGet('relViewCompact') !== '0';
+  const savedViewRows = storageGet('relViewRows') === '1';
   applyView(savedViewCompact, savedViewRows);
   
   const btnCompact = document.getElementById('rel-view-compact');
@@ -430,8 +443,8 @@ function initViewToggle(){
     btnCompact.addEventListener('click', () => {
       const wrap = document.querySelector('.rel-wrap');
       const nowCompact = !wrap.classList.contains('compact');
-      localStorage.setItem('relViewCompact', nowCompact ? '1' : '0');
-      if (nowCompact) localStorage.setItem('relViewRows', '0');
+      storageSet('relViewCompact', nowCompact ? '1' : '0');
+      if (nowCompact) storageSet('relViewRows', '0');
       applyView(nowCompact, false);
     });
   }
@@ -442,8 +455,8 @@ function initViewToggle(){
     btnRows.addEventListener('click', () => {
       const wrap = document.querySelector('.rel-wrap');
       const nowRows = !wrap.classList.contains('row-view');
-      localStorage.setItem('relViewRows', nowRows ? '1' : '0');
-      if (nowRows) localStorage.setItem('relViewCompact', '0');
+      storageSet('relViewRows', nowRows ? '1' : '0');
+      if (nowRows) storageSet('relViewCompact', '0');
       applyView(false, nowRows);
     });
   }
@@ -465,7 +478,7 @@ function initDateModeToggle(){
     modeBtn.addEventListener("click", () => {
       const cat = window._psilodumpCat;
       cat.dateMode = (cat.dateMode === "released") ? "catalogue" : "released";
-      localStorage.setItem("relDateMode", cat.dateMode);
+      storageSet("relDateMode", cat.dateMode);
       populateSelectOptions();
       applyFilters();
       applyDateModeUI();
