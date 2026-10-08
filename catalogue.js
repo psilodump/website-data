@@ -1,4 +1,10 @@
-const JS_VERSION = "1.0.2";
+// Bandzoogle uses Turbo: every page change swaps in a new <body> and re-runs
+// this <script>. Everything lives inside this function so a second run can't
+// hit "Identifier has already been declared"; a re-run just re-initialises.
+(function () {
+if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
+
+const JS_VERSION = "1.0.3";
 const HTML_VERSION = "1.0.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -565,14 +571,18 @@ function initApp(){
   }
 }
 
-if (!window._psilodumpObserver) {
-  window._psilodumpObserver = new MutationObserver(() => {
-    const grid = document.getElementById("rel-grid");
-    if (grid && grid.querySelector(".sk")) {
-      initApp();
-    }
-  });
-  window._psilodumpObserver.observe(document.body, { childList: true, subtree: true });
-}
+window.__psdCatalogue = { init: initApp, version: JS_VERSION };
+
+// Re-initialise whenever placeholder cards appear. Watch <html>, not <body>:
+// Turbo replaces <body> on every page change, <html> stays.
+new MutationObserver(() => {
+  const grid = document.getElementById("rel-grid");
+  if (grid && grid.querySelector(".sk")) initApp();
+}).observe(document.documentElement, { childList: true, subtree: true });
+
+// Also re-initialise after each Turbo page change.
+document.addEventListener("turbo:load", initApp);
+document.addEventListener("turbo:render", initApp);
 
 initApp();
+})();
