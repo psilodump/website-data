@@ -1,3 +1,32 @@
+const JS_VERSION = "1.0.1";
+const HTML_VERSION = "1.0.0";
+
+// Log version silently to Browser Console (F12) on every load
+console.log(`[Psilodump Catalogue] Loaded JS: v${JS_VERSION} | HTML: v${HTML_VERSION}`);
+
+// Secret Debug Trigger: Double-click "Showing X releases" to toggle version badge
+function attachDebugTrigger() {
+  const stats = document.getElementById("rel-stats");
+  if (stats && !stats._debugBound) {
+    stats._bound = true;
+    stats._debugBound = true;
+    stats.style.cursor = "pointer";
+    stats.title = "Double-click for script version info";
+    stats.addEventListener("dblclick", () => {
+      let badge = document.getElementById("rel-debug-badge");
+      if (badge) {
+        badge.remove();
+      } else {
+        badge = document.createElement("span");
+        badge.id = "rel-debug-badge";
+        badge.style.cssText = "display:inline-block; margin-left:8px; padding:2px 6px; background:#333; color:#00ffcc; font-family:monospace; font-size:11px; border-radius:4px;";
+        badge.textContent = `JS: v${JS_VERSION} | HTML: v${HTML_VERSION} | Loaded: ${new Date().toLocaleTimeString()}`;
+        stats.appendChild(badge);
+      }
+    });
+  }
+}
+
 // Persistent Global State to Survive Bandzoogle AJAX Page Swaps
 if (!window._psilodumpCat) {
   window._psilodumpCat = {
