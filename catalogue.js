@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.0.4";
+const JS_VERSION = "1.0.5";
 const HTML_VERSION = "1.0.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -59,7 +59,8 @@ if (!window._psilodumpCat) {
 }
 
 const CSV_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/releases.csv";
-const RAW_GITHUB_BASE = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/";
+// Icons are static, so they come from the jsDelivr CDN (raw.githubusercontent.com is not meant as a CDN).
+const ICON_BASE = "https://cdn.jsdelivr.net/gh/psilodump/website-data@main/icons/";
 
 const DATE_COL    = "Released";
 const CATDATE_COL = "Cat Date";
@@ -245,7 +246,8 @@ function currentDateValue(r){
 function sortView(){
   const cat = window._psilodumpCat;
   if (cat.sortMode === "title"){
-    cat.viewRows.sort((a,b) => String(a[TITLE_COL] || "").localeCompare(String(b[TITLE_COL] || "")));
+    // numeric: "vol.2" before "vol.10"; sensitivity base: ignore case/accents when comparing
+    cat.viewRows.sort((a,b) => String(a[TITLE_COL] || "").localeCompare(String(b[TITLE_COL] || ""), undefined, { numeric: true, sensitivity: "base" }));
   } else {
     cat.viewRows.sort((a,b) => currentDateValue(b) - currentDateValue(a));
   }
@@ -260,28 +262,55 @@ function icon(key){
   };
   const fileName = iconMap[key];
   if (!fileName) return "";
-  return `<img src="${RAW_GITHUB_BASE}icons/${fileName}" alt="${esc(key)}" class="rel-svc-icon">`;
+  return `<img src="${ICON_BASE}${fileName}" alt="${esc(key)}" class="rel-svc-icon">`;
+}
+
+// --- Release colours ---
+// Each release has a background colour from the admin tool. The Listen button
+// uses it 15% darker and the pop-up links 40% darker, so the text colour is
+// worked out here for each shade (WCAG contrast: white or near-black,
+// whichever reads better), instead of reusing one stored text colour.
+function hexToRgb(hex){
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || "").trim());
+  if (!m) return null;                     // ignore anything that isn't a plain #rrggbb
+  const n = parseInt(m[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function luminance(rgb){
+  const lin = c => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+  return 0.2126 * lin(rgb[0]) + 0.7152 * lin(rgb[1]) + 0.0722 * lin(rgb[2]);
+}
+const DARK_TEXT_LUM = luminance([17, 17, 17]);
+// Returns {bg, text} for the colour darkened to `shade` (1 = as is), or null.
+function releaseSurface(bgHex, shade){
+  const rgb = hexToRgb(bgHex);
+  if (!rgb) return null;
+  const c = rgb.map(v => Math.round(v * shade));
+  const L = luminance(c);
+  const onDark = (L + 0.05) / (DARK_TEXT_LUM + 0.05);
+  const onWhite = 1.05 / (L + 0.05);
+  return { bg: `rgb(${c.join(",")})`, text: onDark > onWhite ? "#111111" : "#ffffff" };
 }
 
 function card(r, idx){
   const coverHtml = r._thumbUrl 
     ? `<img loading="lazy" src="${esc(r._thumbUrl)}" alt="${esc(r[TITLE_COL] || "Cover")}" onerror="this.style.display='none'">` 
     : '';
-  const coverClick = r._largeUrl ? `onclick="openLightbox('${esc(r._largeUrl)}')" ` : '';
+  // data-* attributes + one shared click listener (below) instead of inline onclick,
+  // so URLs containing quotes can't break the handler.
+  const coverClick = r._largeUrl ? `data-lightbox="${esc(r._largeUrl)}" role="button" tabindex="0" aria-label="View larger artwork: ${esc(r[TITLE_COL] || "")}"` : '';
   const title = r._titleHref ? `<a href="${esc(r._titleHref)}" target="_blank" rel="noopener nofollow">${esc(r[TITLE_COL] || "(untitled)")}</a>` : esc(r[TITLE_COL] || "(untitled)");
   const activeDate = window._psilodumpCat.dateMode === "catalogue" ? r._catalogue : r._released;
   const metaBits = [ activeDate, r[TYPE_COL], r[CAT_COL] ].filter(Boolean).map(esc);
   const meta = metaBits.join(" • ");
   
-  const bgColor = r['Bg Color'] || r['bg_color'];
-  const textColor = r['Text Color'] || r['text_color'] || '#ffffff';
-  
-  const btnStyle = bgColor 
-    ? `style="background-color: color-mix(in srgb, ${bgColor} 85\%, black) !important; color:${textColor} !important;"` 
+  const btn = releaseSurface(r['Bg Color'] || r['bg_color'], 0.85);
+  const btnStyle = btn
+    ? `style="background-color: ${btn.bg} !important; color: ${btn.text} !important;"`
     : '';
 
   const listenBtn = r._svc.length 
-    ? `<button class="btn-listen" ${btnStyle} onclick="openListenModal(${idx})">Listen / Download</button>` 
+    ? `<button class="btn-listen" ${btnStyle} data-listen="${idx}">Listen / Download</button>` 
     : ``;
 
   return `<article class="rel-card">
@@ -321,8 +350,8 @@ function renderFilterPills(){
   }
 
   pillsWin.innerHTML = pills.map((p, i) => 
-    `<span class="rel-pill">${esc(p.label)} <span class="rel-pill-remove" onclick="removePill(${i})">✕</span></span>`
-  ).join("") + `<button class="rel-clear-all" onclick="clearAllFilters()">Clear all</button>`;
+    `<span class="rel-pill">${esc(p.label)} <span class="rel-pill-remove" data-pill="${i}" role="button" tabindex="0" aria-label="Remove filter">✕</span></span>`
+  ).join("") + `<button type="button" class="rel-clear-all">Clear all</button>`;
 
   window._currentPills = pills;
 }
@@ -386,13 +415,14 @@ window.openListenModal = function(idx){
   const r = cat.viewRows[idx];
   if (!r) return;
   
-  const bgColor = r['Bg Color'] || r['bg_color'] || '#181818';
-  const textColor = r['Text Color'] || r['text_color'] || '#ffffff';
+  const bgHex = hexToRgb(r['Bg Color'] || r['bg_color']) ? (r['Bg Color'] || r['bg_color']) : '#181818';
+  const panel = releaseSurface(bgHex, 1);
+  const link = releaseSurface(bgHex, 0.6);
 
   const card = document.querySelector('.rel-modal-card');
   if (card) {
-    card.style.setProperty('background-color', bgColor, 'important');
-    card.style.setProperty('color', textColor, 'important');
+    card.style.setProperty('background-color', panel.bg, 'important');
+    card.style.setProperty('color', panel.text, 'important');
   }
   
   const cov = document.getElementById("rel-m-cover"); 
@@ -402,9 +432,15 @@ window.openListenModal = function(idx){
   }
   
   const tit = document.getElementById("rel-m-title"); if(tit) tit.textContent = r[TITLE_COL] || "";
-  const met = document.getElementById("rel-m-meta"); if(met) met.textContent = [ r._released, r[TYPE_COL], r[CAT_COL] ].filter(Boolean).join(" • ");
+  // Same date as the card: follows the Catalogue / Released timeline toggle.
+  const activeDate = cat.dateMode === "catalogue" ? r._catalogue : r._released;
+  const met = document.getElementById("rel-m-meta"); if(met) met.textContent = [ activeDate, r[TYPE_COL], r[CAT_COL] ].filter(Boolean).join(" • ");
+  // bandzoogle.php's CSS fixes the title to white and the meta line to grey;
+  // follow the panel's text colour instead so light covers stay readable.
+  if (tit) tit.style.setProperty('color', panel.text, 'important');
+  if (met) { met.style.setProperty('color', panel.text, 'important'); met.style.setProperty('opacity', '0.75', 'important'); }
   
-  const linkBtnStyle = `style="background-color: color-mix(in srgb, ${bgColor} 60%, black) !important; color: ${textColor} !important;"`;
+  const linkBtnStyle = `style="background-color: ${link.bg} !important; color: ${link.text} !important;"`;
 
   const linksWin = document.getElementById("rel-m-links");
   if(linksWin) {
@@ -422,9 +458,35 @@ window.openListenModal = function(idx){
 
 if (!window._psilodumpModalDelegated) {
   window._psilodumpModalDelegated = true;
+
+  // One click listener for the whole catalogue (survives Turbo page swaps,
+  // because it sits on document and the grid is re-rendered inside it).
   document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('rel-modal-overlay') || e.target.classList.contains('rel-lightbox-img')) {
-      e.target.closest('.rel-modal-overlay')?.classList.remove('active');
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+    if (t.classList.contains('rel-modal-overlay') || t.classList.contains('rel-lightbox-img')) {
+      t.closest('.rel-modal-overlay')?.classList.remove('active');
+      return;
+    }
+    const cover = t.closest('[data-lightbox]');
+    if (cover) { window.openLightbox(cover.getAttribute('data-lightbox')); return; }
+    const listen = t.closest('[data-listen]');
+    if (listen) { window.openListenModal(Number(listen.getAttribute('data-listen'))); return; }
+    const pill = t.closest('[data-pill]');
+    if (pill) { window.removePill(Number(pill.getAttribute('data-pill'))); return; }
+    if (t.closest('.rel-clear-all')) window.clearAllFilters();
+  });
+
+  // Keyboard: Escape closes any open pop-up; Enter/Space on a focused cover
+  // or filter pill acts like a click.
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.rel-modal-overlay.active').forEach(m => m.classList.remove('active'));
+      return;
+    }
+    if ((e.key === 'Enter' || e.key === ' ') && e.target instanceof Element && e.target.matches('[data-lightbox], [data-pill]')) {
+      e.preventDefault();
+      e.target.click();
     }
   });
 }
