@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.0.6";
+const JS_VERSION = "1.0.7";
 const HTML_VERSION = "1.0.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -147,6 +147,11 @@ function expandPlatformUrl(val, platform) {
     case "spotify":  return "https://open.spotify.com/album/" + h;
     case "apple":    return "https://music.apple.com/us/album/" + h;
     case "bandcamp": return "https://psilodump.bandcamp.com/album/" + h;
+    case "source":
+      // The release's page on psilodu.mp: an album number or a page name.
+      if (/^\d+$/.test(h)) return "https://psilodu.mp/album/" + h;
+      if (/^[a-z0-9-]+$/i.test(h)) return "https://psilodu.mp/" + h;
+      return "https://" + h;
     default:         return "https://" + h;
   }
 }
