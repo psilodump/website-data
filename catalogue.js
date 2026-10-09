@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.9.0";
+const JS_VERSION = "1.9.1";
 const HTML_VERSION = "2.0.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -1431,6 +1431,8 @@ function buildJsonLd(rows){
       if (k) ed.musicReleaseFormat = k === "Vinyl" ? "https://schema.org/VinylFormat" : "https://schema.org/CDFormat";
       if (/^\d{4}$/.test(e.Year || "")) ed.datePublished = e.Year;
       if (e.URL) ed.url = e.URL;
+      const eb = String(e.Barcode || "").trim();
+      if (/^\d{8,14}$/.test(eb)) ed.identifier = { "@type": "PropertyValue", "propertyID": eb.length === 12 ? "UPC" : eb.length === 13 ? "EAN-13" : "GTIN", "value": eb };
       releases.push(ed);
     });
     if (releases.length) item.albumRelease = one(releases);
