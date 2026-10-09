@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.0.7";
+const JS_VERSION = "1.1.0";
 const HTML_VERSION = "1.0.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -117,7 +117,8 @@ function toObjects(matrix){
     'source': 'Source', 'sources': 'Sources',
     'label': 'Label', 'artist': 'Artist',
     'bg_color': 'Bg Color', 'bg color': 'Bg Color',
-    'text_color': 'Text Color', 'text color': 'Text Color'
+    'text_color': 'Text Color', 'text color': 'Text Color',
+    'musicbrainz': 'MusicBrainz', 'part of': 'Part Of', 'part_of': 'Part Of'
   };
 
   const normHead = head.map(h => {
@@ -639,6 +640,113 @@ function moveModalsToBody(){
   });
 }
 
+// --- Structured data (JSON-LD) for search engines ---
+// Describes every release as a schema.org MusicAlbum, invisible to visitors.
+// "sameAs" ties each release to the same release elsewhere (MusicBrainz, Bandcamp,
+// Spotify, Apple Music); "isPartOf" links e.g. a disc to its double album.
+const SITE = "https://psilodu.mp";
+const ARTIST_ID = SITE + "/#psilodump";
+const ARTIST_JSONLD = {
+  "@type": "MusicGroup",
+  "@id": ARTIST_ID,
+  "name": "psilodump",
+  "url": SITE + "/",
+  "sameAs": [
+    "https://musicbrainz.org/artist/cb85543c-e95b-463b-a111-d04d290b4a2a",
+    "https://www.wikidata.org/wiki/Q6057584",
+    "https://en.wikipedia.org/wiki/Psilodump",
+    "https://psilodump.bandcamp.com/",
+    "https://open.spotify.com/artist/3PK6tofxvZyHdmKIZw6Mx1",
+    "https://music.apple.com/artist/127084265",
+    "https://www.youtube.com/channel/UC8WBPyxIU5AXvqaBsl6aKqw"
+  ]
+};
+const MB_RG_URL = "https://musicbrainz.org/release-group/";
+const MBID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function releaseTypeJsonLd(type){
+  const t = String(type || "").toLowerCase();
+  if (t === "single") return { albumReleaseType: "SingleRelease" };
+  if (t === "ep" || t === "minialbum") return { albumReleaseType: "EPRelease" };
+  if (t === "album") return { albumReleaseType: "AlbumRelease" };
+  if (t === "compilation") return { albumReleaseType: "AlbumRelease", albumProductionType: "CompilationAlbum" };
+  return {};
+}
+
+function buildJsonLd(rows){
+  // Each release needs its own @id so others can point to it (isPartOf).
+  // Prefer its psilodu.mp page; otherwise an anchor on the catalogue page.
+  const used = new Set();
+  const idOf = rows.map((r, i) => {
+    const page = expandPlatformUrl(r["Source"] || "", "source");
+    const key = String(r[CAT_COL] || (i + 1)).replace(/[^A-Za-z0-9._~-]+/g, "-");   // "DMTCD19/20" -> "DMTCD19-20"
+    let id = /^https:\/\/psilodu\.mp\//.test(page) ? page : SITE + "/#release-" + key;
+    if (used.has(id)) id += "-" + (i + 1);
+    used.add(id);
+    return { id, page: /^https:\/\/psilodu\.mp\//.test(page) ? page : "" };
+  });
+  // The first release with a given MusicBrainz group, for resolving "Part Of".
+  const byMbid = {};
+  rows.forEach((r, i) => { const m = r["MusicBrainz"]; if (MBID_RE.test(m || "") && !(m in byMbid)) byMbid[m] = i; });
+
+  const items = rows.map((r, i) => {
+    const item = { "@type": "MusicAlbum", "@id": idOf[i].id, "name": r[TITLE_COL] || "" };
+    if (idOf[i].page) item.url = idOf[i].page;
+    Object.assign(item, releaseTypeJsonLd(r[TYPE_COL]));
+    const date = r[DATE_COL] || r[CATDATE_COL] || "";
+    if (/^\d{4}(-\d{2}(-\d{2})?)?$/.test(date)) item.datePublished = date;
+    item.byArtist = { "@id": ARTIST_ID };
+    if (r._largeUrl) item.image = r._largeUrl;
+    if (r[CAT_COL]) item.identifier = { "@type": "PropertyValue", "propertyID": "catalogNumber", "value": r[CAT_COL] };
+
+    const sameAs = [];
+    if (MBID_RE.test(r["MusicBrainz"] || "")) sameAs.push(MB_RG_URL + r["MusicBrainz"].toLowerCase());
+    r._svc.forEach(s => {
+      // A YouTube link counts as "the same release" only when it is a playlist (a whole release).
+      if (s.key === "youtube" && !/[?&]list=/.test(s.href)) return;
+      sameAs.push(s.href);
+    });
+    if (sameAs.length) item.sameAs = sameAs;
+
+    const parent = r["Part Of"];
+    if (MBID_RE.test(parent || "")) {
+      const pi = byMbid[parent];
+      item.isPartOf = (pi !== undefined && pi !== i)
+        ? { "@id": idOf[pi].id }
+        : { "@type": "MusicAlbum", "sameAs": MB_RG_URL + parent.toLowerCase() };
+    }
+    return { "@type": "ListItem", "position": i + 1, "item": item };
+  });
+
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      ARTIST_JSONLD,
+      { "@type": "ItemList", "@id": SITE + "/#catalogue", "name": "psilodump discography", "numberOfItems": items.length, "itemListElement": items }
+    ]
+  };
+}
+
+// Put the JSON-LD into the page (inside the catalogue wrapper, so Turbo page swaps
+// remove it with the catalogue and it is added again when the catalogue returns).
+function updateJsonLd(){
+  const cat = window._psilodumpCat;
+  const wrap = document.querySelector(".rel-wrap");
+  if (!wrap || !cat.rows.length) return;
+  if (!cat._jsonLd) {
+    // "<" escaped so no value can close the <script> element early.
+    cat._jsonLd = JSON.stringify(buildJsonLd(cat.rows)).replace(/</g, "\\u003c");
+  }
+  let el = document.getElementById("psd-jsonld");
+  if (!el) {
+    el = document.createElement("script");
+    el.type = "application/ld+json";
+    el.id = "psd-jsonld";
+    wrap.appendChild(el);
+  }
+  if (el.textContent !== cat._jsonLd) el.textContent = cat._jsonLd;
+}
+
 function initApp(){
   const grid = document.getElementById("rel-grid");
   if (!grid) return;
@@ -649,6 +757,7 @@ function initApp(){
     bindUIEvents();
     populateSelectOptions();
     applyFilters();
+    updateJsonLd();
   } else if (!cat.loading) {
     cat.loading = true;
     fetch(CSV_URL + "?v=" + Date.now())
@@ -664,6 +773,7 @@ function initApp(){
         populateSelectOptions();
         sortView();
         render();
+        updateJsonLd();
       })
       .catch(err => {
         cat.loading = false;
