@@ -1,16 +1,42 @@
-ID,Cat#,Title,Artist,Format,Year,Label,Status,URL,Releases,Note
-4,,"The Somnambulist - Single",psilodump,"12"" Vinyl",2025,"476 Records",available,https://vinyl.psilodump.store/releases/the-somnambulist-singleep,"160,12","The Somnambulist + Apocryphal Somnambulist"
-5,,"The Somnambulist Remixes",psilodump,"12"" Vinyl",2025,"476 Records",available,,160,"Remixes only"
-7,,"Hidden Trains of Pippuri",psilodump,CD,2025,"476 Records",available,https://vinyl.psilodump.store/releases/hidden-trains-of-pippuri-album,59,
-9,,Symptom,psilodump,"12"" Vinyl",2025,"476 Records",available,https://vinyl.psilodump.store/releases/symptom-album,138,
-8,476INCH001,Untitled,psilodump,"12"" Vinyl",2025,"476 Records",available,https://vinyl.psilodump.store/releases/untitled-singleep,167,
-1,476WAX001+B,"The Nearly Island",psilodump,"2×12"" Vinyl",2025,"476 Records",available,https://vinyl.psilodump.store/releases/the-nearly-island-album,153,
-2,476WAX002,Washed,psilodump,"12"" Vinyl",2025,"476 Records",available,https://vinyl.psilodump.store/releases/washed-album,171,
-3,476WAX003,"The Somnambulist Minialbum",psilodump,"12"" Vinyl",2025,"476 Records",available,https://vinyl.psilodump.store/releases/the-somnambulist-minialbum-album,"160,12","Original, remixes and Apocryphal Somnambulist"
-6,476WAX004,"Hidden Trains of Pippuri",psilodump,"12"" Vinyl",2025,"476 Records",available,https://vinyl.psilodump.store/releases/hidden-trains-of-pippuri-album,59,
-14,"ASW 71190","Pocket Calculator (Glomag Mega-Mix)","8-Bit Operators",Vinyl,2007,Astralwerks,sold_out,,,"Mega-Mix featuring psilodump"
-13,b2kuber,"Uber Album","Bodenstandig 2000",Vinyl,2007,"Storage Records",sold_out,,,"B1 Remix by psilodump"
-15,CVSA008,"I Scream / Breaking The Silence",J,Vinyl,2004,"Captivating Sounds",sold_out,,,"B2 Remix by psilodump"
-10,QREC-009,Tangens,psilodump,"12"" Vinyl",2002,Q-Records,sold_out,,140,
-11,SOHR008,"Gamma EP",psilodump,"12"" Vinyl",2002,"Sound of Habib",sold_out,,52,
-12,domizil14,"full of sid/microcompo remixes",psilodump,"12"" Vinyl",2001,Domizil,sold_out,,50,"Released as psilodumputer"
+ID,Cat#,Title,Artist,Format,Year,Label,Status,URL,Releases,Note,Barcode
+3,476WAX003,"The Somnambulist Minialbum",psilodump,"12"" Vinyl",2026,"476 Records",available,https://vinyl.psilodump.store/releases/the-somnambulist-minialbum-album,"160,12","Original, remixes and Apocryphal Somnambulist",5063692831074
+9,476WAX005,Symptom,psilodump,"12"" Vinyl",2026,"476 Records",available,https://vinyl.psilodump.store/releases/symptom-album,138,,5063692634897
+7,476CD-004,"Hidden Trains of Pippuri",psilodump,CD-R,2025,"476 Records",available,https://vinyl.psilodump.store/releases/hidden-trains-of-pippuri-album,59,,5063692684878
+8,476INCH001,Untitled,psilodump,"12"" Vinyl",2025,"476 Records",available,https://vinyl.psilodump.store/releases/untitled-singleep,167,,5063692560585
+4,476INCH002,"The Somnambulist - Single",psilodump,"12"" Vinyl",2025,"476 Records",available,https://vinyl.psilodump.store/releases/the-somnambulist-singleep,"160,12","The Somnambulist + Apocryphal Somnambulist",5063692693573
+5,476INCH002R,"The Somnambulist Remixes",psilodump,"12"" Vinyl",2025,"476 Records",available,https://vinyl.psilodump.store/releases/the-somnambulist-remixes-singleep,160,"Remixes only",5063692319817
+1,476WAX001,"The Nearly Island - Part 1/2",psilodump,"12"" Vinyl",2025,"476 Records",available,https://vinyl.psilodump.store/releases/the-nearly-island-album,153,"Part 1 of 2 (sold separately, same shop page)",5063692594955
+16,476WAX001B,"The Nearly Island - Part 2/2",psilodump,"12"" Vinyl",2025,"476 Records",available,https://vinyl.psilodump.store/releases/the-nearly-island-album,153,"Part 2 of 2 (sold separately, same shop page)",5063692594993
+2,476WAX002,Washed,psilodump,"12"" Vinyl",2025,"476 Records",available,https://vinyl.psilodump.store/releases/washed-album,171,,5063692649112
+6,476WAX004,"Hidden Trains of Pippuri",psilodump,"12"" Vinyl",2025,"476 Records",available,https://vinyl.psilodump.store/releases/hidden-trains-of-pippuri-album,59,,5063692610013
+18,476CD-002,"The Nearly Island",psilodump,CD-R,2014,"476 Records",not_for_sale,,153,,
+41,DMTCD19/20,"The Nya Albumet",psilodump,2×CD,2009,"Demon Tea Recordings",available,https://www.goastore.com/psilodump-the-nya-albumet-2cds.html,156,,
+14,"ASW 71190","Pocket Calculator (Glomag Mega-Mix)","8-Bit Operators","12"" Vinyl",2007,Astralwerks,sold_out,,,"Mega-Mix featuring psilodump",
+13,b2kuber,"Uber Album","Bodenstandig 2000","12"" Vinyl",2007,"Storage Records",sold_out,,,"B1 Remix by psilodump",
+17,476CD-001,"Never Heal",psilodump,CD-R,2006,"476 Records",sold_out,,91,,7320470070499
+40,"NiDiPsi01 / XD-CD-001",psilodumputer,psilodump,CD-R,2006,"Ninjani Diskus, The X‐Dump",not_for_sale,,106,,
+15,CVSA008,"I Scream / Breaking The Silence",J,"12"" Vinyl",2004,"Captivating Sounds",sold_out,,,"B2 Remix by psilodump",
+10,QREC-009,Tangens,psilodump,"12"" Vinyl",2002,Q-Records,sold_out,,140,,
+11,SOHR008,"Gamma EP",psilodump,"12"" Vinyl",2002,"Sound of Habib",sold_out,,52,,
+12,domizil14,"full of sid/microcompo remixes",psilodump,"12"" Vinyl",2001,Domizil,sold_out,,50,"Released as psilodumputer",
+28,,"The Dark Forrest",psilodump,CD-R,2000,"476 Records",not_for_sale,,28,,
+22,476VOL4,"476 vol.4 / psilophytondapsile",psilodump,CD-R,2000,"476 Records",not_for_sale,,6,,
+23,476VOL5,"476 vol.5 / *not-maybe-could-had*",psilodump,CD-R,2000,"476 Records",not_for_sale,,7,,
+24,476VOL6,"476 vol.6 / the light is the biggest lie",psilodump,CD-R,2000,"476 Records",not_for_sale,,8,,
+26,,"The Almost Black EP",psilodump,CD-R,1999,"476 Records",not_for_sale,,144,,
+27,,"Don't Get Anesthetized",psilodump,CD-R,1999,"476 Records",not_for_sale,,32,,
+19,476VOL1,"476 vol.1 / You're Not Eating It, It's Eating You",psilodump,CD-R,1999,"476 Records",not_for_sale,,3,,
+20,476VOL2,"476 vol.2 / Psychoactive Sonic Extracted From My Brain",psilodump,CD-R,1999,"476 Records",not_for_sale,,4,,
+21,476VOL3,"476 vol.3 / Hellbender",psilodump,CD-R,1999,"476 Records",not_for_sale,,5,,
+25,,Chemicals,psilodump,CD-R,1998,"476 Records",not_for_sale,,22,,
+37,,"The Elephant With The Green Pants / Snabelnauts",psilodump,CD-R,1998,"Don't Panic Records",not_for_sale,,148,"Released as Da R.I.P.C",
+38,,Tropic,psilodump,CD-R,1998,"Don't Panic Records",not_for_sale,,163,"Released as Da R.I.P.C",
+39,,"Moral Panic",psilodump,CD-R,1998,"Don't Panic Records",not_for_sale,,86,"Released as Da R.I.P.C",
+32,,Fluid,psilodump,Cassette,1997,"The Art of Realistix",not_for_sale,,47,"Released as Da R.I.P.C",
+33,,"Party On",psilodump,Cassette,1997,"The Art of Realistix",not_for_sale,,101,"Released as Da R.I.P.C",
+34,,1997,psilodump,Cassette,1997,"The Art of Realistix",not_for_sale,,1,"Released as Da R.I.P.C",
+35,,"Not Today",psilodump,Cassette,1997,"The Art of Realistix",not_for_sale,,94,"Released as Da R.I.P.C",
+36,,"No F--king Name",psilodump,CD-R,1997,,not_for_sale,,93,"Released as Da R.I.P.C",
+31,,"Da R.I.P.C",psilodump,Cassette,1996,,not_for_sale,,183,"Released as Da R.I.P.C",
+30,,DaDoomDay,"psilodump, B.U.T.W","3.5"" Floppy Disk",1995,"P-TV Studios",not_for_sale,,26,"Released as R.I.P.C & B.U.T.W",
+29,,"Greatest Hits",psilodump,"3.5"" Floppy Disk",1994,"P-TV Studios",not_for_sale,,54,"Released as R.I.P.C",
