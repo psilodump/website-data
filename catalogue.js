@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.9.4";
+const JS_VERSION = "1.9.5";
 const HTML_VERSION = "2.0.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -1228,7 +1228,7 @@ function renderRelease(mount, rows){
           : `<span class="psd-ed-status">${EDITION_STATUS_LABELS[e.Status] || "Available soon"}</span>`;
         const other = e.Artist && e.Artist.toLowerCase() !== "psilodump" ? `${esc(e.Artist)} – ` : "";
         return `<li>${k ? PHYS_ICONS[k] : ""}<span class="psd-ed-main"><b>${other}${esc(e.Title)}</b>
-          <span class="psd-ed-meta">${[e.Format, e["Cat#"], e.Label, e.Year].filter(Boolean).map(esc).join(" · ")}${e.Note ? " — " + esc(e.Note) : ""}</span></span>${status}</li>`;
+          <span class="psd-ed-meta">${[e.Format, e["Cat#"], e.Label, e.Year].filter(Boolean).map(esc).join(" · ")}${e.Note ? " — " + esc(e.Note) : ""}${/^https:\/\/www\.discogs\.com\//.test(e.Discogs || "") ? ` · <a href="${esc(e.Discogs)}" target="_blank" rel="noopener">Discogs</a>` : ""}</span></span>${status}</li>`;
       }).join("")}</ul></section>` : ""}
     ${(() => { const lines = creditLines(releaseCredits(r)); return lines.length ? `<section class="psd-rel-credits"><h2>Credits</h2><p>${lines.map(linkify).join("<br>")}</p></section>` : ""; })()}
     ${more.length ? `<div class="psd-rel-more">${more.join(" · ")}</div>` : ""}
@@ -1445,6 +1445,7 @@ function buildJsonLd(rows){
       if (schemaFormat) ed.musicReleaseFormat = "https://schema.org/" + schemaFormat;
       if (/^\d{4}$/.test(e.Year || "")) ed.datePublished = e.Year;
       if (e.URL) ed.url = e.URL;
+      if (/^https:\/\/www\.discogs\.com\//.test(e.Discogs || "")) ed.sameAs = e.Discogs;
       const eb = String(e.Barcode || "").trim();
       if (/^\d{8,14}$/.test(eb)) ed.identifier = { "@type": "PropertyValue", "propertyID": eb.length === 12 ? "UPC" : eb.length === 13 ? "EAN-13" : "GTIN", "value": eb };
       releases.push(ed);
