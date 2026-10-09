@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.3.0";
+const JS_VERSION = "1.4.0";
 const HTML_VERSION = "2.0.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -143,6 +143,50 @@ const CATALOGUE_CSS = `
 .sk-cover { width: 100% !important; aspect-ratio: 1/1 !important; }
 .sk-title { height: 14px !important; margin: 10px 12px 6px !important; border-radius: 4px !important; width: 70% !important; }
 .sk-meta { height: 11px !important; margin: 0 12px 12px !important; border-radius: 4px !important; width: 45% !important; }
+/* Release page (psilodu.mp/release?r=...) — colours come from the release (--rel-*) */
+.psd-rel { max-width: 1000px !important; margin: 0 auto !important; padding: 20px !important; box-sizing: border-box !important; font-family: system-ui, -apple-system, sans-serif !important; background: var(--rel-bg, #181818) !important; color: var(--rel-text, #fff) !important; border-radius: 12px !important; }
+.psd-rel a { color: inherit !important; text-decoration: underline !important; text-underline-offset: 2px !important; }
+.psd-rel-loading { opacity: .7 !important; background: transparent !important; color: inherit !important; }
+.psd-rel-nav { display: flex !important; justify-content: space-between !important; gap: 12px !important; font-size: 14px !important; margin-bottom: 16px !important; }
+.psd-rel-nav a { text-decoration: none !important; opacity: .85 !important; }
+.psd-rel-nav a:hover { opacity: 1 !important; text-decoration: underline !important; }
+.psd-rel-step { display: flex !important; gap: 16px !important; }
+.psd-rel-hero { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) !important; gap: 28px !important; align-items: start !important; }
+.psd-rel-cover { width: 100% !important; aspect-ratio: 1/1 !important; border-radius: 8px !important; overflow: hidden !important; background: var(--rel-deep, #2a2a2a) !important; box-shadow: 0 8px 30px rgba(0,0,0,.35) !important; cursor: zoom-in !important; }
+.psd-rel-cover img { width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important; }
+.psd-rel-title { font-size: clamp(24px, 4vw, 38px) !important; line-height: 1.1 !important; margin: 0 0 6px !important; color: inherit !important; font-weight: 700 !important; }
+.psd-rel-sub { font-size: 14px !important; opacity: .8 !important; margin-bottom: 18px !important; }
+.psd-rel-listen { display: flex !important; flex-wrap: wrap !important; gap: 8px !important; margin-bottom: 18px !important; }
+.psd-rel-svc { display: inline-flex !important; align-items: center !important; gap: 8px !important; padding: 8px 12px !important; border-radius: 8px !important; background: var(--rel-deep, #2a2a2a) !important; color: var(--rel-deep-text, #fff) !important; text-decoration: none !important; font-size: 13px !important; font-weight: 600 !important; }
+.psd-rel-svc:hover { filter: brightness(1.15) !important; }
+.psd-rel-facts { display: grid !important; grid-template-columns: max-content 1fr !important; gap: 6px 14px !important; margin: 0 !important; font-size: 14px !important; }
+.psd-rel-facts dt { opacity: .7 !important; margin: 0 !important; font-weight: 400 !important; }
+.psd-rel-facts dd { margin: 0 !important; }
+.psd-rel-player { margin-top: 24px !important; }
+.psd-rel-more { margin-top: 18px !important; font-size: 13px !important; opacity: .85 !important; }
+.psd-embed { width: 100% !important; border: 0 !important; border-radius: 12px !important; display: block !important; }
+.psd-player { background: var(--rel-soft, #222) !important; color: var(--rel-soft-text, #fff) !important; border-radius: 10px !important; padding: 12px !important; }
+.psd-player-note { opacity: .75 !important; font-size: 13px !important; padding: 8px 0 !important; }
+.psd-player-bar { display: flex !important; align-items: center !important; gap: 12px !important; }
+.psd-pp { width: 44px !important; height: 44px !important; flex: 0 0 44px !important; border-radius: 50% !important; border: none !important; cursor: pointer !important; font-size: 15px !important; background: var(--rel-deep, #2a2a2a) !important; color: var(--rel-deep-text, #fff) !important; }
+.psd-now { display: flex !important; flex-direction: column !important; min-width: 0 !important; }
+.psd-now-title { font-weight: 600 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+.psd-time { font-size: 12px !important; opacity: .75 !important; font-variant-numeric: tabular-nums !important; }
+.psd-progress { height: 6px !important; margin: 12px 0 8px !important; border-radius: 3px !important; background: rgba(127,127,127,.35) !important; cursor: pointer !important; position: relative !important; }
+.psd-progress-fill { height: 100% !important; width: 0; border-radius: 3px !important; background: currentColor !important; }
+.psd-tracks { list-style: none !important; margin: 0 !important; padding: 0 !important; }
+.psd-tracks li { margin: 0 !important; padding: 0 !important; list-style: none !important; }
+.psd-tracks button { display: flex !important; width: 100% !important; gap: 10px !important; align-items: baseline !important; padding: 8px 6px !important; border: none !important; border-radius: 6px !important; background: transparent !important; color: inherit !important; font: inherit !important; font-size: 14px !important; text-align: left !important; cursor: pointer !important; }
+.psd-tracks button:hover { background: rgba(127,127,127,.18) !important; }
+.psd-tracks button.is-current { background: var(--rel-deep, #2a2a2a) !important; color: var(--rel-deep-text, #fff) !important; font-weight: 600 !important; }
+.psd-n { opacity: .6 !important; min-width: 1.6em !important; text-align: right !important; font-variant-numeric: tabular-nums !important; }
+.psd-t { flex: 1 1 auto !important; }
+.psd-d { opacity: .7 !important; font-variant-numeric: tabular-nums !important; }
+@media (max-width: 700px) {
+  .psd-rel { padding: 14px !important; border-radius: 0 !important; }
+  .psd-rel-hero { grid-template-columns: 1fr !important; gap: 18px !important; }
+  .psd-rel-cover { max-width: 420px !important; margin: 0 auto !important; }
+}
 `;
 
 const CATALOGUE_HTML = `
@@ -482,7 +526,9 @@ function card(r, idx){
   // data-* attributes + one shared click listener (below) instead of inline onclick,
   // so URLs containing quotes can't break the handler.
   const coverClick = r._largeUrl ? `data-lightbox="${esc(r._largeUrl)}" data-thumb="${esc(r._thumbUrl)}" role="button" tabindex="0" aria-label="View larger artwork: ${esc(r[TITLE_COL] || "")}"` : '';
-  const title = r._titleHref ? `<a href="${esc(r._titleHref)}" target="_blank" rel="noopener nofollow">${esc(r[TITLE_COL] || "(untitled)")}</a>` : esc(r[TITLE_COL] || "(untitled)");
+  const title = RELEASE_LINKS
+    ? `<a href="${esc(releaseHref(r))}">${esc(r[TITLE_COL] || "(untitled)")}</a>`
+    : r._titleHref ? `<a href="${esc(r._titleHref)}" target="_blank" rel="noopener nofollow">${esc(r[TITLE_COL] || "(untitled)")}</a>` : esc(r[TITLE_COL] || "(untitled)");
   const activeDate = window._psilodumpCat.dateMode === "catalogue" ? r._catalogue : r._released;
   const metaBits = [ activeDate, r[TYPE_COL], r[CAT_COL] ].filter(Boolean).map(esc);
   const meta = metaBits.join(" • ");
@@ -744,6 +790,27 @@ if (!window._psilodumpModalDelegated) {
       t.closest('.rel-modal-overlay')?.classList.remove('active');
       return;
     }
+    // Release page player
+    const track = t.closest('[data-psd-track]');
+    if (track) {
+      const i = Number(track.getAttribute('data-psd-track')), p = window._psdPlayer;
+      if (p && p.index === i && !p.audio.paused) p.audio.pause(); else playTrack(i);
+      return;
+    }
+    if (t.closest('[data-psd-play]')) {
+      const p = window._psdPlayer;
+      if (p) { if (p.audio.paused) playTrack(p.index); else p.audio.pause(); }
+      return;
+    }
+    const seek = t.closest('[data-psd-seek]');
+    if (seek) {
+      const p = window._psdPlayer;
+      if (p && isFinite(p.audio.duration)) {
+        const box = seek.getBoundingClientRect();
+        p.audio.currentTime = Math.max(0, Math.min(1, (e.clientX - box.left) / box.width)) * p.audio.duration;
+      }
+      return;
+    }
     const cover = t.closest('[data-lightbox]');
     if (cover) { window.openLightbox(cover.getAttribute('data-lightbox'), cover.getAttribute('data-thumb')); return; }
     const listen = t.closest('[data-listen]');
@@ -769,6 +836,11 @@ if (!window._psilodumpModalDelegated) {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       document.querySelectorAll('.rel-modal-overlay.active').forEach(m => m.classList.remove('active'));
+      return;
+    }
+    if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && e.target instanceof Element && e.target.matches('[data-psd-seek]')) {
+      const p = window._psdPlayer;
+      if (p && isFinite(p.audio.duration)) { e.preventDefault(); p.audio.currentTime = Math.max(0, Math.min(p.audio.duration, p.audio.currentTime + (e.key === 'ArrowLeft' ? -5 : 5))); }
       return;
     }
     if ((e.key === 'Enter' || e.key === ' ') && e.target instanceof Element && e.target.matches('[data-lightbox], [data-pill]')) {
@@ -896,6 +968,265 @@ function moveModalsToBody(){
   });
 }
 
+// --- Release page: psilodu.mp/release?r=<id> ---
+// One Bandzoogle page (/release) with <div id="psd-release"></div> + this script
+// shows any release. <id> is the Cat# (DMTCD19/20 -> DMTCD19-20) or, without a
+// Cat#, title + year (psilodumputer-2000). Releases on Bandzoogle get our own
+// player, built from their album page's track list (same site, so it can be read).
+const RELEASE_PATH = "/release";
+const CATALOGUE_PATH = "/";
+// Catalogue titles link to the release page. Turn on once the /release page exists.
+const RELEASE_LINKS = false;
+
+function slugify(s){
+  return String(s || "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+function releaseKey(r){
+  const cat = String(r[CAT_COL] || "").trim().replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  if (cat) return cat;
+  const y = r._yearRel !== "Unknown" ? r._yearRel : (r._yearCat !== "Unknown" ? r._yearCat : "");
+  return [slugify(r[TITLE_COL]), y].filter(Boolean).join("-");
+}
+const releaseHref = r => RELEASE_PATH + "?r=" + encodeURIComponent(releaseKey(r));
+
+// The Bandzoogle album number in Source ("3319229" or a psilodu.mp/album/... address), or "".
+function bzAlbumId(r){
+  const s = String(r["Source"] || "").trim();
+  if (/^\d+$/.test(s)) return s;
+  const m = s.match(/psilodu\.mp\/album\/(\d+)/i);
+  return m ? m[1] : "";
+}
+function platformId(r, col, re){
+  const v = String(r[col] || "").split(MULTI_LINK_SEP).map(x => x.trim()).filter(Boolean)[0] || "";
+  if (!v) return "";
+  if (!/^https?:\/\//i.test(v)) return v;
+  const m = v.match(re);
+  return m ? m[1] : "";
+}
+const fmtTime = s => !isFinite(s) || s < 0 ? "0:00" : Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+
+// Load releases.csv once per visit; shared by the catalogue and the release page.
+function loadCatalogue(){
+  const cat = window._psilodumpCat;
+  if (cat.loaded) return Promise.resolve(cat.rows);
+  if (!cat._promise) {
+    cat.loading = true;
+    cat._promise = fetch(CSV_URL + "?v=" + Date.now())
+      .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
+      .then(text => {
+        const { rows: raw } = toObjects(parseCSV(text));
+        cat.rows = withDerived(raw);
+        cat.viewRows = [...cat.rows];
+        cat.loaded = true;
+        cat.loading = false;
+        return cat.rows;
+      })
+      .catch(err => { cat.loading = false; cat._promise = null; throw err; });
+  }
+  return cat._promise;
+}
+
+function initRelease(){
+  const mount = document.getElementById("psd-release");
+  if (!mount || mount._psdShown === location.search) return;
+  mount._psdShown = location.search;
+  ensureStyles();
+  mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading release…</div>`;
+  loadCatalogue()
+    .then(rows => renderRelease(mount, rows))
+    .catch(err => {
+      console.error("Failed to load release data:", err);
+      mount.innerHTML = `<div class="psd-rel">Unable to load the release right now. Please refresh the page.</div>`;
+    });
+}
+
+function renderRelease(mount, rows){
+  const key = (new URLSearchParams(location.search).get("r") || "").trim();
+  const r = key && rows.find(x => releaseKey(x).toLowerCase() === key.toLowerCase());
+  if (!r) {
+    mount.innerHTML = `<div class="psd-rel"><nav class="psd-rel-nav"><a href="${CATALOGUE_PATH}">← Catalogue</a></nav>
+      <h1 class="psd-rel-title">Release not found</h1>
+      <p>${key ? `Nothing in the catalogue is called “${esc(key)}”. <a href="${CATALOGUE_PATH}#q=${encodeURIComponent(key)}">Search the catalogue</a>.` : `<a href="${CATALOGUE_PATH}">Browse the catalogue</a>.`}</p></div>`;
+    document.title = "Release not found | psilodump";
+    return;
+  }
+
+  // Newer / older neighbours in catalogue order (catalogue date, newest first).
+  const byDate = v => { const t = Date.parse(v._catalogue || v._released); return isNaN(t) ? -Infinity : t; };
+  const ordered = [...rows].sort((a, b) => byDate(b) - byDate(a));
+  const pos = ordered.indexOf(r);
+  const newer = ordered[pos - 1], older = ordered[pos + 1];
+
+  const panel = releaseSurface(r["Bg Color"], 1) || { bg: "#181818", text: "#ffffff" };
+  const soft = releaseSurface(r["Bg Color"], 0.85) || { bg: "#222222", text: "#ffffff" };
+  const deep = releaseSurface(r["Bg Color"], 0.6) || { bg: "#2a2a2a", text: "#ffffff" };
+  const vars = `--rel-bg:${panel.bg};--rel-text:${panel.text};--rel-soft:${soft.bg};--rel-soft-text:${soft.text};--rel-deep:${deep.bg};--rel-deep-text:${deep.text}`;
+
+  const title = r[TITLE_COL] || "(untitled)";
+  const link = (x, label) => `<a href="${esc(releaseHref(x))}">${esc(label || x[TITLE_COL] || "(untitled)")}</a>`;
+  const facts = [];
+  if (r._released) facts.push(["Released", esc(r._released)]);
+  if (r._catalogue && r._catalogue !== r._released) facts.push(["Catalogue date", esc(r._catalogue)]);
+  if (r[TYPE_COL]) facts.push(["Type", esc(r[TYPE_COL])]);
+  if (r[CAT_COL]) facts.push(["Cat#", esc(r[CAT_COL])]);
+  if (r._series.length) facts.push(["Series", r._series.map(s => `<a href="${CATALOGUE_PATH}#series=${encodeURIComponent(s)}">${esc(s)}</a>`).join(", ")]);
+  const parent = r["Part Of"] && rows.find(x => x["MusicBrainz"] && x["MusicBrainz"] === r["Part Of"]);
+  if (parent) facts.push(["Part of", link(parent)]);
+  const children = r["MusicBrainz"] ? rows.filter(x => x["Part Of"] === r["MusicBrainz"]) : [];
+  if (children.length) facts.push(["Contains", children.map(c => link(c)).join(", ")]);
+  const norm = s => slugify(s);
+  const editions = rows.filter(x => x !== r && norm(x[TITLE_COL]) === norm(title));
+  if (editions.length) facts.push(["Other editions", editions.map(x => link(x, `${x[TITLE_COL]} (${x._yearRel !== "Unknown" ? x._yearRel : x._yearCat})`)).join(", ")]);
+
+  const listen = r._svc.map(s => `<a class="psd-rel-svc" href="${esc(s.href)}" target="_blank" rel="noopener nofollow">${icon(s.key)}<span>${esc(s.label)}</span></a>`).join("");
+
+  const albumId = bzAlbumId(r);
+  const more = [];
+  if (albumId) more.push(`<a href="${SITE}/album/${albumId}">Album page on psilodu.mp</a>`);
+  else if (r["Source"]) more.push(`<a href="${esc(normHref(expandPlatformUrl(r["Source"], "source")))}">Release page</a>`);
+  String(r["Sources"] || "").split(MULTI_LINK_SEP).map(x => x.trim()).filter(Boolean)
+    .forEach(u => { const h = normHref(u); more.push(`<a href="${esc(h)}" target="_blank" rel="noopener nofollow">${esc(h.replace(/^https?:\/\/(www\.)?/, "").split("/")[0])}</a>`); });
+  if (MBID_RE.test(r["MusicBrainz"] || "")) more.push(`<a href="${MB_RG_URL}${esc(r["MusicBrainz"])}" target="_blank" rel="noopener">MusicBrainz</a>`);
+
+  const cover = r._largeUrl || r._thumbUrl;
+  mount.innerHTML = `
+  <div class="psd-rel" style="${vars}">
+    <nav class="psd-rel-nav">
+      <a href="${CATALOGUE_PATH}">← Catalogue</a>
+      <span class="psd-rel-step">
+        ${newer ? `<a href="${esc(releaseHref(newer))}" title="${esc(newer[TITLE_COL])}">‹ Newer</a>` : ""}
+        ${older ? `<a href="${esc(releaseHref(older))}" title="${esc(older[TITLE_COL])}">Older ›</a>` : ""}
+      </span>
+    </nav>
+    <div class="psd-rel-hero">
+      <div class="psd-rel-cover"${cover ? ` data-lightbox="${esc(r._largeUrl || cover)}" data-thumb="${esc(r._thumbUrl)}" role="button" tabindex="0" aria-label="View larger artwork"` : ""}>
+        ${cover ? `<img src="${esc(cover)}" alt="${esc(title)}">` : ""}
+      </div>
+      <div class="psd-rel-info">
+        <h1 class="psd-rel-title">${esc(title)}</h1>
+        <div class="psd-rel-sub">${[r[TYPE_COL], r._yearRel !== "Unknown" ? r._yearRel : "", r[CAT_COL]].filter(Boolean).map(esc).join(" • ")}</div>
+        ${listen ? `<div class="psd-rel-listen">${listen}</div>` : ""}
+        <dl class="psd-rel-facts">${facts.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
+      </div>
+    </div>
+    <section class="psd-rel-player" id="psd-player"></section>
+    ${more.length ? `<div class="psd-rel-more">${more.join(" · ")}</div>` : ""}
+  </div>
+  <div id="rel-lightbox" class="rel-modal-overlay"><img id="rel-lightbox-img" class="rel-lightbox-img" src="" alt="Album Artwork"></div>`;
+  moveModalsToBody();
+  document.title = title + " | psilodump";
+  renderPlayer(document.getElementById("psd-player"), r, albumId);
+}
+
+// --- Player ---
+// Bandzoogle album: read the track list from the album page and play the tracks
+// with one <audio> element. Otherwise: the Spotify / Apple Music / YouTube player.
+function renderPlayer(box, r, albumId){
+  if (!box) return;
+  stopPlayer();
+  if (albumId) {
+    box.innerHTML = `<div class="psd-player-note">Loading tracks…</div>`;
+    fetch(`/album/${albumId}`)
+      .then(res => { if (!res.ok) throw new Error("HTTP " + res.status); return res.text(); })
+      .then(html => {
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        const tracks = [...doc.querySelectorAll("li.track-list-item a[data-dest]")].map(a => ({
+          id: a.getAttribute("data-id"),
+          title: a.getAttribute("data-title") || "",
+          duration: a.getAttribute("data-duration") || "",
+          src: a.getAttribute("data-dest"),
+        })).filter(t => t.src);
+        if (!document.body.contains(box)) return;          // the visitor has moved on
+        if (!tracks.length) throw new Error("no tracks");
+        buildTrackPlayer(box, r, tracks, albumId);
+      })
+      .catch(err => {
+        console.warn("Bandzoogle tracks unavailable, using another player:", err.message);
+        if (document.body.contains(box)) renderEmbed(box, r);
+      });
+  } else {
+    renderEmbed(box, r);
+  }
+}
+
+function renderEmbed(box, r){
+  const spotify = platformId(r, "Spotify", /album\/([A-Za-z0-9]+)/);
+  const apple = platformId(r, "Apple", /(?:album\/[^/]*\/|\/)(\d+)(?:\?|$)/);
+  const yt = String(r["YouTube"] || "").trim();
+  const ytList = (yt.match(/[?&]list=([A-Za-z0-9_-]+)/) || [])[1];
+  const ytVideo = (yt.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/) || [])[1];
+  let src = "", height = 352;
+  if (spotify) src = `https://open.spotify.com/embed/album/${spotify}`;
+  else if (apple) { src = `https://embed.music.apple.com/us/album/${apple}`; height = 450; }
+  else if (ytList) src = `https://www.youtube-nocookie.com/embed/videoseries?list=${ytList}`;
+  else if (ytVideo) src = `https://www.youtube-nocookie.com/embed/${ytVideo}`;
+  box.innerHTML = src
+    ? `<iframe class="psd-embed" src="${esc(src)}" height="${height}" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" title="Player"></iframe>`
+    : "";
+}
+
+function buildTrackPlayer(box, r, tracks, albumId){
+  box.innerHTML = `
+    <div class="psd-player">
+      <div class="psd-player-bar">
+        <button type="button" class="psd-pp" data-psd-play aria-label="Play">▶</button>
+        <div class="psd-now"><span class="psd-now-title">${esc(tracks[0].title)}</span><span class="psd-time">0:00 / ${esc(tracks[0].duration)}</span></div>
+      </div>
+      <div class="psd-progress" data-psd-seek role="slider" tabindex="0" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="psd-progress-fill"></div></div>
+      <ol class="psd-tracks">${tracks.map((t, i) => `<li><button type="button" data-psd-track="${i}"><span class="psd-n">${i + 1}</span><span class="psd-t">${esc(t.title)}</span><span class="psd-d">${esc(t.duration)}</span></button></li>`).join("")}</ol>
+    </div>`;
+  const audio = new Audio();
+  audio.preload = "none";
+  const p = window._psdPlayer = { audio, tracks, index: 0, box, title: r[TITLE_COL] || "", cover: r._largeUrl || r._thumbUrl || "" };
+  audio.addEventListener("timeupdate", () => updatePlayerUI());
+  audio.addEventListener("loadedmetadata", () => updatePlayerUI());
+  audio.addEventListener("play", () => updatePlayerUI());
+  audio.addEventListener("pause", () => updatePlayerUI());
+  audio.addEventListener("ended", () => { if (p.index + 1 < p.tracks.length) playTrack(p.index + 1); else updatePlayerUI(); });
+}
+
+function playTrack(i){
+  const p = window._psdPlayer;
+  if (!p || !p.tracks[i]) return;
+  if (i !== p.index || !p.audio.src) {
+    p.index = i;
+    p.audio.src = p.tracks[i].src;
+  }
+  p.audio.play().catch(() => {});
+  if ("mediaSession" in navigator && window.MediaMetadata) {
+    navigator.mediaSession.metadata = new MediaMetadata({ title: p.tracks[i].title, artist: "psilodump", album: p.title, artwork: p.cover ? [{ src: p.cover }] : [] });
+    navigator.mediaSession.setActionHandler("nexttrack", () => playTrack(p.index + 1));
+    navigator.mediaSession.setActionHandler("previoustrack", () => playTrack(Math.max(0, p.index - 1)));
+  }
+  updatePlayerUI();
+}
+
+function updatePlayerUI(){
+  const p = window._psdPlayer;
+  if (!p || !document.body.contains(p.box)) return;
+  const a = p.audio, t = p.tracks[p.index];
+  const playing = !a.paused && !a.ended;
+  const pp = p.box.querySelector(".psd-pp");
+  if (pp) { pp.textContent = playing ? "❚❚" : "▶"; pp.setAttribute("aria-label", playing ? "Pause" : "Play"); }
+  const nowT = p.box.querySelector(".psd-now-title"); if (nowT) nowT.textContent = t.title;
+  const time = p.box.querySelector(".psd-time"); if (time) time.textContent = fmtTime(a.currentTime) + " / " + (isFinite(a.duration) ? fmtTime(a.duration) : t.duration);
+  const pct = isFinite(a.duration) && a.duration > 0 ? (a.currentTime / a.duration) * 100 : 0;
+  const fill = p.box.querySelector(".psd-progress-fill"); if (fill) fill.style.width = pct + "%";
+  const bar = p.box.querySelector(".psd-progress"); if (bar) bar.setAttribute("aria-valuenow", String(Math.round(pct)));
+  p.box.querySelectorAll("[data-psd-track]").forEach(b => {
+    const on = Number(b.getAttribute("data-psd-track")) === p.index && (playing || a.currentTime > 0);
+    b.classList.toggle("is-current", on);
+    b.setAttribute("aria-current", on ? "true" : "false");
+  });
+}
+
+// Removing the page doesn't stop an <audio> element by itself, so stop it on page changes.
+function stopPlayer(){
+  const p = window._psdPlayer;
+  if (p) { p.audio.pause(); p.audio.removeAttribute("src"); p.audio.load(); window._psdPlayer = null; }
+}
+
 // --- Structured data (JSON-LD) for search engines ---
 // Describes every release as a schema.org MusicAlbum, invisible to visitors.
 // "sameAs" ties each release to the same release elsewhere (MusicBrainz, Bandcamp,
@@ -1004,6 +1335,7 @@ function updateJsonLd(){
 }
 
 function initApp(){
+  initRelease();
   mountMarkup();
   const grid = document.getElementById("rel-grid");
   if (!grid) return;
@@ -1017,17 +1349,10 @@ function initApp(){
     populateSelectOptions();
     applyFilters();
     updateJsonLd();
-  } else if (!cat.loading) {
-    cat.loading = true;
-    fetch(CSV_URL + "?v=" + Date.now())
-      .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
-      .then(text => {
-        const {headers: h, rows: raw} = toObjects(parseCSV(text));
-        cat.rows = withDerived(raw);
-        cat.viewRows = [...cat.rows];
-        cat.loaded = true;
-        cat.loading = false;
-
+  } else if (!grid._psdPending) {
+    grid._psdPending = true;                 // one request per grid (a release page may already be loading it)
+    loadCatalogue()
+      .then(() => {
         applyHash();
         bindUIEvents();
         populateSelectOptions();
@@ -1035,7 +1360,6 @@ function initApp(){
         updateJsonLd();
       })
       .catch(err => {
-        cat.loading = false;
         console.error("Failed to load release data:", err);
         const g = document.getElementById("rel-grid");
         if(g) g.innerHTML = `<div style="grid-column: 1/-1; padding: 2rem 0; text-align: center; opacity: 0.8;">Unable to load discography data right now. Please refresh the page.</div>`;
@@ -1050,6 +1374,8 @@ window.__psdCatalogue = { init: initApp, version: JS_VERSION };
 new MutationObserver(() => {
   const mount = document.getElementById("psd-catalogue");
   if (mount && !mount.firstElementChild) { initApp(); return; }
+  const rel = document.getElementById("psd-release");
+  if (rel && rel._psdShown !== location.search) { initRelease(); return; }
   const grid = document.getElementById("rel-grid");
   if (grid && grid.querySelector(".sk")) initApp();
 }).observe(document.documentElement, { childList: true, subtree: true });
@@ -1057,6 +1383,8 @@ new MutationObserver(() => {
 // Also re-initialise after each Turbo page change.
 document.addEventListener("turbo:load", initApp);
 document.addEventListener("turbo:render", initApp);
+// Leaving a release page: stop its music (a removed <audio> element keeps playing).
+document.addEventListener("turbo:before-render", stopPlayer);
 
 initApp();
 })();
