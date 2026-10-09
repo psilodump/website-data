@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.5.0";
+const JS_VERSION = "1.6.0";
 const HTML_VERSION = "2.0.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -83,6 +83,7 @@ const CATALOGUE_CSS = `
 
 /* Cover container with CSS background pattern fallback */
 .rel-cover { position: relative !important; width: 100% !important; aspect-ratio: 1/1 !important; background: repeating-linear-gradient(45deg,#eee,#eee 8px,#f6f6f6 8px,#f6f6f6 16px) !important; cursor: pointer !important; }
+a.rel-cover { display: block !important; text-decoration: none !important; }
 .rel-cover img { width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important; position: relative !important; z-index: 1 !important; }
 
 .rel-body { padding: 10px 12px 12px !important; display: flex !important; flex-direction: column !important; flex-grow: 1 !important; }
@@ -523,9 +524,14 @@ function card(r, idx){
   const coverHtml = r._thumbUrl 
     ? `<img loading="lazy" src="${esc(r._thumbUrl)}" alt="${esc(r[TITLE_COL] || "Cover")}" onerror="this.style.display='none'">` 
     : '';
-  // data-* attributes + one shared click listener (below) instead of inline onclick,
-  // so URLs containing quotes can't break the handler.
+  // With release pages, the cover opens the release page like the title does (the
+  // full-size artwork is one click further, on that page). The cover link is left out
+  // of keyboard/screen-reader navigation so each card has one link, not two the same.
+  // Without release pages: data-* attributes + the shared click listener open the lightbox.
   const coverClick = r._largeUrl ? `data-lightbox="${esc(r._largeUrl)}" data-thumb="${esc(r._thumbUrl)}" role="button" tabindex="0" aria-label="View larger artwork: ${esc(r[TITLE_COL] || "")}"` : '';
+  const cover = RELEASE_LINKS
+    ? `<a class="rel-cover" href="${esc(releaseHref(r))}" tabindex="-1" aria-hidden="true">${coverHtml}</a>`
+    : `<div class="rel-cover" ${coverClick}>${coverHtml}</div>`;
   const title = RELEASE_LINKS
     ? `<a href="${esc(releaseHref(r))}">${esc(r[TITLE_COL] || "(untitled)")}</a>`
     : r._titleHref ? `<a href="${esc(r._titleHref)}" target="_blank" rel="noopener nofollow">${esc(r[TITLE_COL] || "(untitled)")}</a>` : esc(r[TITLE_COL] || "(untitled)");
@@ -543,7 +549,7 @@ function card(r, idx){
     : ``;
 
   return `<article class="rel-card">
-    <div class="rel-cover" ${coverClick}>${coverHtml}</div>
+    ${cover}
     <div class="rel-body">
       <h3 class="rel-title">${title}</h3>
       ${meta ? `<div class="rel-meta">${meta}</div>` : ``}
