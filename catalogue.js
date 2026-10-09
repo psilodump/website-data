@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.4.0";
+const JS_VERSION = "1.5.0";
 const HTML_VERSION = "2.0.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -975,8 +975,8 @@ function moveModalsToBody(){
 // player, built from their album page's track list (same site, so it can be read).
 const RELEASE_PATH = "/release";
 const CATALOGUE_PATH = "/";
-// Catalogue titles link to the release page. Turn on once the /release page exists.
-const RELEASE_LINKS = false;
+// Catalogue titles link to the release page (the Bandzoogle page /release exists since 2026-10-09).
+const RELEASE_LINKS = true;
 
 function slugify(s){
   return String(s || "").normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase()
@@ -1030,6 +1030,11 @@ function loadCatalogue(){
 function initRelease(){
   const mount = document.getElementById("psd-release");
   if (!mount || mount._psdShown === location.search) return;
+  // During a Turbo visit the address changes before the new page is swapped in
+  // (<html aria-busy>); the old page must not render the next address. turbo:render
+  // / turbo:load call this again once the new page is there.
+  if (document.documentElement.hasAttribute("aria-busy")) return;
+  if (location.pathname.replace(/\/+$/, "") !== RELEASE_PATH) return;
   mount._psdShown = location.search;
   ensureStyles();
   mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading release…</div>`;
