@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.8.0";
+const JS_VERSION = "1.9.0";
 const HTML_VERSION = "2.0.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -173,6 +173,15 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .rel-phys { display: flex !important; gap: 6px !important; margin: -4px 0 10px !important; color: #333 !important; opacity: .75 !important; }
 .rel-phys .psd-phys-icon { width: 15px !important; height: 15px !important; }
 .rel-wrap.row-view .rel-phys { margin: 0 !important; }
+.rel-phys .is-past { opacity: .4 !important; }
+.psd-rel-editions { margin-top: 22px !important; }
+.psd-rel-editions h2 { font-size: 15px !important; margin: 0 0 8px !important; color: inherit !important; opacity: .75 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
+.psd-rel-editions ul { list-style: none !important; margin: 0 !important; padding: 0 !important; }
+.psd-rel-editions li { display: flex !important; align-items: center !important; gap: 10px !important; padding: 8px 0 !important; border-top: 1px solid rgba(127,127,127,.25) !important; margin: 0 !important; list-style: none !important; }
+.psd-ed-main { flex: 1 1 auto !important; display: flex !important; flex-direction: column !important; font-size: 14px !important; }
+.psd-ed-meta { font-size: 12px !important; opacity: .75 !important; }
+.psd-ed-buy { padding: 5px 12px !important; border-radius: 999px !important; background: var(--rel-deep, #2a2a2a) !important; color: var(--rel-deep-text, #fff) !important; text-decoration: none !important; font-size: 13px !important; font-weight: 600 !important; }
+.psd-ed-status { font-size: 12px !important; opacity: .65 !important; white-space: nowrap !important; }
 .psd-rel-facts { display: grid !important; grid-template-columns: max-content 1fr !important; gap: 6px 14px !important; margin: 0 !important; font-size: 14px !important; }
 .psd-rel-facts dt { opacity: .7 !important; margin: 0 !important; font-weight: 400 !important; }
 .psd-rel-facts dd { margin: 0 !important; }
@@ -294,6 +303,8 @@ if (!window._psilodumpCat) {
 }
 
 const CSV_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/releases.csv";
+// Physical editions (vinyl / CD pressings); "Releases" holds the IDs of the releases each contains.
+const EDITIONS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/editions.csv";
 // Icons are static, so they come from the jsDelivr CDN (raw.githubusercontent.com is not meant as a CDN).
 const ICON_BASE = "https://cdn.jsdelivr.net/gh/psilodump/website-data@main/icons/";
 
@@ -454,7 +465,7 @@ function withDerived(arr){
 
     const searchTerms = [
       r[TITLE_COL], r[TYPE_COL], r[CAT_COL], r[SERIES_COL],
-      r["Label"], r["Source"], r["Sources"], r["Artist"], r["Original Credit"], r["Physical"],
+      r["Label"], r["Source"], r["Sources"], r["Artist"], r["Original Credit"],
       relDate, catDate, yearRel, yearCat
     ].filter(Boolean).join(" ").toLowerCase();
 
@@ -566,7 +577,7 @@ function card(r, idx){
     <div class="rel-body">
       <h3 class="rel-title">${title}</h3>
       ${meta ? `<div class="rel-meta">${meta}</div>` : ``}
-      ${physicalFormats(r).length ? `<div class="rel-phys">${physicalFormats(r).map(x => `<span title="Available on ${x}">${PHYS_ICONS[x]}</span>`).join("")}</div>` : ``}
+      ${physicalFormats(r).length ? `<div class="rel-phys">${physicalFormats(r).map(p => `<span class="${p.available ? "" : "is-past"}" title="${p.available ? "Available on " + p.kind : "Released on " + p.kind + " (sold out)"}">${PHYS_ICONS[p.kind]}</span>`).join("")}</div>` : ``}
       ${listenBtn}
     </div>
   </article>`;
@@ -1016,7 +1027,20 @@ const PHYS_ICONS = {
   CD: '<svg class="psd-phys-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 5.2a6.8 6.8 0 0 1 6.8 6.8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".55"/></svg>',
   Vinyl: '<svg class="psd-phys-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="currentColor"/><circle cx="12" cy="12" r="8" fill="none" stroke="#000" stroke-opacity=".35" stroke-width=".8"/><circle cx="12" cy="12" r="6" fill="none" stroke="#000" stroke-opacity=".35" stroke-width=".8"/><circle cx="12" cy="12" r="3.4" fill="#fff" fill-opacity=".85"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>',
 };
-const physicalFormats = r => splitList(r["Physical"]).filter(x => PHYS_ICONS[x]);
+// Order of a release's editions: buyable first, then those with a cat# (the label's own
+// pressing, e.g. 476WAX003 before a variant without one), then newest first.
+const editionOrder = (a, b) => (a.Status === "sold_out") - (b.Status === "sold_out")
+  || (!a["Cat#"]) - (!b["Cat#"]) || String(b.Year).localeCompare(String(a.Year));
+const editionKind = fmt => /vinyl|\b(7|10|12)"/i.test(fmt) ? "Vinyl" : /\bcd\b/i.test(fmt) ? "CD" : "";
+// Kinds (CD / Vinyl) of a release's editions: [{ kind, available }], available if any edition of that kind is.
+function physicalFormats(r){
+  const kinds = {};
+  (r._editions || []).forEach(e => {
+    const k = editionKind(e.Format);
+    if (k) kinds[k] = kinds[k] || e.Status === "available";
+  });
+  return ["Vinyl", "CD"].filter(k => k in kinds).map(k => ({ kind: k, available: kinds[k] }));
+}
 
 // --- Release page: psilodu.mp/release?r=<id> ---
 // One Bandzoogle page (/release) with <div id="psd-release"></div> + this script
@@ -1062,11 +1086,22 @@ function loadCatalogue(){
   if (cat.loaded) return Promise.resolve(cat.rows);
   if (!cat._promise) {
     cat.loading = true;
+    // editions.csv is optional: if it can't be loaded the catalogue works without it.
+    const editions = fetch(EDITIONS_URL + "?v=" + Date.now())
+      .then(r => r.ok ? r.text() : "").then(t => t ? toObjects(parseCSV(t)).rows : []).catch(() => []);
     cat._promise = fetch(CSV_URL + "?v=" + Date.now())
       .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
-      .then(text => {
+      .then(text => editions.then(eds => [text, eds]))
+      .then(([text, eds]) => {
         const { rows: raw } = toObjects(parseCSV(text));
         cat.rows = withDerived(raw);
+        cat.editions = eds;
+        const byRelease = {};
+        eds.forEach(e => splitList(e["Releases"]).forEach(id => (byRelease[id] = byRelease[id] || []).push(e)));
+        cat.rows.forEach(r => {
+          r._editions = (byRelease[r["ID"]] || []).sort(editionOrder);
+          if (r._editions.length) r._searchStr += " " + r._editions.map(e => [e["Cat#"], e.Format, e.Title].join(" ")).join(" ").toLowerCase();
+        });
         cat.viewRows = [...cat.rows];
         cat.loaded = true;
         cat.loading = false;
@@ -1169,18 +1204,24 @@ function renderRelease(mount, rows){
         <div class="psd-rel-sub">${[r[TYPE_COL], r._yearRel !== "Unknown" ? r._yearRel : "", r[CAT_COL]].filter(Boolean).map(esc).join(" • ")}</div>
         ${listen ? `<div class="psd-rel-listen">${listen}</div>` : ""}
         ${(() => {
-          const phys = physicalFormats(r);
-          if (!phys.length) return "";
-          const url = String(r["Physical URL"] || "").trim();
-          const item = fmt => url
-            ? `<a class="psd-rel-phys-btn" href="${esc(url)}" target="_blank" rel="noopener">${PHYS_ICONS[fmt]}<span>${fmt}</span></a>`
-            : `<span class="psd-rel-phys-btn">${PHYS_ICONS[fmt]}<span>${fmt}</span></span>`;
-          return `<div class="psd-rel-phys"><span class="psd-rel-phys-label">Available on</span>${phys.map(item).join("")}</div>`;
+          // One button per kind that can be bought now, linking to the first such edition's shop page.
+          const buy = ["Vinyl", "CD"].map(k => r._editions.find(e => editionKind(e.Format) === k && e.Status === "available" && e.URL)).filter(Boolean);
+          if (!buy.length) return "";
+          return `<div class="psd-rel-phys"><span class="psd-rel-phys-label">Available on</span>${buy.map(e => { const k = editionKind(e.Format);
+            return `<a class="psd-rel-phys-btn" href="${esc(e.URL)}" target="_blank" rel="noopener">${PHYS_ICONS[k]}<span>${k}</span></a>`; }).join("")}</div>`;
         })()}
         <dl class="psd-rel-facts">${facts.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
       </div>
     </div>
     <section class="psd-rel-player" id="psd-player"></section>
+    ${r._editions.length ? `<section class="psd-rel-editions"><h2>Physical editions</h2><ul>${r._editions.map(e => {
+        const k = editionKind(e.Format);
+        const status = e.Status === "available" && e.URL ? `<a class="psd-ed-buy" href="${esc(e.URL)}" target="_blank" rel="noopener">Buy</a>`
+          : `<span class="psd-ed-status">${e.Status === "sold_out" ? "Sold out" : e.Status === "upcoming" ? "Upcoming" : "Available soon"}</span>`;
+        const other = e.Artist && e.Artist.toLowerCase() !== "psilodump" ? `${esc(e.Artist)} – ` : "";
+        return `<li>${k ? PHYS_ICONS[k] : ""}<span class="psd-ed-main"><b>${other}${esc(e.Title)}</b>
+          <span class="psd-ed-meta">${[e.Format, e["Cat#"], e.Label, e.Year].filter(Boolean).map(esc).join(" · ")}${e.Note ? " — " + esc(e.Note) : ""}</span></span>${status}</li>`;
+      }).join("")}</ul></section>` : ""}
     ${(() => { const lines = creditLines(releaseCredits(r)); return lines.length ? `<section class="psd-rel-credits"><h2>Credits</h2><p>${lines.map(linkify).join("<br>")}</p></section>` : ""; })()}
     ${more.length ? `<div class="psd-rel-more">${more.join(" · ")}</div>` : ""}
   </div>
@@ -1381,7 +1422,18 @@ function buildJsonLd(rows){
     // products/offers), so it goes in identifier, named by its type.
     const barcode = splitList(r["Barcode"]).find(b => /^\d{8,14}$/.test(b));
     if (barcode) release.identifier = { "@type": "PropertyValue", "propertyID": barcode.length === 12 ? "UPC" : barcode.length === 13 ? "EAN-13" : "GTIN", "value": barcode };
-    if (Object.keys(release).length > 2) item.albumRelease = release;
+    const releases = Object.keys(release).length > 2 ? [release] : [];
+    (r._editions || []).forEach(e => {
+      const ed = { "@type": "MusicRelease", "name": e.Title };
+      if (e["Cat#"]) ed.catalogNumber = e["Cat#"];
+      if (e.Label) ed.recordLabel = { "@type": "Organization", "name": e.Label };
+      const k = editionKind(e.Format);
+      if (k) ed.musicReleaseFormat = k === "Vinyl" ? "https://schema.org/VinylFormat" : "https://schema.org/CDFormat";
+      if (/^\d{4}$/.test(e.Year || "")) ed.datePublished = e.Year;
+      if (e.URL) ed.url = e.URL;
+      releases.push(ed);
+    });
+    if (releases.length) item.albumRelease = one(releases);
     const credits = releaseCredits(r);
     const creditText = creditLines(credits).join(" ");
     if (creditText) item.creditText = creditText;
