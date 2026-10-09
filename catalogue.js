@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.9.3";
+const JS_VERSION = "1.9.4";
 const HTML_VERSION = "2.0.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -1247,18 +1247,23 @@ function renderPlayer(box, r, albumId){
   stopPlayer();
   if (albumId) {
     box.innerHTML = `<div class="psd-player-note">Loading tracks…</div>`;
-    fetch(`/album/${albumId}`)
+    // Bandzoogle's album page lists only the first 20 tracks (then data-load-more="true");
+    // /go/albums/<n>/tracks returns the track list alone, all of it with amount=1000.
+    // Not an official address, so the album page (first 20 tracks) is the fallback.
+    const readTracks = html => [...new DOMParser().parseFromString(html, "text/html")
+      .querySelectorAll("li.track-list-item a[data-dest]")].map(a => ({
+        id: a.getAttribute("data-id"),
+        title: a.getAttribute("data-title") || "",
+        duration: a.getAttribute("data-duration") || "",
+        src: a.getAttribute("data-dest"),
+      })).filter(t => t.src);
+    const getTracks = url => fetch(url)
       .then(res => { if (!res.ok) throw new Error("HTTP " + res.status); return res.text(); })
-      .then(html => {
-        const doc = new DOMParser().parseFromString(html, "text/html");
-        const tracks = [...doc.querySelectorAll("li.track-list-item a[data-dest]")].map(a => ({
-          id: a.getAttribute("data-id"),
-          title: a.getAttribute("data-title") || "",
-          duration: a.getAttribute("data-duration") || "",
-          src: a.getAttribute("data-dest"),
-        })).filter(t => t.src);
+      .then(html => { const t = readTracks(html); if (!t.length) throw new Error("no tracks"); return t; });
+    getTracks(`/go/albums/${albumId}/tracks?offset=0&amount=1000`)
+      .catch(() => getTracks(`/album/${albumId}`))
+      .then(tracks => {
         if (!document.body.contains(box)) return;          // the visitor has moved on
-        if (!tracks.length) throw new Error("no tracks");
         buildTrackPlayer(box, r, tracks, albumId);
       })
       .catch(err => {
