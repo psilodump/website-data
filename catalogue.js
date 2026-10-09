@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.2.0";
+const JS_VERSION = "1.3.0";
 const HTML_VERSION = "2.0.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -67,6 +67,7 @@ const CATALOGUE_CSS = `
 .rel-pill-remove { cursor: pointer !important; font-weight: bold !important; margin-left: 2px !important; opacity: .8 !important; }
 .rel-pill-remove:hover { opacity: 1 !important; }
 .rel-clear-all { background: none !important; border: none !important; color: #d9534f !important; font-size: 12px !important; cursor: pointer !important; text-decoration: underline !important; padding: .2rem .4rem !important; }
+.rel-copy-link { background: none !important; border: none !important; color: inherit !important; font-size: 12px !important; cursor: pointer !important; text-decoration: underline !important; padding: .2rem .4rem !important; opacity: .85 !important; }
 
 #rel-stats { margin-top: .5rem !important; font-size: 13px !important; opacity: .85 !important; color: inherit !important; }
 
@@ -513,6 +514,7 @@ function render(){
   const stats = document.getElementById("rel-stats");
   if (stats) stats.innerHTML = `Showing <strong>${cat.viewRows.length}</strong> release${cat.viewRows.length === 1 ? "" : "s"}`;
   renderFilterPills();
+  syncHash();
 }
 
 function renderFilterPills(){
@@ -521,6 +523,9 @@ function renderFilterPills(){
   const cat = window._psilodumpCat;
   const pills = [];
 
+  const qEl = document.getElementById("rel-q");
+  const q = qEl ? qEl.value.trim() : "";
+  if (q) pills.push({ label: `Search: ${q}`, clear: () => { const el = document.getElementById("rel-q"); if(el) el.value = ""; } });
   if (cat.activeDecade) pills.push({ label: `Decade: ${cat.activeDecade}`, clear: () => { cat.activeDecade = ""; const el = document.getElementById("rel-sel-decade"); if(el) el.value = ""; } });
   if (cat.activeYear) pills.push({ label: `Year: ${cat.activeYear}`, clear: () => { cat.activeYear = ""; const el = document.getElementById("rel-sel-year"); if(el) el.value = ""; } });
   if (cat.activeType) pills.push({ label: `Type: ${cat.activeType}`, clear: () => { cat.activeType = ""; const el = document.getElementById("rel-sel-type"); if(el) el.value = ""; } });
@@ -533,7 +538,8 @@ function renderFilterPills(){
 
   pillsWin.innerHTML = pills.map((p, i) => 
     `<span class="rel-pill">${esc(p.label)} <span class="rel-pill-remove" data-pill="${i}" role="button" tabindex="0" aria-label="Remove filter">✕</span></span>`
-  ).join("") + `<button type="button" class="rel-clear-all">Clear all</button>`;
+  ).join("") + `<button type="button" class="rel-clear-all">Clear all</button>`
+    + `<button type="button" class="rel-copy-link">Copy link</button>`;
 
   window._currentPills = pills;
 }
@@ -555,6 +561,69 @@ window.clearAllFilters = function(){
   const q = document.getElementById("rel-q"); if(q) q.value = "";
   applyFilters();
 };
+
+// --- Shareable links: the filters live in the address, e.g. #type=EP&q=saturnus ---
+// replaceState (not pushState) so typing doesn't add a history entry per key,
+// and it passes history.state through because Turbo keeps its own data there.
+const HASH_KEYS = ["q", "decade", "year", "type", "series", "sort", "timeline"];
+
+function hashParams(){
+  const p = new URLSearchParams(location.hash.replace(/^#/, ""));
+  return HASH_KEYS.some(k => p.has(k)) ? p : null;
+}
+
+function stateToHash(){
+  const cat = window._psilodumpCat;
+  const qEl = document.getElementById("rel-q");
+  const p = new URLSearchParams();
+  const q = qEl ? qEl.value.trim() : "";
+  if (q) p.set("q", q);
+  if (cat.activeDecade) p.set("decade", cat.activeDecade);
+  if (cat.activeYear) p.set("year", cat.activeYear);
+  if (cat.activeType) p.set("type", cat.activeType);
+  if (cat.activeSeries) p.set("series", cat.activeSeries);
+  if (cat.sortMode === "title") p.set("sort", "title");
+  // Years differ between the two timelines, so a link with a year or decade says which one.
+  if (cat.activeYear || cat.activeDecade) p.set("timeline", cat.dateMode);
+  return p.toString().replace(/\+/g, "%20");
+}
+
+function syncHash(){
+  if (!document.getElementById("rel-grid")) return;
+  const h = stateToHash();
+  const current = location.hash.replace(/^#/, "");
+  if (h === current) return;
+  if (!h && current && !hashParams()) return;      // someone else's #anchor: leave it alone
+  history.replaceState(history.state, "", location.pathname + location.search + (h ? "#" + h : ""));
+}
+
+// Apply the filters from the address. Returns false if it has none of ours.
+function applyHash(){
+  const p = hashParams();
+  if (!p) return false;
+  const cat = window._psilodumpCat;
+  cat.activeDecade = p.get("decade") || "";
+  cat.activeYear = p.get("year") || "";
+  cat.activeType = p.get("type") || "";
+  cat.activeSeries = p.get("series") || "";
+  cat.sortMode = p.get("sort") === "title" ? "title" : "date";
+  const tl = p.get("timeline");
+  if (tl === "released" || tl === "catalogue") cat.dateMode = tl;   // for this visit only, not saved
+  const qEl = document.getElementById("rel-q"); if (qEl) qEl.value = p.get("q") || "";
+  document.getElementById("rel-sort-date")?.setAttribute("aria-pressed", cat.sortMode === "date" ? "true" : "false");
+  document.getElementById("rel-sort-title")?.setAttribute("aria-pressed", cat.sortMode === "title" ? "true" : "false");
+  return true;
+}
+
+function copyViewLink(btn){
+  const url = location.href;
+  const done = () => { btn.textContent = "Link copied ✓"; setTimeout(() => { btn.textContent = "Copy link"; }, 2000); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(done, () => window.prompt("Copy this link:", url));
+  } else {
+    window.prompt("Copy this link:", url);
+  }
+}
 
 function populateSelectOptions(){
   const cat = window._psilodumpCat;
@@ -681,7 +750,18 @@ if (!window._psilodumpModalDelegated) {
     if (listen) { window.openListenModal(Number(listen.getAttribute('data-listen'))); return; }
     const pill = t.closest('[data-pill]');
     if (pill) { window.removePill(Number(pill.getAttribute('data-pill'))); return; }
-    if (t.closest('.rel-clear-all')) window.clearAllFilters();
+    if (t.closest('.rel-clear-all')) { window.clearAllFilters(); return; }
+    const copy = t.closest('.rel-copy-link');
+    if (copy) copyViewLink(copy);
+  });
+
+  // A link or an edited address with new filters, while already on the page.
+  window.addEventListener('hashchange', () => {
+    const cat = window._psilodumpCat;
+    if (!cat.loaded || !document.getElementById('rel-grid') || !applyHash()) return;
+    populateSelectOptions();
+    applyDateModeUI();
+    applyFilters();
   });
 
   // Keyboard: Escape closes any open pop-up; Enter/Space on a focused cover
@@ -932,6 +1012,7 @@ function initApp(){
   const cat = window._psilodumpCat;
 
   if (cat.loaded) {
+    applyHash();
     bindUIEvents();
     populateSelectOptions();
     applyFilters();
@@ -947,10 +1028,10 @@ function initApp(){
         cat.loaded = true;
         cat.loading = false;
 
+        applyHash();
         bindUIEvents();
         populateSelectOptions();
-        sortView();
-        render();
+        applyFilters();
         updateJsonLd();
       })
       .catch(err => {
