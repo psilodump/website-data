@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.6.0";
+const JS_VERSION = "1.7.0";
 const HTML_VERSION = "2.0.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -156,7 +156,12 @@ a.rel-cover { display: block !important; text-decoration: none !important; }
 .psd-rel-cover { width: 100% !important; aspect-ratio: 1/1 !important; border-radius: 8px !important; overflow: hidden !important; background: var(--rel-deep, #2a2a2a) !important; box-shadow: 0 8px 30px rgba(0,0,0,.35) !important; cursor: zoom-in !important; }
 .psd-rel-cover img { width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important; }
 .psd-rel-title { font-size: clamp(24px, 4vw, 38px) !important; line-height: 1.1 !important; margin: 0 0 6px !important; color: inherit !important; font-weight: 700 !important; }
+.psd-rel-by { font-size: 17px !important; margin: 0 0 4px !important; }
+.psd-rel-orig { font-size: 13px !important; opacity: .7 !important; font-style: italic !important; margin-bottom: 8px !important; }
 .psd-rel-sub { font-size: 14px !important; opacity: .8 !important; margin-bottom: 18px !important; }
+.psd-rel-credits { margin-top: 22px !important; font-size: 14px !important; line-height: 1.6 !important; }
+.psd-rel-credits h2 { font-size: 15px !important; margin: 0 0 6px !important; color: inherit !important; opacity: .75 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
+.psd-rel-credits p { margin: 0 !important; }
 .psd-rel-listen { display: flex !important; flex-wrap: wrap !important; gap: 8px !important; margin-bottom: 18px !important; }
 .psd-rel-svc { display: inline-flex !important; align-items: center !important; gap: 8px !important; padding: 8px 12px !important; border-radius: 8px !important; background: var(--rel-deep, #2a2a2a) !important; color: var(--rel-deep-text, #fff) !important; text-decoration: none !important; font-size: 13px !important; font-weight: 600 !important; }
 .psd-rel-svc:hover { filter: brightness(1.15) !important; }
@@ -441,7 +446,7 @@ function withDerived(arr){
 
     const searchTerms = [
       r[TITLE_COL], r[TYPE_COL], r[CAT_COL], r[SERIES_COL],
-      r["Label"], r["Source"], r["Sources"],
+      r["Label"], r["Source"], r["Sources"], r["Artist"], r["Original Credit"],
       relDate, catDate, yearRel, yearCat
     ].filter(Boolean).join(" ").toLowerCase();
 
@@ -974,6 +979,29 @@ function moveModalsToBody(){
   });
 }
 
+// --- Credits (JSON in the Credits column; the admin's creditLines() builds the same lines) ---
+function releaseCredits(r){
+  try { const c = JSON.parse(r["Credits"] || "{}"); return c && typeof c === "object" ? c : {}; } catch (e) { return {}; }
+}
+function creditLines(c){
+  const lines = [];
+  if (c.written_by) lines.push(`${c.role || "Written & Produced"} by ${c.written_by}${c.studio ? " @ " + c.studio : ""}${c.years ? ", " + c.years : ""}.`);
+  if (c.remixed_by) lines.push(`Remixed by ${c.remixed_by}.`);
+  if (c.mastered_by || c.mastered_at) lines.push(`${c.remaster ? "Remastered" : "Mastered"}${c.mastered_by ? " by " + c.mastered_by : ""}${c.mastered_at ? " at " + c.mastered_at : ""}.`);
+  if (c.artwork_by) lines.push(`Artwork by ${c.artwork_by}.`);
+  if (c.copyright_holder || c.copyright_year) lines.push(`© ${[c.copyright_holder, c.copyright_year].filter(Boolean).join(" ")}`);
+  if (c.other) String(c.other).split(/\n+/).map(l => l.trim()).filter(Boolean).forEach(l => lines.push(l));
+  return lines;
+}
+// Escaped text with web addresses turned into links.
+const linkify = s => esc(s).replace(/\b((?:https?:\/\/|www\.)[^\s<]+[^\s<.,;:!?)])/gi,
+  u => `<a href="${/^www\./i.test(u) ? "https://" + u : u}" target="_blank" rel="noopener nofollow">${u}</a>`);
+// "psilodump & Paza Rahm", "Methadump, psilodump", "psilodump feat. Son of Sun" -> names.
+// Only ", ", " & " and " feat. " separate names ("Puskajussi and The Apinat" is one name).
+const releaseArtist = r => String(r["Artist"] || "").trim() || "psilodump";
+const artistNames = credit => String(credit).split(/\s*,\s*|\s+&\s+|\s+(?:feat\.?|ft\.?|featuring)\s+/i).map(x => x.trim()).filter(Boolean);
+const splitList = v => String(v || "").split(",").map(x => x.trim()).filter(Boolean);
+
 // --- Release page: psilodu.mp/release?r=<id> ---
 // One Bandzoogle page (/release) with <div id="psd-release"></div> + this script
 // shows any release. <id> is the Cat# (DMTCD19/20 -> DMTCD19-20) or, without a
@@ -1081,6 +1109,9 @@ function renderRelease(mount, rows){
   if (r._catalogue && r._catalogue !== r._released) facts.push(["Catalogue date", esc(r._catalogue)]);
   if (r[TYPE_COL]) facts.push(["Type", esc(r[TYPE_COL])]);
   if (r[CAT_COL]) facts.push(["Cat#", esc(r[CAT_COL])]);
+  if (r["Label"]) facts.push(["Label", esc(r["Label"])]);
+  if (r["Formats"]) facts.push(["Format", esc(r["Formats"])]);
+  if (r["Barcode"]) facts.push(["Barcode", esc(r["Barcode"])]);
   if (r._series.length) facts.push(["Series", r._series.map(s => `<a href="${CATALOGUE_PATH}#series=${encodeURIComponent(s)}">${esc(s)}</a>`).join(", ")]);
   const parent = r["Part Of"] && rows.find(x => x["MusicBrainz"] && x["MusicBrainz"] === r["Part Of"]);
   if (parent) facts.push(["Part of", link(parent)]);
@@ -1116,12 +1147,15 @@ function renderRelease(mount, rows){
       </div>
       <div class="psd-rel-info">
         <h1 class="psd-rel-title">${esc(title)}</h1>
+        <div class="psd-rel-by">by ${esc(releaseArtist(r))}</div>
+        ${r["Original Credit"] && slugify(r["Original Credit"]) !== slugify(releaseArtist(r)) ? `<div class="psd-rel-orig">Originally released as ${esc(r["Original Credit"])}</div>` : ""}
         <div class="psd-rel-sub">${[r[TYPE_COL], r._yearRel !== "Unknown" ? r._yearRel : "", r[CAT_COL]].filter(Boolean).map(esc).join(" • ")}</div>
         ${listen ? `<div class="psd-rel-listen">${listen}</div>` : ""}
         <dl class="psd-rel-facts">${facts.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
       </div>
     </div>
     <section class="psd-rel-player" id="psd-player"></section>
+    ${(() => { const lines = creditLines(releaseCredits(r)); return lines.length ? `<section class="psd-rel-credits"><h2>Credits</h2><p>${lines.map(linkify).join("<br>")}</p></section>` : ""; })()}
     ${more.length ? `<div class="psd-rel-more">${more.join(" · ")}</div>` : ""}
   </div>
   <div id="rel-lightbox" class="rel-modal-overlay"><img id="rel-lightbox-img" class="rel-lightbox-img" src="" alt="Album Artwork"></div>`;
@@ -1271,6 +1305,19 @@ function releaseTypeJsonLd(type){
   return {};
 }
 
+// MusicBrainz format -> schema.org MusicReleaseFormatType (formats without one are left out).
+function releaseFormatJsonLd(fmt){
+  const f = String(fmt).toLowerCase();
+  if (/digital/.test(f)) return "https://schema.org/DigitalFormat";
+  if (/\bcd\b|cd-r|compact disc/.test(f)) return "https://schema.org/CDFormat";
+  if (/vinyl|\b(7|10|12)"/.test(f)) return "https://schema.org/VinylFormat";
+  if (/cassette/.test(f)) return "https://schema.org/CassetteFormat";
+  if (/dvd/.test(f)) return "https://schema.org/DVDFormat";
+  if (/laserdisc/.test(f)) return "https://schema.org/LaserDiscFormat";
+  return "";
+}
+const one = list => list.length === 1 ? list[0] : list;
+
 function buildJsonLd(rows){
   // Each release needs its own @id so others can point to it (isPartOf).
   // Prefer its psilodu.mp page; otherwise an anchor on the catalogue page.
@@ -1293,9 +1340,27 @@ function buildJsonLd(rows){
     Object.assign(item, releaseTypeJsonLd(r[TYPE_COL]));
     const date = r[DATE_COL] || r[CATDATE_COL] || "";
     if (/^\d{4}(-\d{2}(-\d{2})?)?$/.test(date)) item.datePublished = date;
-    item.byArtist = { "@id": ARTIST_ID };
+    item.byArtist = one(artistNames(releaseArtist(r)).map(n => n.toLowerCase() === "psilodump"
+      ? { "@id": ARTIST_ID }
+      : { "@type": "MusicGroup", "name": n }));
     if (r._largeUrl) item.image = r._largeUrl;
-    if (r[CAT_COL]) item.identifier = { "@type": "PropertyValue", "propertyID": "catalogNumber", "value": r[CAT_COL] };
+    // The release (this edition): catalogue number, label, format, barcode.
+    const release = { "@type": "MusicRelease", "name": r[TITLE_COL] || "" };
+    if (r[CAT_COL]) release.catalogNumber = r[CAT_COL];
+    const labels = splitList(r["Label"]);
+    if (labels.length) release.recordLabel = one(labels.map(n => ({ "@type": "Organization", "name": n })));
+    const formats = [...new Set(splitList(r["Formats"]).map(releaseFormatJsonLd).filter(Boolean))];
+    if (formats.length) release.musicReleaseFormat = one(formats);
+    // Barcode: schema.org has no barcode property for music releases (gtin is for
+    // products/offers), so it goes in identifier, named by its type.
+    const barcode = splitList(r["Barcode"]).find(b => /^\d{8,14}$/.test(b));
+    if (barcode) release.identifier = { "@type": "PropertyValue", "propertyID": barcode.length === 12 ? "UPC" : barcode.length === 13 ? "EAN-13" : "GTIN", "value": barcode };
+    if (Object.keys(release).length > 2) item.albumRelease = release;
+    const credits = releaseCredits(r);
+    const creditText = creditLines(credits).join(" ");
+    if (creditText) item.creditText = creditText;
+    if (credits.copyright_holder) item.copyrightHolder = { "@type": "Organization", "name": credits.copyright_holder };
+    if (/^\d{4}$/.test(credits.copyright_year || "")) item.copyrightYear = Number(credits.copyright_year);
 
     const sameAs = [];
     if (MBID_RE.test(r["MusicBrainz"] || "")) sameAs.push(MB_RG_URL + r["MusicBrainz"].toLowerCase());
