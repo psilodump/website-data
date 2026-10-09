@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.7.0";
+const JS_VERSION = "1.8.0";
 const HTML_VERSION = "2.0.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -165,6 +165,14 @@ a.rel-cover { display: block !important; text-decoration: none !important; }
 .psd-rel-listen { display: flex !important; flex-wrap: wrap !important; gap: 8px !important; margin-bottom: 18px !important; }
 .psd-rel-svc { display: inline-flex !important; align-items: center !important; gap: 8px !important; padding: 8px 12px !important; border-radius: 8px !important; background: var(--rel-deep, #2a2a2a) !important; color: var(--rel-deep-text, #fff) !important; text-decoration: none !important; font-size: 13px !important; font-weight: 600 !important; }
 .psd-rel-svc:hover { filter: brightness(1.15) !important; }
+.psd-rel-phys { display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; margin: -6px 0 18px !important; }
+.psd-rel-phys-label { font-size: 13px !important; opacity: .75 !important; margin-right: 2px !important; }
+.psd-rel-phys-btn { display: inline-flex !important; align-items: center !important; gap: 6px !important; padding: 6px 10px !important; border-radius: 999px !important; border: 1px solid currentColor !important; color: inherit !important; text-decoration: none !important; font-size: 13px !important; font-weight: 600 !important; }
+a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; color: var(--rel-deep-text, #fff) !important; }
+.psd-phys-icon { width: 16px !important; height: 16px !important; display: block !important; flex: 0 0 16px !important; }
+.rel-phys { display: flex !important; gap: 6px !important; margin: -4px 0 10px !important; color: #333 !important; opacity: .75 !important; }
+.rel-phys .psd-phys-icon { width: 15px !important; height: 15px !important; }
+.rel-wrap.row-view .rel-phys { margin: 0 !important; }
 .psd-rel-facts { display: grid !important; grid-template-columns: max-content 1fr !important; gap: 6px 14px !important; margin: 0 !important; font-size: 14px !important; }
 .psd-rel-facts dt { opacity: .7 !important; margin: 0 !important; font-weight: 400 !important; }
 .psd-rel-facts dd { margin: 0 !important; }
@@ -446,7 +454,7 @@ function withDerived(arr){
 
     const searchTerms = [
       r[TITLE_COL], r[TYPE_COL], r[CAT_COL], r[SERIES_COL],
-      r["Label"], r["Source"], r["Sources"], r["Artist"], r["Original Credit"],
+      r["Label"], r["Source"], r["Sources"], r["Artist"], r["Original Credit"], r["Physical"],
       relDate, catDate, yearRel, yearCat
     ].filter(Boolean).join(" ").toLowerCase();
 
@@ -558,6 +566,7 @@ function card(r, idx){
     <div class="rel-body">
       <h3 class="rel-title">${title}</h3>
       ${meta ? `<div class="rel-meta">${meta}</div>` : ``}
+      ${physicalFormats(r).length ? `<div class="rel-phys">${physicalFormats(r).map(x => `<span title="Available on ${x}">${PHYS_ICONS[x]}</span>`).join("")}</div>` : ``}
       ${listenBtn}
     </div>
   </article>`;
@@ -1002,6 +1011,13 @@ const releaseArtist = r => String(r["Artist"] || "").trim() || "psilodump";
 const artistNames = credit => String(credit).split(/\s*,\s*|\s+&\s+|\s+(?:feat\.?|ft\.?|featuring)\s+/i).map(x => x.trim()).filter(Boolean);
 const splitList = v => String(v || "").split(",").map(x => x.trim()).filter(Boolean);
 
+// --- Physical editions (CD / Vinyl, e.g. on elastic stage) ---
+const PHYS_ICONS = {
+  CD: '<svg class="psd-phys-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 5.2a6.8 6.8 0 0 1 6.8 6.8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".55"/></svg>',
+  Vinyl: '<svg class="psd-phys-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="currentColor"/><circle cx="12" cy="12" r="8" fill="none" stroke="#000" stroke-opacity=".35" stroke-width=".8"/><circle cx="12" cy="12" r="6" fill="none" stroke="#000" stroke-opacity=".35" stroke-width=".8"/><circle cx="12" cy="12" r="3.4" fill="#fff" fill-opacity=".85"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>',
+};
+const physicalFormats = r => splitList(r["Physical"]).filter(x => PHYS_ICONS[x]);
+
 // --- Release page: psilodu.mp/release?r=<id> ---
 // One Bandzoogle page (/release) with <div id="psd-release"></div> + this script
 // shows any release. <id> is the Cat# (DMTCD19/20 -> DMTCD19-20) or, without a
@@ -1130,6 +1146,7 @@ function renderRelease(mount, rows){
   String(r["Sources"] || "").split(MULTI_LINK_SEP).map(x => x.trim()).filter(Boolean)
     .forEach(u => { const h = normHref(u); more.push(`<a href="${esc(h)}" target="_blank" rel="noopener nofollow">${esc(h.replace(/^https?:\/\/(www\.)?/, "").split("/")[0])}</a>`); });
   if (MBID_RE.test(r["MusicBrainz"] || "")) more.push(`<a href="${MB_RG_URL}${esc(r["MusicBrainz"])}" target="_blank" rel="noopener">MusicBrainz</a>`);
+  if (/^https:\/\/www\.discogs\.com\//.test(r["Discogs"] || "")) more.push(`<a href="${esc(r["Discogs"])}" target="_blank" rel="noopener">Discogs</a>`);
 
   const cover = r._largeUrl || r._thumbUrl;
   mount.innerHTML = `
@@ -1151,6 +1168,15 @@ function renderRelease(mount, rows){
         ${r["Original Credit"] && slugify(r["Original Credit"]) !== slugify(releaseArtist(r)) ? `<div class="psd-rel-orig">Originally released as ${esc(r["Original Credit"])}</div>` : ""}
         <div class="psd-rel-sub">${[r[TYPE_COL], r._yearRel !== "Unknown" ? r._yearRel : "", r[CAT_COL]].filter(Boolean).map(esc).join(" • ")}</div>
         ${listen ? `<div class="psd-rel-listen">${listen}</div>` : ""}
+        ${(() => {
+          const phys = physicalFormats(r);
+          if (!phys.length) return "";
+          const url = String(r["Physical URL"] || "").trim();
+          const item = fmt => url
+            ? `<a class="psd-rel-phys-btn" href="${esc(url)}" target="_blank" rel="noopener">${PHYS_ICONS[fmt]}<span>${fmt}</span></a>`
+            : `<span class="psd-rel-phys-btn">${PHYS_ICONS[fmt]}<span>${fmt}</span></span>`;
+          return `<div class="psd-rel-phys"><span class="psd-rel-phys-label">Available on</span>${phys.map(item).join("")}</div>`;
+        })()}
         <dl class="psd-rel-facts">${facts.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
       </div>
     </div>
@@ -1364,6 +1390,7 @@ function buildJsonLd(rows){
 
     const sameAs = [];
     if (MBID_RE.test(r["MusicBrainz"] || "")) sameAs.push(MB_RG_URL + r["MusicBrainz"].toLowerCase());
+    if (/^https:\/\/www\.discogs\.com\//.test(r["Discogs"] || "")) sameAs.push(r["Discogs"]);
     r._svc.forEach(s => {
       // A YouTube link counts as "the same release" only when it is a playlist (a whole release).
       if (s.key === "youtube" && !/[?&]list=/.test(s.href)) return;
