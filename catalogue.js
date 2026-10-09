@@ -4,8 +4,8 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.1.0";
-const HTML_VERSION = "1.0.0";
+const JS_VERSION = "1.2.0";
+const HTML_VERSION = "2.0.0";
 
 // Log version silently to Browser Console (F12) on every load
 console.log(`[Psilodump Catalogue] Loaded JS: v${JS_VERSION} | HTML: v${HTML_VERSION}`);
@@ -40,6 +40,182 @@ function storageGet(key){
 }
 function storageSet(key, value){
   try { window.localStorage.setItem(key, value); } catch (e) { /* ignore */ }
+}
+
+// --- Styles and markup ---
+// The Bandzoogle embed is only <div id="psd-catalogue"></div> plus this script,
+// so Bandzoogle serving a stale edit of the page can't bring back an old
+// catalogue: the styles and HTML live here. An older embed that still carries
+// its own HTML is left as it is.
+const CATALOGUE_CSS = `
+/* Container */
+.rel-wrap { max-width: 1100px !important; margin: 0 auto !important; font-family: system-ui, -apple-system, sans-serif !important; }
+
+/* Toolbar & Filters Layout */
+.rel-controls { margin-bottom: 1rem !important; color: inherit !important; }
+.rel-toolbar { display: flex !important; flex-wrap: wrap !important; gap: .5rem !important; margin-bottom: .5rem !important; }
+
+#rel-q { flex: 1 1 220px !important; min-width: 180px !important; padding: .6rem .8rem !important; border: 1px solid #ccc !important; border-radius: 6px !important; background: #fff !important; color: #000 !important; font-size: 14px !important; box-sizing: border-box !important; }
+
+/* Compact Filter Select Dropdowns */
+.rel-select { flex: 0 1 auto !important; min-width: 110px !important; padding: .6rem .8rem !important; border: 1px solid #ccc !important; border-radius: 6px !important; background: #fff !important; color: #111 !important; font-size: 13px !important; cursor: pointer !important; outline: none !important; }
+.rel-select:focus { border-color: #222 !important; }
+
+/* Active Filter Pills */
+.rel-pills { display: flex !important; flex-wrap: wrap !important; gap: .4rem !important; align-items: center !important; margin-top: .6rem !important; min-height: 28px !important; }
+.rel-pill { display: inline-flex !important; align-items: center !important; gap: .3rem !important; background: #222 !important; color: #fff !important; padding: .2rem .55rem !important; border-radius: 999px !important; font-size: 12px !important; line-height: 1 !important; }
+.rel-pill-remove { cursor: pointer !important; font-weight: bold !important; margin-left: 2px !important; opacity: .8 !important; }
+.rel-pill-remove:hover { opacity: 1 !important; }
+.rel-clear-all { background: none !important; border: none !important; color: #d9534f !important; font-size: 12px !important; cursor: pointer !important; text-decoration: underline !important; padding: .2rem .4rem !important; }
+
+#rel-stats { margin-top: .5rem !important; font-size: 13px !important; opacity: .85 !important; color: inherit !important; }
+
+/* Sort & View Bar */
+.rel-sort { display: flex !important; gap: .5rem !important; margin: .6rem 0 1rem !important; flex-wrap: wrap !important; color: inherit !important; }
+.rel-sort button { border: 1px solid #bbb !important; background: #fff !important; color: #000 !important; padding: .35rem .6rem !important; border-radius: 6px !important; cursor: pointer !important; font-size: 13px !important; }
+.rel-sort button[aria-pressed="true"] { background: #e0e0e0 !important; font-weight: 600 !important; }
+
+/* Grid & Cards */
+.rel-grid { display: grid !important; grid-template-columns: repeat( auto-fill, minmax(220px, 1fr) ) !important; gap: 16px !important; }
+.rel-card { border: 1px solid #ddd !important; background: #fff !important; color: #111 !important; border-radius: 8px !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; transition: transform 0.15s ease, box-shadow 0.15s ease !important; }
+.rel-card:hover { transform: translateY(-2px) !important; box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important; }
+
+/* Cover container with CSS background pattern fallback */
+.rel-cover { position: relative !important; width: 100% !important; aspect-ratio: 1/1 !important; background: repeating-linear-gradient(45deg,#eee,#eee 8px,#f6f6f6 8px,#f6f6f6 16px) !important; cursor: pointer !important; }
+.rel-cover img { width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important; position: relative !important; z-index: 1 !important; }
+
+.rel-body { padding: 10px 12px 12px !important; display: flex !important; flex-direction: column !important; flex-grow: 1 !important; }
+.rel-title { margin: 0 0 4px !important; font-size: 15px !important; line-height: 1.25 !important; font-weight: 600 !important; }
+.rel-title a { color: inherit !important; text-decoration: none !important; }
+.rel-title a:hover { text-decoration: underline !important; }
+.rel-meta { margin: 0 0 10px !important; font-size: 12px !important; opacity: .8 !important; color: #333 !important; }
+
+/* Listen Button */
+.btn-listen { margin-top: auto !important; width: 100% !important; padding: .45rem .6rem !important; background: #222 !important; color: #fff !important; border: none !important; border-radius: 6px !important; font-size: 12px !important; font-weight: 600 !important; cursor: pointer !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: .4rem !important; transition: background 0.15s ease !important; }
+.btn-listen:hover { background: #444 !important; }
+
+/* Compact View */
+.rel-wrap.compact .rel-grid { grid-template-columns: repeat( auto-fill, minmax(160px, 1fr) ) !important; gap: 12px !important; }
+.rel-wrap.compact .rel-title { font-size: 13px !important; }
+.rel-wrap.compact .rel-meta { font-size: 11px !important; }
+.rel-wrap.compact .btn-listen { padding: .35rem .45rem !important; font-size: 11px !important; }
+
+/* Row/List Layout View */
+.rel-wrap.row-view .rel-grid { display: flex !important; flex-direction: column !important; gap: 8px !important; }
+.rel-wrap.row-view .rel-card { flex-direction: row !important; align-items: center !important; padding: 8px 12px !important; }
+.rel-wrap.row-view .rel-cover { width: 52px !important; height: 52px !important; flex-shrink: 0 !important; border-radius: 4px !important; overflow: hidden !important; }
+.rel-wrap.row-view .rel-body { padding: 0 0 0 12px !important; flex-direction: row !important; align-items: center !important; justify-content: space-between !important; gap: 12px !important; width: 100% !important; }
+.rel-wrap.row-view .rel-title { font-size: 14px !important; margin: 0 !important; flex: 1 1 auto !important; }
+.rel-wrap.row-view .rel-meta { margin: 0 !important; font-size: 12px !important; white-space: nowrap !important; }
+.rel-wrap.row-view .btn-listen { width: auto !important; margin: 0 !important; padding: .35rem .75rem !important; white-space: nowrap !important; }
+
+/* Modals with Elevated Z-Index above Site Footer Layer */
+.rel-modal-overlay { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; background: rgba(0, 0, 0, 0.85) !important; backdrop-filter: blur(5px) !important; display: flex !important; align-items: center !important; justify-content: center !important; z-index: 999999 !important; opacity: 0 !important; pointer-events: none !important; transition: opacity 0.2s ease !important; padding: 15px !important; box-sizing: border-box !important; }
+.rel-modal-overlay.active { opacity: 1 !important; pointer-events: auto !important; }
+
+.rel-lightbox-img { max-width: 90vw !important; max-height: 85vh !important; border-radius: 8px !important; box-shadow: 0 8px 30px rgba(0,0,0,0.5) !important; object-fit: contain !important; }
+
+.rel-modal-card { background: #181818; color: #fff; width: 100% !important; max-width: 380px !important; border-radius: 12px !important; padding: 20px !important; box-shadow: 0 10px 40px rgba(0,0,0,0.6) !important; text-align: center !important; position: relative !important; }
+.rel-modal-cover { width: 110px !important; height: 110px !important; border-radius: 8px !important; margin: 0 auto 12px !important; object-fit: cover !important; display: block !important; box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important; }
+.rel-modal-title { font-size: 18px !important; font-weight: 700 !important; margin: 0 0 4px !important; color: #fff !important; }
+.rel-modal-meta { font-size: 12px !important; color: #aaa !important; margin-bottom: 16px !important; }
+.rel-modal-links { display: flex !important; flex-direction: column !important; gap: 8px !important; }
+.rel-svc-link { display: flex !important; align-items: center !important; justify-content: space-between !important; background: #282828 !important; color: #fff !important; text-decoration: none !important; padding: 10px 14px !important; border-radius: 8px !important; font-weight: 600 !important; font-size: 13px !important; transition: background 0.15s ease !important; }
+.rel-svc-link:hover { background: #383838 !important; }
+.rel-svc-left { display: flex !important; align-items: center !important; gap: 10px !important; }
+.rel-svc-icon { 
+  width: 20px !important; 
+  height: 20px !important; 
+  object-fit: contain !important; 
+  display: block !important; 
+}
+
+.svc-bc { color: #629aa9 !important; }
+.svc-sp { color: #1db954 !important; }
+.svc-yt { color: #ff0000 !important; }
+.svc-am { color: #fc3c44 !important; }
+
+/* Skeleton Loader */
+@keyframes rel-shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.rel-card.sk { pointer-events: none !important; border-color: #eee !important; }
+.sk-block { background: linear-gradient(90deg, #eee 25%, #f7f7f7 50%, #eee 75%) !important; background-size: 200% 100% !important; animation: rel-shimmer 1.4s infinite !important; }
+.sk-cover { width: 100% !important; aspect-ratio: 1/1 !important; }
+.sk-title { height: 14px !important; margin: 10px 12px 6px !important; border-radius: 4px !important; width: 70% !important; }
+.sk-meta { height: 11px !important; margin: 0 12px 12px !important; border-radius: 4px !important; width: 45% !important; }
+`;
+
+const CATALOGUE_HTML = `
+<div class="rel-wrap">
+  <div class="rel-controls">
+    <div class="rel-toolbar">
+      <input id="rel-q" type="search" placeholder="Filter catalogue…">
+      <select id="rel-sel-decade" class="rel-select"><option value="">All Decades</option></select>
+      <select id="rel-sel-year" class="rel-select"><option value="">All Years</option></select>
+      <select id="rel-sel-type" class="rel-select"><option value="">All Types</option></select>
+      <select id="rel-sel-series" class="rel-select"><option value="">All Series</option></select>
+    </div>
+
+    <!-- Active Filter Badges/Pills -->
+    <div id="rel-pills" class="rel-pills"></div>
+
+    <div id="rel-stats" aria-live="polite">Loading release catalogue…</div>
+  </div>
+
+  <div class="rel-sort">
+    <button type="button" id="rel-sort-date" aria-pressed="true">Newest first</button>
+    <button type="button" id="rel-sort-title" aria-pressed="false">Title A→Z</button>
+    <button type="button" id="rel-date-mode" aria-pressed="false" title="Toggle date basis">Timeline: Catalogue</button>
+    <button type="button" id="rel-view-compact" aria-pressed="false" title="Toggle compact grid">Compact grid</button>
+    <button type="button" id="rel-view-rows" aria-pressed="false" title="Toggle list view">Row view</button>
+  </div>
+
+  <div id="rel-grid" class="rel-grid" aria-live="polite">
+    <article class="rel-card sk"><div class="sk-block sk-cover"></div>
+<div class="sk-block sk-title"></div>
+<div class="sk-block sk-meta"></div></article>
+    <article class="rel-card sk"><div class="sk-block sk-cover"></div>
+<div class="sk-block sk-title"></div>
+<div class="sk-block sk-meta"></div></article>
+    <article class="rel-card sk"><div class="sk-block sk-cover"></div>
+<div class="sk-block sk-title"></div>
+<div class="sk-block sk-meta"></div></article>
+    <article class="rel-card sk"><div class="sk-block sk-cover"></div>
+<div class="sk-block sk-title"></div>
+<div class="sk-block sk-meta"></div></article>
+  </div>
+</div>
+
+<!-- Image Lightbox Modal -->
+<div id="rel-lightbox" class="rel-modal-overlay">
+  <img id="rel-lightbox-img" class="rel-lightbox-img" src="" alt="Album Artwork">
+</div>
+
+<!-- Listen / Streaming Links Modal -->
+<div id="rel-listen-modal" class="rel-modal-overlay">
+  <div class="rel-modal-card">
+    <img id="rel-m-cover" class="rel-modal-cover" src="" alt="">
+    <h3 id="rel-m-title" class="rel-modal-title"></h3>
+    <div id="rel-m-meta" class="rel-modal-meta"></div>
+    <div id="rel-m-links" class="rel-modal-links"></div>
+  </div>
+</div>
+`;
+
+function ensureStyles(){
+  let el = document.getElementById("psd-catalogue-css");
+  if (!el) {
+    el = document.createElement("style");
+    el.id = "psd-catalogue-css";
+    (document.head || document.documentElement).appendChild(el);
+  }
+  if (el.textContent !== CATALOGUE_CSS) el.textContent = CATALOGUE_CSS;
+}
+
+function mountMarkup(){
+  const mount = document.getElementById("psd-catalogue");
+  if (mount && !mount.firstElementChild && !document.getElementById("rel-grid")) {
+    mount.innerHTML = CATALOGUE_HTML;
+  }
 }
 
 // Persistent Global State to Survive Bandzoogle AJAX Page Swaps
@@ -748,8 +924,10 @@ function updateJsonLd(){
 }
 
 function initApp(){
+  mountMarkup();
   const grid = document.getElementById("rel-grid");
   if (!grid) return;
+  ensureStyles();
   moveModalsToBody();
   const cat = window._psilodumpCat;
 
@@ -786,9 +964,11 @@ function initApp(){
 
 window.__psdCatalogue = { init: initApp, version: JS_VERSION };
 
-// Re-initialise whenever placeholder cards appear. Watch <html>, not <body>:
+// Re-initialise whenever an empty embed or placeholder cards appear. Watch <html>, not <body>:
 // Turbo replaces <body> on every page change, <html> stays.
 new MutationObserver(() => {
+  const mount = document.getElementById("psd-catalogue");
+  if (mount && !mount.firstElementChild) { initApp(); return; }
   const grid = document.getElementById("rel-grid");
   if (grid && grid.querySelector(".sk")) initApp();
 }).observe(document.documentElement, { childList: true, subtree: true });
