@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.9.1";
+const JS_VERSION = "1.9.2";
 const HTML_VERSION = "2.0.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -577,7 +577,7 @@ function card(r, idx){
     <div class="rel-body">
       <h3 class="rel-title">${title}</h3>
       ${meta ? `<div class="rel-meta">${meta}</div>` : ``}
-      ${physicalFormats(r).length ? `<div class="rel-phys">${physicalFormats(r).map(p => `<span class="${p.available ? "" : "is-past"}" title="${p.available ? "Available on " + p.kind : "Released on " + p.kind + " (sold out)"}">${PHYS_ICONS[p.kind]}</span>`).join("")}</div>` : ``}
+      ${physicalFormats(r).length ? `<div class="rel-phys">${physicalFormats(r).map(p => `<span class="${p.available ? "" : "is-past"}" title="${p.available ? "Available on " + p.kind : "Released on " + p.kind}">${PHYS_ICONS[p.kind]}</span>`).join("")}</div>` : ``}
       ${listenBtn}
     </div>
   </article>`;
@@ -1027,9 +1027,13 @@ const PHYS_ICONS = {
   CD: '<svg class="psd-phys-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 5.2a6.8 6.8 0 0 1 6.8 6.8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".55"/></svg>',
   Vinyl: '<svg class="psd-phys-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="currentColor"/><circle cx="12" cy="12" r="8" fill="none" stroke="#000" stroke-opacity=".35" stroke-width=".8"/><circle cx="12" cy="12" r="6" fill="none" stroke="#000" stroke-opacity=".35" stroke-width=".8"/><circle cx="12" cy="12" r="3.4" fill="#fff" fill-opacity=".85"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>',
 };
+// Edition statuses: available, upcoming, sold_out, not_for_sale (exists, but isn't sold,
+// e.g. the 476 Vol. CD-Rs). The last two are "past": listed after the others, icon dimmed.
+const EDITION_STATUS_LABELS = { sold_out: "Sold out", upcoming: "Upcoming", not_for_sale: "Not for sale" };
+const editionPast = e => e.Status === "sold_out" || e.Status === "not_for_sale";
 // Order of a release's editions: buyable first, then those with a cat# (the label's own
 // pressing, e.g. 476WAX003 before a variant without one), then newest first.
-const editionOrder = (a, b) => (a.Status === "sold_out") - (b.Status === "sold_out")
+const editionOrder = (a, b) => editionPast(a) - editionPast(b)
   || (!a["Cat#"]) - (!b["Cat#"]) || String(b.Year).localeCompare(String(a.Year));
 const editionKind = fmt => /vinyl|\b(7|10|12)"/i.test(fmt) ? "Vinyl" : /\bcd\b/i.test(fmt) ? "CD" : "";
 // Kinds (CD / Vinyl) of a release's editions: [{ kind, available }], available if any edition of that kind is.
@@ -1217,7 +1221,7 @@ function renderRelease(mount, rows){
     ${r._editions.length ? `<section class="psd-rel-editions"><h2>Physical editions</h2><ul>${r._editions.map(e => {
         const k = editionKind(e.Format);
         const status = e.Status === "available" && e.URL ? `<a class="psd-ed-buy" href="${esc(e.URL)}" target="_blank" rel="noopener">Buy</a>`
-          : `<span class="psd-ed-status">${e.Status === "sold_out" ? "Sold out" : e.Status === "upcoming" ? "Upcoming" : "Available soon"}</span>`;
+          : `<span class="psd-ed-status">${EDITION_STATUS_LABELS[e.Status] || "Available soon"}</span>`;
         const other = e.Artist && e.Artist.toLowerCase() !== "psilodump" ? `${esc(e.Artist)} – ` : "";
         return `<li>${k ? PHYS_ICONS[k] : ""}<span class="psd-ed-main"><b>${other}${esc(e.Title)}</b>
           <span class="psd-ed-meta">${[e.Format, e["Cat#"], e.Label, e.Year].filter(Boolean).map(esc).join(" · ")}${e.Note ? " — " + esc(e.Note) : ""}</span></span>${status}</li>`;
