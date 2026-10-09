@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.9.2";
+const JS_VERSION = "1.9.3";
 const HTML_VERSION = "2.0.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -1025,6 +1025,8 @@ const splitList = v => String(v || "").split(",").map(x => x.trim()).filter(Bool
 // --- Physical editions (CD / Vinyl, e.g. on elastic stage) ---
 const PHYS_ICONS = {
   CD: '<svg class="psd-phys-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 5.2a6.8 6.8 0 0 1 6.8 6.8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".55"/></svg>',
+  Cassette: '<svg class="psd-phys-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="1.5" y="5" width="21" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="8" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="16" cy="11" r="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.2 11h3.6M6 19l1.5-3.5h9L18 19" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+  Floppy: '<svg class="psd-phys-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h15l3 3v15H3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><rect x="7" y="3" width="9" height="6" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="12.5" y="4.3" width="2" height="3.4" fill="currentColor"/><rect x="6" y="13" width="12" height="8" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
   Vinyl: '<svg class="psd-phys-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="currentColor"/><circle cx="12" cy="12" r="8" fill="none" stroke="#000" stroke-opacity=".35" stroke-width=".8"/><circle cx="12" cy="12" r="6" fill="none" stroke="#000" stroke-opacity=".35" stroke-width=".8"/><circle cx="12" cy="12" r="3.4" fill="#fff" fill-opacity=".85"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>',
 };
 // Edition statuses: available, upcoming, sold_out, not_for_sale (exists, but isn't sold,
@@ -1035,7 +1037,9 @@ const editionPast = e => e.Status === "sold_out" || e.Status === "not_for_sale";
 // pressing, e.g. 476WAX003 before a variant without one), then newest first.
 const editionOrder = (a, b) => editionPast(a) - editionPast(b)
   || (!a["Cat#"]) - (!b["Cat#"]) || String(b.Year).localeCompare(String(a.Year));
-const editionKind = fmt => /vinyl|\b(7|10|12)"/i.test(fmt) ? "Vinyl" : /\bcd\b/i.test(fmt) ? "CD" : "";
+const EDITION_KINDS = ["Vinyl", "CD", "Cassette", "Floppy"];
+const editionKind = fmt => /vinyl|\b(7|10|12)"/i.test(fmt) ? "Vinyl" : /\bcd\b/i.test(fmt) ? "CD"
+  : /cassette|\btape\b/i.test(fmt) ? "Cassette" : /floppy|diskette/i.test(fmt) ? "Floppy" : "";
 // Kinds (CD / Vinyl) of a release's editions: [{ kind, available }], available if any edition of that kind is.
 function physicalFormats(r){
   const kinds = {};
@@ -1043,7 +1047,7 @@ function physicalFormats(r){
     const k = editionKind(e.Format);
     if (k) kinds[k] = kinds[k] || e.Status === "available";
   });
-  return ["Vinyl", "CD"].filter(k => k in kinds).map(k => ({ kind: k, available: kinds[k] }));
+  return EDITION_KINDS.filter(k => k in kinds).map(k => ({ kind: k, available: kinds[k] }));
 }
 
 // --- Release page: psilodu.mp/release?r=<id> ---
@@ -1209,7 +1213,7 @@ function renderRelease(mount, rows){
         ${listen ? `<div class="psd-rel-listen">${listen}</div>` : ""}
         ${(() => {
           // One button per kind that can be bought now, linking to the first such edition's shop page.
-          const buy = ["Vinyl", "CD"].map(k => r._editions.find(e => editionKind(e.Format) === k && e.Status === "available" && e.URL)).filter(Boolean);
+          const buy = EDITION_KINDS.map(k => r._editions.find(e => editionKind(e.Format) === k && e.Status === "available" && e.URL)).filter(Boolean);
           if (!buy.length) return "";
           return `<div class="psd-rel-phys"><span class="psd-rel-phys-label">Available on</span>${buy.map(e => { const k = editionKind(e.Format);
             return `<a class="psd-rel-phys-btn" href="${esc(e.URL)}" target="_blank" rel="noopener">${PHYS_ICONS[k]}<span>${k}</span></a>`; }).join("")}</div>`;
@@ -1432,7 +1436,8 @@ function buildJsonLd(rows){
       if (e["Cat#"]) ed.catalogNumber = e["Cat#"];
       if (e.Label) ed.recordLabel = { "@type": "Organization", "name": e.Label };
       const k = editionKind(e.Format);
-      if (k) ed.musicReleaseFormat = k === "Vinyl" ? "https://schema.org/VinylFormat" : "https://schema.org/CDFormat";
+      const schemaFormat = { Vinyl: "VinylFormat", CD: "CDFormat", Cassette: "CassetteFormat" }[k];
+      if (schemaFormat) ed.musicReleaseFormat = "https://schema.org/" + schemaFormat;
       if (/^\d{4}$/.test(e.Year || "")) ed.datePublished = e.Year;
       if (e.URL) ed.url = e.URL;
       const eb = String(e.Barcode || "").trim();
