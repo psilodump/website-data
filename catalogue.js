@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.12.0";
+const JS_VERSION = "1.12.1";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -1201,9 +1201,10 @@ const secToTime = s => { s = parseInt(s, 10); return s > 0 ? Math.floor(s / 60) 
 // release's, else the track's), disc + heading, and the audio address when the track has a page.
 function releaseTrackItems(list){
   return list.map(({ row, t }) => {
-    const bz = (String(t.Source || "").match(/track\/(\d+)/) || [])[1];
+    // A release can print its own title for the track (a remaster renamed) and have its own upload.
+    const bz = (String(row.Source || t.Source || "").match(/track\/(\d+)/) || [])[1];
     return {
-      title: t.Title || "(untitled)", version: t.Version || "", artist: t.Artist || "",
+      title: row.Title || t.Title || "(untitled)", version: row.Title ? "" : (t.Version || ""), artist: t.Artist || "",
       former: String(t["Former Titles"] || "").split(" | ").filter(Boolean),
       duration: secToTime(row.Length) || secToTime(t.Length), disc: +row.Disc || 1, pos: +row.Position || 0,
       heading: row.Heading || "", note: row.Note || "", src: bz ? "/player/tracks/" + bz + ".mp3" : "",
