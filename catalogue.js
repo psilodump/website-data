@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.10.1";
+const JS_VERSION = "1.10.2";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -90,6 +90,7 @@ a.rel-cover { display: block !important; text-decoration: none !important; }
 .rel-title { margin: 0 0 4px !important; font-size: 15px !important; line-height: 1.25 !important; font-weight: 600 !important; }
 .rel-title a { color: inherit !important; text-decoration: none !important; }
 .rel-title a:hover { text-decoration: underline !important; }
+.rel-meta a.rel-parts { color: inherit !important; text-decoration: underline !important; }
 .rel-meta { margin: 0 0 10px !important; font-size: 12px !important; opacity: .8 !important; color: #333 !important; }
 
 /* Listen Button */
@@ -580,6 +581,7 @@ function card(r, idx){
     : r._titleHref ? `<a href="${esc(r._titleHref)}" target="_blank" rel="noopener nofollow">${esc(r[TITLE_COL] || "(untitled)")}</a>` : esc(r[TITLE_COL] || "(untitled)");
   const activeDate = window._psilodumpCat.dateMode === "catalogue" ? r._catalogue : r._released;
   const metaBits = [ activeDate, r[TYPE_COL], r[CAT_COL] ].filter(Boolean).map(esc);
+  if (r._hiddenParts) metaBits.push(`<a class="rel-parts" href="${esc(workHref(r))}">${r._hiddenParts} part${r._hiddenParts === 1 ? "" : "s"}</a>`);
   const meta = metaBits.join(" • ");
   
   const btn = releaseSurface(r['Bg Color'] || r['bg_color'], 0.85);
@@ -765,7 +767,13 @@ function applyFilters(){
   const qEl = document.getElementById("rel-q");
   const q = qEl ? qEl.value.trim().toLowerCase() : "";
   const work = cat.activeWork ? workParent(cat.rows, cat.activeWork) : null;
+  // "Hide in grid" (admin) only applies to the plain grid: a search or any filter shows everything.
+  const plain = !q && !cat.activeDecade && !cat.activeYear && !cat.activeType && !cat.activeSeries && !cat.activeLabel && !work;
+  const hiddenParts = {};
+  for (const r of cat.rows) if (r["Hidden"] === "1" && r["Part Of"]) hiddenParts[r["Part Of"]] = (hiddenParts[r["Part Of"]] || 0) + 1;
+  for (const r of cat.rows) r._hiddenParts = plain && r["MusicBrainz"] ? (hiddenParts[r["MusicBrainz"]] || 0) : 0;
   cat.viewRows = cat.rows.filter(r => {
+    if (plain && r["Hidden"] === "1") return false;
     if (cat.activeDecade && currentDecade(r) !== cat.activeDecade) return false;
     if (cat.activeYear && currentYear(r) !== cat.activeYear) return false;
     if (cat.activeType && !r._types.some(t => t.toLowerCase() === cat.activeType.toLowerCase())) return false;
