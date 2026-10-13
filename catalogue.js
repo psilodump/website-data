@@ -4,8 +4,8 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.10.0";
-const HTML_VERSION = "2.1.0";
+const JS_VERSION = "1.10.1";
+const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
 console.log(`[Psilodump Catalogue] Loaded JS: v${JS_VERSION} | HTML: v${HTML_VERSION}`);
@@ -219,8 +219,7 @@ const CATALOGUE_HTML = `
   <div class="rel-controls">
     <div class="rel-toolbar">
       <input id="rel-q" type="search" placeholder="Filter catalogue…">
-      <select id="rel-sel-decade" class="rel-select"><option value="">All Decades</option></select>
-      <select id="rel-sel-year" class="rel-select"><option value="">All Years</option></select>
+      <select id="rel-sel-when" class="rel-select" aria-label="Decade or year"><option value="">All Years</option></select>
       <select id="rel-sel-type" class="rel-select"><option value="">All Types</option></select>
       <select id="rel-sel-series" class="rel-select"><option value="">All Series</option></select>
       <select id="rel-sel-label" class="rel-select"><option value="">All Labels</option></select>
@@ -623,8 +622,8 @@ function renderFilterPills(){
   const qEl = document.getElementById("rel-q");
   const q = qEl ? qEl.value.trim() : "";
   if (q) pills.push({ label: `Search: ${q}`, clear: () => { const el = document.getElementById("rel-q"); if(el) el.value = ""; } });
-  if (cat.activeDecade) pills.push({ label: `Decade: ${cat.activeDecade}`, clear: () => { cat.activeDecade = ""; const el = document.getElementById("rel-sel-decade"); if(el) el.value = ""; } });
-  if (cat.activeYear) pills.push({ label: `Year: ${cat.activeYear}`, clear: () => { cat.activeYear = ""; const el = document.getElementById("rel-sel-year"); if(el) el.value = ""; } });
+  if (cat.activeDecade) pills.push({ label: `Decade: ${cat.activeDecade}`, clear: () => { cat.activeDecade = ""; const el = document.getElementById("rel-sel-decade"); if(el) el.value = ""; const w = document.getElementById("rel-sel-when"); if(w) w.value = ""; } });
+  if (cat.activeYear) pills.push({ label: `Year: ${cat.activeYear}`, clear: () => { cat.activeYear = ""; const el = document.getElementById("rel-sel-year"); if(el) el.value = ""; const w = document.getElementById("rel-sel-when"); if(w) w.value = ""; } });
   if (cat.activeType) pills.push({ label: `Type: ${cat.activeType}`, clear: () => { cat.activeType = ""; const el = document.getElementById("rel-sel-type"); if(el) el.value = ""; } });
   if (cat.activeSeries) pills.push({ label: `Series: ${cat.activeSeries}`, clear: () => { cat.activeSeries = ""; const el = document.getElementById("rel-sel-series"); if(el) el.value = ""; } });
   if (cat.activeLabel) pills.push({ label: `Label: ${cat.activeLabel}`, clear: () => { cat.activeLabel = ""; const el = document.getElementById("rel-sel-label"); if(el) el.value = ""; } });
@@ -655,6 +654,7 @@ window.clearAllFilters = function(){
   cat.activeDecade = ""; cat.activeYear = ""; cat.activeType = ""; cat.activeSeries = ""; cat.activeLabel = ""; cat.activeWork = "";
   const d = document.getElementById("rel-sel-decade"); if(d) d.value = "";
   const y = document.getElementById("rel-sel-year"); if(y) y.value = "";
+  const w = document.getElementById("rel-sel-when"); if(w) w.value = "";
   const t = document.getElementById("rel-sel-type"); if(t) t.value = "";
   const s = document.getElementById("rel-sel-series"); if(s) s.value = "";
   const l = document.getElementById("rel-sel-label"); if(l) l.value = "";
@@ -706,6 +706,7 @@ function applyHash(){
   const cat = window._psilodumpCat;
   cat.activeDecade = p.get("decade") || "";
   cat.activeYear = p.get("year") || "";
+  if (cat.activeYear) cat.activeDecade = "";
   cat.activeType = p.get("type") || "";
   cat.activeSeries = p.get("series") || "";
   cat.activeLabel = p.get("label") || "";
@@ -738,6 +739,13 @@ function populateSelectOptions(){
   const labels = Array.from(new Set(cat.rows.flatMap(r => r._labels))).sort((a,b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
 
   const elD = document.getElementById("rel-sel-decade"); if(elD) elD.innerHTML = `<option value="">All Decades</option>` + decades.map(d => `<option value="${esc(d)}" ${d===cat.activeDecade?'selected':''}>${esc(d)}</option>`).join("");
+  const elW = document.getElementById("rel-sel-when");
+  if (elW) {
+    const cur = cat.activeYear ? "y:" + cat.activeYear : (cat.activeDecade ? "d:" + cat.activeDecade : "");
+    const opt = (v, label) => `<option value="${esc(v)}" ${v === cur ? "selected" : ""}>${esc(label)}</option>`;
+    elW.innerHTML = opt("", "All Years") + decades.map(d => `<optgroup label="${esc(d)}">${opt("d:" + d, "All " + d)}${years.filter(y => y !== "Unknown" && Math.floor(Number(y) / 10) * 10 + "s" === d).map(y => opt("y:" + y, y)).join("")}</optgroup>`).join("")
+      + (years.includes("Unknown") ? opt("y:Unknown", "Unknown year") : "");
+  }
   const elY = document.getElementById("rel-sel-year"); if(elY) elY.innerHTML = `<option value="">All Years</option>` + years.map(y => `<option value="${esc(y)}" ${y===cat.activeYear?'selected':''}>${esc(y)}</option>`).join("");
   const elT = document.getElementById("rel-sel-type"); if(elT) elT.innerHTML = `<option value="">All Types</option>` + types.map(t => `<option value="${esc(t)}" ${t===cat.activeType?'selected':''}>${esc(t)}</option>`).join("");
   const elL = document.getElementById("rel-sel-label"); if(elL) elL.innerHTML = `<option value="">All Labels</option>` + labels.map(s => `<option value="${esc(s)}" ${s.toLowerCase()===cat.activeLabel.toLowerCase()?'selected':''}>${esc(s)}</option>`).join("");
@@ -991,10 +999,18 @@ function bindUIEvents() {
   if (q && !q._bound) { q._bound = true; q.addEventListener("input", applyFilters); }
 
   const selD = document.getElementById("rel-sel-decade");
-  if (selD && !selD._bound) { selD._bound = true; selD.addEventListener("change", (e) => { cat.activeDecade = e.target.value; applyFilters(); }); }
+  if (selD && !selD._bound) { selD._bound = true; selD.addEventListener("change", (e) => { cat.activeDecade = e.target.value; cat.activeYear = ""; const y = document.getElementById("rel-sel-year"); if (y) y.value = ""; applyFilters(); }); }
+
+  const selW = document.getElementById("rel-sel-when");
+  if (selW && !selW._bound) { selW._bound = true; selW.addEventListener("change", (e) => {
+    const v = e.target.value;
+    cat.activeDecade = v.startsWith("d:") ? v.slice(2) : "";
+    cat.activeYear = v.startsWith("y:") ? v.slice(2) : "";
+    applyFilters();
+  }); }
 
   const selY = document.getElementById("rel-sel-year");
-  if (selY && !selY._bound) { selY._bound = true; selY.addEventListener("change", (e) => { cat.activeYear = e.target.value; applyFilters(); }); }
+  if (selY && !selY._bound) { selY._bound = true; selY.addEventListener("change", (e) => { cat.activeYear = e.target.value; cat.activeDecade = ""; const d = document.getElementById("rel-sel-decade"); if (d) d.value = ""; applyFilters(); }); }
 
   const selT = document.getElementById("rel-sel-type");
   if (selT && !selT._bound) { selT._bound = true; selT.addEventListener("change", (e) => { cat.activeType = e.target.value; applyFilters(); }); }
@@ -1220,7 +1236,10 @@ function renderRelease(mount, rows){
   const children = r["MusicBrainz"] ? rows.filter(x => x["Part Of"] === r["MusicBrainz"]).sort(catOrder) : [];
   if (children.length) facts.push(["Contains", children.map(c => link(c)).join(", ") + ` · <a href="${esc(workHref(r))}">show in catalogue</a>`]);
   const norm = s => slugify(s);
-  const editions = rows.filter(x => x !== r && norm(x[TITLE_COL]) === norm(title));
+  // Same title AND (when both are on MusicBrainz) the same release group: the psilodumputer singles
+  // (2000, 2023) are editions of each other, not of the 2006 album with the same name.
+  const editions = rows.filter(x => x !== r && norm(x[TITLE_COL]) === norm(title)
+    && !(x["MusicBrainz"] && r["MusicBrainz"] && x["MusicBrainz"] !== r["MusicBrainz"]));
   if (editions.length) facts.push(["Other editions", editions.map(x => link(x, `${x[TITLE_COL]} (${x._yearRel !== "Unknown" ? x._yearRel : x._yearCat})`)).join(", ")]);
 
   const listen = r._svc.map(s => `<a class="psd-rel-svc" href="${esc(s.href)}" target="_blank" rel="noopener nofollow">${icon(s.key)}<span>${esc(s.label)}</span></a>`).join("");
