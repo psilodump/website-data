@@ -4,8 +4,8 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.9.6";
-const HTML_VERSION = "2.0.0";
+const JS_VERSION = "1.10.0";
+const HTML_VERSION = "2.1.0";
 
 // Log version silently to Browser Console (F12) on every load
 console.log(`[Psilodump Catalogue] Loaded JS: v${JS_VERSION} | HTML: v${HTML_VERSION}`);
@@ -223,6 +223,7 @@ const CATALOGUE_HTML = `
       <select id="rel-sel-year" class="rel-select"><option value="">All Years</option></select>
       <select id="rel-sel-type" class="rel-select"><option value="">All Types</option></select>
       <select id="rel-sel-series" class="rel-select"><option value="">All Series</option></select>
+      <select id="rel-sel-label" class="rel-select"><option value="">All Labels</option></select>
     </div>
 
     <!-- Active Filter Badges/Pills -->
@@ -299,6 +300,8 @@ if (!window._psilodumpCat) {
     activeYear: "",
     activeType: "",
     activeSeries: "",
+    activeLabel: "",
+    activeWork: "",
     sortMode: "date",
     dateMode: storageGet("relDateMode") === "released" ? "released" : "catalogue"
   };
@@ -330,6 +333,8 @@ const SERVICES = [
 const MULTI_LINK_SEP = /(?:\r?\n|[,;])+/;
 const TYPE_SPLIT = /[,;|/]+/;
 const SERIES_SPLIT = /[,;|/]+/;
+// Labels are comma-separated; typographic hyphens ("The X‐Dump") count as "-".
+const labelList = v => String(v || "").split(",").map(x => x.replace(/[\u2010-\u2015]/g, "-").trim()).filter(Boolean);
 
 function parseCSV(text){
   const out = []; let row=[], cell="", i=0, q=false;
@@ -479,6 +484,7 @@ function withDerived(arr){
       _yearCat:   yearCat,
       _types: String(r[TYPE_COL] || "").split(TYPE_SPLIT).map(x => x.trim()).filter(Boolean),
       _series: String(r[SERIES_COL] || "").split(SERIES_SPLIT).map(x => x.trim()).filter(Boolean),
+      _labels: labelList(r["Label"]),
       _titleHref: firstUrlFrom(r, TITLE_LINK_FROM),
       _svc: svc,
       _thumbUrl: getCoverUrl(r, false),
@@ -621,6 +627,8 @@ function renderFilterPills(){
   if (cat.activeYear) pills.push({ label: `Year: ${cat.activeYear}`, clear: () => { cat.activeYear = ""; const el = document.getElementById("rel-sel-year"); if(el) el.value = ""; } });
   if (cat.activeType) pills.push({ label: `Type: ${cat.activeType}`, clear: () => { cat.activeType = ""; const el = document.getElementById("rel-sel-type"); if(el) el.value = ""; } });
   if (cat.activeSeries) pills.push({ label: `Series: ${cat.activeSeries}`, clear: () => { cat.activeSeries = ""; const el = document.getElementById("rel-sel-series"); if(el) el.value = ""; } });
+  if (cat.activeLabel) pills.push({ label: `Label: ${cat.activeLabel}`, clear: () => { cat.activeLabel = ""; const el = document.getElementById("rel-sel-label"); if(el) el.value = ""; } });
+  if (cat.activeWork) { const w = workParent(cat.rows, cat.activeWork); pills.push({ label: `Part of: ${w ? w[TITLE_COL] : cat.activeWork}`, clear: () => { cat.activeWork = ""; } }); }
 
   if (!pills.length) {
     pillsWin.innerHTML = "";
@@ -644,11 +652,12 @@ window.removePill = function(index){
 
 window.clearAllFilters = function(){
   const cat = window._psilodumpCat;
-  cat.activeDecade = ""; cat.activeYear = ""; cat.activeType = ""; cat.activeSeries = "";
+  cat.activeDecade = ""; cat.activeYear = ""; cat.activeType = ""; cat.activeSeries = ""; cat.activeLabel = ""; cat.activeWork = "";
   const d = document.getElementById("rel-sel-decade"); if(d) d.value = "";
   const y = document.getElementById("rel-sel-year"); if(y) y.value = "";
   const t = document.getElementById("rel-sel-type"); if(t) t.value = "";
   const s = document.getElementById("rel-sel-series"); if(s) s.value = "";
+  const l = document.getElementById("rel-sel-label"); if(l) l.value = "";
   const q = document.getElementById("rel-q"); if(q) q.value = "";
   applyFilters();
 };
@@ -656,7 +665,7 @@ window.clearAllFilters = function(){
 // --- Shareable links: the filters live in the address, e.g. #type=EP&q=saturnus ---
 // replaceState (not pushState) so typing doesn't add a history entry per key,
 // and it passes history.state through because Turbo keeps its own data there.
-const HASH_KEYS = ["q", "decade", "year", "type", "series", "sort", "timeline"];
+const HASH_KEYS = ["q", "decade", "year", "type", "series", "label", "work", "sort", "timeline"];
 
 function hashParams(){
   const p = new URLSearchParams(location.hash.replace(/^#/, ""));
@@ -673,6 +682,8 @@ function stateToHash(){
   if (cat.activeYear) p.set("year", cat.activeYear);
   if (cat.activeType) p.set("type", cat.activeType);
   if (cat.activeSeries) p.set("series", cat.activeSeries);
+  if (cat.activeLabel) p.set("label", cat.activeLabel);
+  if (cat.activeWork) p.set("work", cat.activeWork);
   if (cat.sortMode === "title") p.set("sort", "title");
   // Years differ between the two timelines, so a link with a year or decade says which one.
   if (cat.activeYear || cat.activeDecade) p.set("timeline", cat.dateMode);
@@ -697,6 +708,8 @@ function applyHash(){
   cat.activeYear = p.get("year") || "";
   cat.activeType = p.get("type") || "";
   cat.activeSeries = p.get("series") || "";
+  cat.activeLabel = p.get("label") || "";
+  cat.activeWork = p.get("work") || "";
   cat.sortMode = p.get("sort") === "title" ? "title" : "date";
   const tl = p.get("timeline");
   if (tl === "released" || tl === "catalogue") cat.dateMode = tl;   // for this visit only, not saved
@@ -722,22 +735,35 @@ function populateSelectOptions(){
   const years = Array.from(new Set(cat.rows.map(currentYear))).sort((a,b) => (a === "Unknown") - (b === "Unknown") || Number(b) - Number(a));
   const types = Array.from(new Set(cat.rows.flatMap(r => r._types))).sort((a,b) => a.localeCompare(b));
   const series = Array.from(new Set(cat.rows.flatMap(r => r._series))).sort((a,b) => a.localeCompare(b));
+  const labels = Array.from(new Set(cat.rows.flatMap(r => r._labels))).sort((a,b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
 
   const elD = document.getElementById("rel-sel-decade"); if(elD) elD.innerHTML = `<option value="">All Decades</option>` + decades.map(d => `<option value="${esc(d)}" ${d===cat.activeDecade?'selected':''}>${esc(d)}</option>`).join("");
   const elY = document.getElementById("rel-sel-year"); if(elY) elY.innerHTML = `<option value="">All Years</option>` + years.map(y => `<option value="${esc(y)}" ${y===cat.activeYear?'selected':''}>${esc(y)}</option>`).join("");
   const elT = document.getElementById("rel-sel-type"); if(elT) elT.innerHTML = `<option value="">All Types</option>` + types.map(t => `<option value="${esc(t)}" ${t===cat.activeType?'selected':''}>${esc(t)}</option>`).join("");
+  const elL = document.getElementById("rel-sel-label"); if(elL) elL.innerHTML = `<option value="">All Labels</option>` + labels.map(s => `<option value="${esc(s)}" ${s.toLowerCase()===cat.activeLabel.toLowerCase()?'selected':''}>${esc(s)}</option>`).join("");
   const elS = document.getElementById("rel-sel-series"); if(elS) elS.innerHTML = `<option value="">All Series</option>` + series.map(s => `<option value="${esc(s)}" ${s===cat.activeSeries?'selected':''}>${esc(s)}</option>`).join("");
 }
+
+// A work = a release whose parts point to it with Part Of (The Ground → Vol. 1, Vol. 2).
+// In links it is named by its title slug: #work=the-ground
+function workParent(rows, key){
+  const k = String(key || "").toLowerCase();
+  return rows.find(x => x["MusicBrainz"] && slugify(x[TITLE_COL]) === k && rows.some(y => y["Part Of"] === x["MusicBrainz"])) || null;
+}
+function workHref(parent){ return `${CATALOGUE_PATH}#work=${encodeURIComponent(slugify(parent[TITLE_COL]))}`; }
 
 function applyFilters(){
   const cat = window._psilodumpCat;
   const qEl = document.getElementById("rel-q");
   const q = qEl ? qEl.value.trim().toLowerCase() : "";
+  const work = cat.activeWork ? workParent(cat.rows, cat.activeWork) : null;
   cat.viewRows = cat.rows.filter(r => {
     if (cat.activeDecade && currentDecade(r) !== cat.activeDecade) return false;
     if (cat.activeYear && currentYear(r) !== cat.activeYear) return false;
     if (cat.activeType && !r._types.some(t => t.toLowerCase() === cat.activeType.toLowerCase())) return false;
     if (cat.activeSeries && !r._series.some(s => s.toLowerCase() === cat.activeSeries.toLowerCase())) return false;
+    if (cat.activeLabel && !r._labels.some(s => s.toLowerCase() === cat.activeLabel.toLowerCase())) return false;
+    if (cat.activeWork && !(work && (r === work || (r["Part Of"] && r["Part Of"] === work["MusicBrainz"])))) return false;
     if (q && !r._searchStr.includes(q)) return false;
     return true;
   });
@@ -976,6 +1002,9 @@ function bindUIEvents() {
   const selS = document.getElementById("rel-sel-series");
   if (selS && !selS._bound) { selS._bound = true; selS.addEventListener("change", (e) => { cat.activeSeries = e.target.value; applyFilters(); }); }
 
+  const selL = document.getElementById("rel-sel-label");
+  if (selL && !selL._bound) { selL._bound = true; selL.addEventListener("change", (e) => { cat.activeLabel = e.target.value; applyFilters(); }); }
+
   const btnDate = document.getElementById("rel-sort-date");
   if (btnDate && !btnDate._bound) {
     btnDate._bound = true;
@@ -1182,14 +1211,14 @@ function renderRelease(mount, rows){
   if (r._catalogue && r._catalogue !== r._released) facts.push(["Catalogue date", esc(r._catalogue)]);
   if (r[TYPE_COL]) facts.push(["Type", esc(r[TYPE_COL])]);
   if (r[CAT_COL]) facts.push(["Cat#", esc(r[CAT_COL])]);
-  if (r["Label"]) facts.push(["Label", esc(r["Label"])]);
+  if (r._labels.length) facts.push(["Label", r._labels.map(l => `<a href="${CATALOGUE_PATH}#label=${encodeURIComponent(l)}">${esc(l)}</a>`).join(", ")]);
   if (r["Formats"]) facts.push(["Format", esc(r["Formats"])]);
   if (r["Barcode"]) facts.push(["Barcode", esc(r["Barcode"])]);
   if (r._series.length) facts.push(["Series", r._series.map(s => `<a href="${CATALOGUE_PATH}#series=${encodeURIComponent(s)}">${esc(s)}</a>`).join(", ")]);
   const parent = r["Part Of"] && rows.find(x => x["MusicBrainz"] && x["MusicBrainz"] === r["Part Of"]);
-  if (parent) facts.push(["Part of", link(parent)]);
+  if (parent) facts.push(["Part of", `${link(parent)} · <a href="${esc(workHref(parent))}">all parts</a>`]);
   const children = r["MusicBrainz"] ? rows.filter(x => x["Part Of"] === r["MusicBrainz"]).sort(catOrder) : [];
-  if (children.length) facts.push(["Contains", children.map(c => link(c)).join(", ")]);
+  if (children.length) facts.push(["Contains", children.map(c => link(c)).join(", ") + ` · <a href="${esc(workHref(r))}">show in catalogue</a>`]);
   const norm = s => slugify(s);
   const editions = rows.filter(x => x !== r && norm(x[TITLE_COL]) === norm(title));
   if (editions.length) facts.push(["Other editions", editions.map(x => link(x, `${x[TITLE_COL]} (${x._yearRel !== "Unknown" ? x._yearRel : x._yearCat})`)).join(", ")]);
