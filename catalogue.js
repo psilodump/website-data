@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.9.5";
+const JS_VERSION = "1.9.6";
 const HTML_VERSION = "2.0.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -147,6 +147,7 @@ a.rel-cover { display: block !important; text-decoration: none !important; }
 /* Release page (psilodu.mp/release?r=...) — colours come from the release (--rel-*) */
 .psd-rel { max-width: 1000px !important; margin: 0 auto !important; padding: 20px !important; box-sizing: border-box !important; font-family: system-ui, -apple-system, sans-serif !important; background: var(--rel-bg, #181818) !important; color: var(--rel-text, #fff) !important; border-radius: 12px !important; }
 .psd-rel a { color: inherit !important; text-decoration: underline !important; text-underline-offset: 2px !important; }
+.psd-rel a.psd-rel-svc, .psd-rel a.psd-rel-phys-btn, .psd-rel a.psd-ed-buy { text-decoration: none !important; }
 .psd-rel-loading { opacity: .7 !important; background: transparent !important; color: inherit !important; }
 .psd-rel-nav { display: flex !important; justify-content: space-between !important; gap: 12px !important; font-size: 14px !important; margin-bottom: 16px !important; }
 .psd-rel-nav a { text-decoration: none !important; opacity: .85 !important; }
@@ -191,7 +192,8 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-player { background: var(--rel-soft, #222) !important; color: var(--rel-soft-text, #fff) !important; border-radius: 10px !important; padding: 12px !important; }
 .psd-player-note { opacity: .75 !important; font-size: 13px !important; padding: 8px 0 !important; }
 .psd-player-bar { display: flex !important; align-items: center !important; gap: 12px !important; }
-.psd-pp { width: 44px !important; height: 44px !important; flex: 0 0 44px !important; border-radius: 50% !important; border: none !important; cursor: pointer !important; font-size: 15px !important; background: var(--rel-deep, #2a2a2a) !important; color: var(--rel-deep-text, #fff) !important; }
+.psd-pp svg { width: 20px !important; height: 20px !important; display: block !important; margin: auto !important; }
+.psd-pp { display: inline-flex !important; align-items: center !important; justify-content: center !important; padding: 0 !important; width: 44px !important; height: 44px !important; flex: 0 0 44px !important; border-radius: 50% !important; border: none !important; cursor: pointer !important; font-size: 15px !important; background: var(--rel-deep, #2a2a2a) !important; color: var(--rel-deep-text, #fff) !important; }
 .psd-now { display: flex !important; flex-direction: column !important; min-width: 0 !important; }
 .psd-now-title { font-weight: 600 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
 .psd-time { font-size: 12px !important; opacity: .75 !important; font-variant-numeric: tabular-nums !important; }
@@ -495,13 +497,25 @@ function currentDateValue(r){
   return isNaN(t) ? -Infinity : t;
 }
 
+// Tie-breaker everywhere releases are ordered: a release directly before its parts
+// (via Part Of), then the Cat# (numeric-aware), releases without one last. Same-date
+// releases then read The Nya Albumet (DMTCD19/20), The Otukset (DMTCD19), The Koneet (DMTCD20).
+function catOrder(a, b){
+  const isPartOf = (x, y) => !!x["Part Of"] && x["Part Of"] === y["MusicBrainz"];
+  if (isPartOf(b, a)) return -1;
+  if (isPartOf(a, b)) return 1;
+  const ca = String(a[CAT_COL] || "").trim(), cb = String(b[CAT_COL] || "").trim();
+  if (!ca || !cb) return (!ca) - (!cb);
+  return ca.localeCompare(cb, undefined, { numeric: true, sensitivity: "base" });
+}
+
 function sortView(){
   const cat = window._psilodumpCat;
   if (cat.sortMode === "title"){
     // numeric: "vol.2" before "vol.10"; sensitivity base: ignore case/accents when comparing
-    cat.viewRows.sort((a,b) => String(a[TITLE_COL] || "").localeCompare(String(b[TITLE_COL] || ""), undefined, { numeric: true, sensitivity: "base" }));
+    cat.viewRows.sort((a,b) => String(a[TITLE_COL] || "").localeCompare(String(b[TITLE_COL] || ""), undefined, { numeric: true, sensitivity: "base" }) || catOrder(a, b));
   } else {
-    cat.viewRows.sort((a,b) => currentDateValue(b) - currentDateValue(a));
+    cat.viewRows.sort((a,b) => (currentDateValue(b) - currentDateValue(a)) || catOrder(a, b));
   }
 }
 
@@ -1152,7 +1166,7 @@ function renderRelease(mount, rows){
 
   // Newer / older neighbours in catalogue order (catalogue date, newest first).
   const byDate = v => { const t = Date.parse(v._catalogue || v._released); return isNaN(t) ? -Infinity : t; };
-  const ordered = [...rows].sort((a, b) => byDate(b) - byDate(a));
+  const ordered = [...rows].sort((a, b) => (byDate(b) - byDate(a)) || catOrder(a, b));
   const pos = ordered.indexOf(r);
   const newer = ordered[pos - 1], older = ordered[pos + 1];
 
@@ -1174,7 +1188,7 @@ function renderRelease(mount, rows){
   if (r._series.length) facts.push(["Series", r._series.map(s => `<a href="${CATALOGUE_PATH}#series=${encodeURIComponent(s)}">${esc(s)}</a>`).join(", ")]);
   const parent = r["Part Of"] && rows.find(x => x["MusicBrainz"] && x["MusicBrainz"] === r["Part Of"]);
   if (parent) facts.push(["Part of", link(parent)]);
-  const children = r["MusicBrainz"] ? rows.filter(x => x["Part Of"] === r["MusicBrainz"]) : [];
+  const children = r["MusicBrainz"] ? rows.filter(x => x["Part Of"] === r["MusicBrainz"]).sort(catOrder) : [];
   if (children.length) facts.push(["Contains", children.map(c => link(c)).join(", ")]);
   const norm = s => slugify(s);
   const editions = rows.filter(x => x !== r && norm(x[TITLE_COL]) === norm(title));
@@ -1240,6 +1254,9 @@ function renderRelease(mount, rows){
 }
 
 // --- Player ---
+// Play / pause as SVG: iPhone and iPad render the "▶" character as a colour emoji.
+const PLAY_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>';
+const PAUSE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5.5" width="4" height="13" rx="1" fill="currentColor"/><rect x="13.5" y="5.5" width="4" height="13" rx="1" fill="currentColor"/></svg>';
 // Bandzoogle album: read the track list from the album page and play the tracks
 // with one <audio> element. Otherwise: the Spotify / Apple Music / YouTube player.
 function renderPlayer(box, r, albumId){
@@ -1295,7 +1312,7 @@ function buildTrackPlayer(box, r, tracks, albumId){
   box.innerHTML = `
     <div class="psd-player">
       <div class="psd-player-bar">
-        <button type="button" class="psd-pp" data-psd-play aria-label="Play">▶</button>
+        <button type="button" class="psd-pp" data-psd-play aria-label="Play">${PLAY_ICON}</button>
         <div class="psd-now"><span class="psd-now-title">${esc(tracks[0].title)}</span><span class="psd-time">0:00 / ${esc(tracks[0].duration)}</span></div>
       </div>
       <div class="psd-progress" data-psd-seek role="slider" tabindex="0" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="psd-progress-fill"></div></div>
@@ -1333,7 +1350,7 @@ function updatePlayerUI(){
   const a = p.audio, t = p.tracks[p.index];
   const playing = !a.paused && !a.ended;
   const pp = p.box.querySelector(".psd-pp");
-  if (pp) { pp.textContent = playing ? "❚❚" : "▶"; pp.setAttribute("aria-label", playing ? "Pause" : "Play"); }
+  if (pp) { pp.innerHTML = playing ? PAUSE_ICON : PLAY_ICON; pp.setAttribute("aria-label", playing ? "Pause" : "Play"); }
   const nowT = p.box.querySelector(".psd-now-title"); if (nowT) nowT.textContent = t.title;
   const time = p.box.querySelector(".psd-time"); if (time) time.textContent = fmtTime(a.currentTime) + " / " + (isFinite(a.duration) ? fmtTime(a.duration) : t.duration);
   const pct = isFinite(a.duration) && a.duration > 0 ? (a.currentTime / a.duration) * 100 : 0;
