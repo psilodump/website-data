@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.10.2";
+const JS_VERSION = "1.11.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -137,6 +137,10 @@ a.rel-cover { display: block !important; text-decoration: none !important; }
 .svc-sp { color: #1db954 !important; }
 .svc-yt { color: #ff0000 !important; }
 .svc-am { color: #fc3c44 !important; }
+.svc-bp { color: #a2d80c !important; }
+.rel-m-note { margin: 10px 0 0 !important; font-size: 12px !important; opacity: .8 !important; }
+.psd-rel-store { font-size: 13px !important; opacity: .85 !important; margin: -10px 0 18px !important; }
+.psd-rel-store .dot { display: inline-block !important; width: 8px !important; height: 8px !important; border-radius: 50% !important; background: #2bd96b !important; margin-right: 6px !important; vertical-align: 1px !important; }
 
 /* Skeleton Loader */
 @keyframes rel-shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
@@ -310,8 +314,9 @@ if (!window._psilodumpCat) {
 const CSV_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/releases.csv";
 // Physical editions (vinyl / CD pressings); "Releases" holds the IDs of the releases each contains.
 const EDITIONS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/editions.csv";
-// Icons are static, so they come from the jsDelivr CDN (raw.githubusercontent.com is not meant as a CDN).
-const ICON_BASE = "https://cdn.jsdelivr.net/gh/psilodump/website-data@main/icons/";
+// Icons come from GitHub Pages like this script (jsDelivr's @main can serve an old commit
+// for hours, so a newly added icon would 404 there).
+const ICON_BASE = "https://psilodump.github.io/website-data/icons/";
 
 const DATE_COL    = "Released";
 const CATDATE_COL = "Cat Date";
@@ -328,6 +333,7 @@ const SERVICES = [
   { col:"Spotify",  label:"Spotify",  key:"spotify",  class:"svc-sp" },
   { col:"YouTube",  label:"YouTube",  key:"youtube",  class:"svc-yt" },
   { col:"Apple",    label:"Apple Music", key:"apple", class:"svc-am" },
+  { col:"Beatport", label:"Beatport", key:"beatport", class:"svc-bp" },
 ];
 
 const MULTI_LINK_SEP = /(?:\r?\n|[,;])+/;
@@ -401,6 +407,7 @@ function expandPlatformUrl(val, platform) {
     case "spotify":  return "https://open.spotify.com/album/" + h;
     case "apple":    return "https://music.apple.com/us/album/" + h;
     case "bandcamp": return "https://psilodump.bandcamp.com/album/" + h;
+    case "beatport": return "https://www.beatport.com/release/" + h;      // "<slug>/<id>"
     case "source":
       // The release's page on psilodu.mp: an album number or a page name.
       if (/^\d+$/.test(h)) return "https://psilodu.mp/album/" + h;
@@ -454,6 +461,12 @@ function getCoverUrl(r, isLarge = false) {
     return isLarge ? url.replace('/thumb_', '/large_') : url;
   }
   return "";
+}
+
+// The store version of a release can have another name (e.g. Whut is in stores only as
+// "Whut (Hardfloor Remix)"), so listeners aren't surprised by a different track list.
+function storeNote(r){
+  return r["In Stores As"] ? `In stores as “${esc(r["In Stores As"])}”` : "";
 }
 
 function withDerived(arr){
@@ -530,7 +543,8 @@ function icon(key){
     "bandcamp": "bandcamp.png",
     "spotify":  "spotify.png",
     "youtube":  "youtube.png",
-    "apple":    "applemusic.png"
+    "apple":    "applemusic.png",
+    "beatport": "beatport.png"
   };
   const fileName = iconMap[key];
   if (!fileName) return "";
@@ -858,7 +872,7 @@ window.openListenModal = function(idx){
         <span class="rel-svc-left"><span class="${s.class}">${icon(s.key)}</span> ${esc(s.label)}</span>
         <span>&#10140;</span>
       </a>`
-    ).join("");
+    ).join("") + (storeNote(r) && r._svc.length ? `<p class="rel-m-note" style="color: ${panel.text} !important;">${storeNote(r)}</p>` : "");
   }
 
   const modal = document.getElementById("rel-listen-modal");
@@ -1281,6 +1295,12 @@ function renderRelease(mount, rows){
         ${r["Original Credit"] && slugify(r["Original Credit"]) !== slugify(releaseArtist(r)) ? `<div class="psd-rel-orig">Originally released as ${esc(r["Original Credit"])}</div>` : ""}
         <div class="psd-rel-sub">${[r[TYPE_COL], r._yearRel !== "Unknown" ? r._yearRel : "", r[CAT_COL]].filter(Boolean).map(esc).join(" • ")}</div>
         ${listen ? `<div class="psd-rel-listen">${listen}</div>` : ""}
+        ${(() => {
+          const bits = [];
+          if (r["Live"] === "1") bits.push(`<span class="dot" aria-hidden="true"></span>Live on streaming services`);
+          if (storeNote(r)) bits.push(storeNote(r));
+          return bits.length ? `<div class="psd-rel-store">${bits.join(" · ")}</div>` : "";
+        })()}
         ${(() => {
           // One button per kind that can be bought now, linking to the first such edition's shop page.
           const buy = EDITION_KINDS.map(k => r._editions.find(e => editionKind(e.Format) === k && e.Status === "available" && e.URL)).filter(Boolean);
