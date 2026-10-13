@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.11.0";
+const JS_VERSION = "1.12.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -211,6 +211,12 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-tracks button.is-current { background: var(--rel-deep, #2a2a2a) !important; color: var(--rel-deep-text, #fff) !important; font-weight: 600 !important; }
 .psd-n { opacity: .6 !important; min-width: 1.6em !important; text-align: right !important; font-variant-numeric: tabular-nums !important; }
 .psd-t { flex: 1 1 auto !important; }
+.psd-tracks .psd-h { padding: 14px 6px 4px !important; font-size: 12px !important; font-weight: 700 !important; letter-spacing: .06em !important; text-transform: uppercase !important; opacity: .8 !important; }
+.psd-tracks .psd-h:first-child { padding-top: 4px !important; }
+.psd-tracks .psd-v { opacity: .7 !important; }
+.psd-tracks .psd-sub { display: block !important; font-size: 12px !important; opacity: .65 !important; font-weight: normal !important; }
+.psd-tracks .psd-off { display: flex !important; gap: 10px !important; align-items: baseline !important; padding: 8px 6px !important; font-size: 14px !important; opacity: .55 !important; }
+.psd-tracks button.is-broken { opacity: .45 !important; cursor: default !important; }
 .psd-d { opacity: .7 !important; font-variant-numeric: tabular-nums !important; }
 @media (max-width: 700px) {
   .psd-rel { padding: 14px !important; border-radius: 0 !important; }
@@ -314,6 +320,9 @@ if (!window._psilodumpCat) {
 const CSV_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/releases.csv";
 // Physical editions (vinyl / CD pressings); "Releases" holds the IDs of the releases each contains.
 const EDITIONS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/editions.csv";
+// Tracks and track lists (release pages only; loaded when a release page is opened).
+const TRACKS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/tracks.csv";
+const TRACKLISTS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/tracklists.csv";
 // Icons come from GitHub Pages like this script (jsDelivr's @main can serve an old commit
 // for hours, so a newly added icon would 404 there).
 const ICON_BASE = "https://psilodump.github.io/website-data/icons/";
@@ -1170,6 +1179,38 @@ function platformId(r, col, re){
 const fmtTime = s => !isFinite(s) || s < 0 ? "0:00" : Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
 
 // Load releases.csv once per visit; shared by the catalogue and the release page.
+// tracks.csv + tracklists.csv → { lists: {releaseId: [rows in order]} }, once per visit.
+// Optional: without them the release page uses Bandzoogle's track list as before.
+function loadTrackData(){
+  const cat = window._psilodumpCat;
+  if (!cat._trackPromise) {
+    const get = url => fetch(url + "?v=" + Date.now()).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); }).then(t => toObjects(parseCSV(t)).rows);
+    cat._trackPromise = Promise.all([get(TRACKS_URL), get(TRACKLISTS_URL)]).then(([tracks, rows]) => {
+      const byId = {}; tracks.forEach(t => { byId[t.ID] = t; });
+      const lists = {};
+      rows.forEach(r => { const t = byId[r["Track ID"]]; if (t) (lists[r["Release ID"]] = lists[r["Release ID"]] || []).push({ row: r, t }); });
+      Object.values(lists).forEach(l => l.sort((a, b) => (+a.row.Disc - +b.row.Disc) || (+a.row.Position - +b.row.Position)));
+      return { byId, lists };
+    }).catch(err => { console.warn("Track lists unavailable:", err.message); cat._trackPromise = null; return { byId: {}, lists: {} }; });
+  }
+  return cat._trackPromise;
+}
+const secToTime = s => { s = parseInt(s, 10); return s > 0 ? Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0") : ""; };
+
+// Our track list for a release as player items: title/version/artist/former titles, length (this
+// release's, else the track's), disc + heading, and the audio address when the track has a page.
+function releaseTrackItems(list){
+  return list.map(({ row, t }) => {
+    const bz = (String(t.Source || "").match(/track\/(\d+)/) || [])[1];
+    return {
+      title: t.Title || "(untitled)", version: t.Version || "", artist: t.Artist || "",
+      former: String(t["Former Titles"] || "").split(" | ").filter(Boolean),
+      duration: secToTime(row.Length) || secToTime(t.Length), disc: +row.Disc || 1, pos: +row.Position || 0,
+      heading: row.Heading || "", note: row.Note || "", src: bz ? "/player/tracks/" + bz + ".mp3" : "",
+    };
+  });
+}
+
 function loadCatalogue(){
   const cat = window._psilodumpCat;
   if (cat.loaded) return Promise.resolve(cat.rows);
@@ -1338,6 +1379,24 @@ const PAUSE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y=
 function renderPlayer(box, r, albumId){
   if (!box) return;
   stopPlayer();
+  box.innerHTML = `<div class="psd-player-note">Loading tracks…</div>`;
+  loadTrackData().then(data => {
+    if (!document.body.contains(box)) return;
+    const list = data.lists[r["ID"]];
+    if (list && list.length) {
+      const items = releaseTrackItems(list);
+      if (items.some(x => x.src)) return buildTrackPlayer(box, r, items, albumId);
+      if (albumId) return renderBzPlayer(box, r, albumId, items);    // our list has no audio: Bandzoogle's
+      box.innerHTML = trackListHtml(items, false);                    // list only, plus an embed below
+      const emb = document.createElement("div"); emb.style.marginTop = "14px"; box.appendChild(emb); renderEmbed(emb, r);
+      return;
+    }
+    renderBzPlayer(box, r, albumId, null);
+  });
+}
+
+// Bandzoogle's own album track list (releases without our list, or without track pages in it).
+function renderBzPlayer(box, r, albumId, items){
   if (albumId) {
     box.innerHTML = `<div class="psd-player-note">Loading tracks…</div>`;
     // Bandzoogle's album page lists only the first 20 tracks (then data-load-more="true");
@@ -1368,6 +1427,22 @@ function renderPlayer(box, r, albumId){
   }
 }
 
+// The track list as HTML. Discs restart the numbering; a heading starts a chapter (or names the disc).
+// playable = buttons (data-psd-track = index into the player's items); otherwise plain rows.
+function trackListHtml(items, playable){
+  const discs = new Set(items.map(x => x.disc)).size > 1;
+  let html = "", lastDisc = 0;
+  items.forEach((x, i) => {
+    if (discs && x.disc !== lastDisc) html += `<li class="psd-h">Disc ${x.disc}${x.heading ? " · " + esc(x.heading) : ""}</li>`;
+    else if (x.heading) html += `<li class="psd-h">${esc(x.heading)}</li>`;
+    lastDisc = x.disc;
+    const sub = [x.artist && x.artist.toLowerCase() !== "psilodump" ? "by " + esc(x.artist) : "", x.former.length ? "previously " + x.former.map(esc).join(", ") : "", x.note ? esc(x.note) : ""].filter(Boolean).join(" · ");
+    const inner = `<span class="psd-n">${x.pos || i + 1}</span><span class="psd-t">${esc(x.title)}${x.version ? ` <span class="psd-v">(${esc(x.version)})</span>` : ""}${sub ? `<span class="psd-sub">${sub}</span>` : ""}</span><span class="psd-d">${esc(x.duration)}</span>`;
+    html += playable && x.src ? `<li><button type="button" data-psd-track="${i}">${inner}</button></li>` : `<li><div class="psd-off">${inner}</div></li>`;
+  });
+  return `<ol class="psd-tracks">${html}</ol>`;
+}
+
 function renderEmbed(box, r){
   const spotify = platformId(r, "Spotify", /album\/([A-Za-z0-9]+)/);
   const apple = platformId(r, "Apple", /(?:album\/[^/]*\/|\/)(\d+)(?:\?|$)/);
@@ -1385,36 +1460,48 @@ function renderEmbed(box, r){
 }
 
 function buildTrackPlayer(box, r, tracks, albumId){
+  tracks.forEach(t => { if (!("former" in t)) Object.assign(t, { version: "", artist: "", former: [], note: "", heading: "", disc: 1, pos: 0 }); });
+  const first = Math.max(0, tracks.findIndex(t => t.src));
   box.innerHTML = `
     <div class="psd-player">
       <div class="psd-player-bar">
         <button type="button" class="psd-pp" data-psd-play aria-label="Play">${PLAY_ICON}</button>
-        <div class="psd-now"><span class="psd-now-title">${esc(tracks[0].title)}</span><span class="psd-time">0:00 / ${esc(tracks[0].duration)}</span></div>
+        <div class="psd-now"><span class="psd-now-title">${esc(tracks[first].title)}</span><span class="psd-time">0:00 / ${esc(tracks[first].duration)}</span></div>
       </div>
       <div class="psd-progress" data-psd-seek role="slider" tabindex="0" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="psd-progress-fill"></div></div>
-      <ol class="psd-tracks">${tracks.map((t, i) => `<li><button type="button" data-psd-track="${i}"><span class="psd-n">${i + 1}</span><span class="psd-t">${esc(t.title)}</span><span class="psd-d">${esc(t.duration)}</span></button></li>`).join("")}</ol>
+      ${trackListHtml(tracks, true)}
     </div>`;
   const audio = new Audio();
   audio.preload = "none";
-  const p = window._psdPlayer = { audio, tracks, index: 0, box, title: r[TITLE_COL] || "", cover: r._largeUrl || r._thumbUrl || "" };
+  const p = window._psdPlayer = { audio, tracks, index: first, box, title: r[TITLE_COL] || "", cover: r._largeUrl || r._thumbUrl || "" };
   audio.addEventListener("timeupdate", () => updatePlayerUI());
   audio.addEventListener("loadedmetadata", () => updatePlayerUI());
   audio.addEventListener("play", () => updatePlayerUI());
   audio.addEventListener("pause", () => updatePlayerUI());
-  audio.addEventListener("ended", () => { if (p.index + 1 < p.tracks.length) playTrack(p.index + 1); else updatePlayerUI(); });
+  const nextPlayable = from => { for (let k = from; k < p.tracks.length; k++) if (p.tracks[k].src && !p.tracks[k].broken) return k; return -1; };
+  p.next = nextPlayable;
+  audio.addEventListener("ended", () => { const n = nextPlayable(p.index + 1); if (n >= 0) playTrack(n); else updatePlayerUI(); });
+  // A track page that no longer exists: mark it and go on with the next one.
+  audio.addEventListener("error", () => {
+    const t = p.tracks[p.index]; if (!t || !audio.getAttribute("src")) return;
+    t.broken = true;
+    const b = p.box.querySelector(`[data-psd-track="${p.index}"]`); if (b) { b.classList.add("is-broken"); b.disabled = true; b.title = "Not available"; }
+    const n = nextPlayable(p.index + 1); if (n >= 0) playTrack(n); else updatePlayerUI();
+  });
 }
 
 function playTrack(i){
   const p = window._psdPlayer;
-  if (!p || !p.tracks[i]) return;
+  if (!p || !p.tracks[i] || !p.tracks[i].src || p.tracks[i].broken) return;
   if (i !== p.index || !p.audio.src) {
     p.index = i;
     p.audio.src = p.tracks[i].src;
   }
   p.audio.play().catch(() => {});
   if ("mediaSession" in navigator && window.MediaMetadata) {
-    navigator.mediaSession.metadata = new MediaMetadata({ title: p.tracks[i].title, artist: "psilodump", album: p.title, artwork: p.cover ? [{ src: p.cover }] : [] });
-    navigator.mediaSession.setActionHandler("nexttrack", () => playTrack(p.index + 1));
+    const tr = p.tracks[i];
+    navigator.mediaSession.metadata = new MediaMetadata({ title: tr.title + (tr.version ? " (" + tr.version + ")" : ""), artist: tr.artist || "psilodump", album: p.title, artwork: p.cover ? [{ src: p.cover }] : [] });
+    navigator.mediaSession.setActionHandler("nexttrack", () => { const n = p.next ? p.next(p.index + 1) : p.index + 1; if (n >= 0) playTrack(n); });
     navigator.mediaSession.setActionHandler("previoustrack", () => playTrack(Math.max(0, p.index - 1)));
   }
   updatePlayerUI();
@@ -1427,7 +1514,7 @@ function updatePlayerUI(){
   const playing = !a.paused && !a.ended;
   const pp = p.box.querySelector(".psd-pp");
   if (pp) { pp.innerHTML = playing ? PAUSE_ICON : PLAY_ICON; pp.setAttribute("aria-label", playing ? "Pause" : "Play"); }
-  const nowT = p.box.querySelector(".psd-now-title"); if (nowT) nowT.textContent = t.title;
+  const nowT = p.box.querySelector(".psd-now-title"); if (nowT) nowT.textContent = t.title + (t.version ? " (" + t.version + ")" : "");
   const time = p.box.querySelector(".psd-time"); if (time) time.textContent = fmtTime(a.currentTime) + " / " + (isFinite(a.duration) ? fmtTime(a.duration) : t.duration);
   const pct = isFinite(a.duration) && a.duration > 0 ? (a.currentTime / a.duration) * 100 : 0;
   const fill = p.box.querySelector(".psd-progress-fill"); if (fill) fill.style.width = pct + "%";
