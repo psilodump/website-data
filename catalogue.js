@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.26.1";
+const JS_VERSION = "1.26.2";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -2421,21 +2421,16 @@ function feedItems(posts, gigs){
   const cat = window._psilodumpCat;
   const relDone = new Set(posts.map(p => p["Release ID"]).filter(Boolean)), gigDone = new Set(posts.map(p => p["Gig ID"]).filter(Boolean));
   const items = posts.map(p => ({ type: "post", date: String(p.Date), kind: p.Kind || "news", title: p.Title, href: postHref(p), img: p._img, text: p._text, tags: p.Tags || "", p }));
-  // A release with two dates (476LEG: made long ago, released now) appears twice: at its catalogue date, in
-  // its old context (your post, else a short entry), and at its release date as "out now" (unless a post
-  // is dated then). Releases with one date appear once, unless a post is about them.
+  // Releases without a post appear once, at their catalogue date (476LEG releases belong to the time they
+  // were made); when the release date differs it is named in the text. Else the release date.
   const full = d => /^\d{4}-\d{2}-\d{2}/.test(d || "");
-  const postDays = {}; posts.forEach(p => { if (p["Release ID"]) (postDays[p["Release ID"]] = postDays[p["Release ID"]] || []).push(String(p.Date).slice(0, 10)); });
   (cat.rows || []).forEach(r => {
-    if (r["Hidden"] === "1") return;
-    const rd = r._released || "", cd = r._catalogue || "", id = r["ID"], base = [r[TYPE_COL], r[CAT_COL], r["Label"]].filter(Boolean).join(" · ");
-    const entry = (date, text) => items.push({ type: "release", date, kind: "release", title: r[TITLE_COL], href: releaseHref(r), img: r._thumbUrl || "", text, tags: "" });
-    if (full(rd) && full(cd) && rd.slice(0, 10) !== cd.slice(0, 10)) {
-      if (!relDone.has(id)) entry(cd, base + " · released " + gigDateText(rd.slice(0, 10)));
-      const dn = d => Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10)) / 864e5;
-      if (!(postDays[id] || []).some(d => Math.abs(dn(d) - dn(rd)) <= 3))
-        entry(rd, "Out now · " + base + " · " + (cd < rd ? "from " : "catalogue date ") + gigDateText(cd.slice(0, 10)));
-    } else if (full(rd) && !relDone.has(id)) entry(rd, base);
+    if (r["Hidden"] === "1" || relDone.has(r["ID"])) return;
+    const rd = r._released || "", cd = r._catalogue || "", base = [r[TYPE_COL], r[CAT_COL], r["Label"]].filter(Boolean).join(" · ");
+    const date = full(cd) ? cd : rd;
+    if (!full(date)) return;
+    const text = full(rd) && rd.slice(0, 10) !== date.slice(0, 10) ? base + " · released " + gigDateText(rd.slice(0, 10)) : base;
+    items.push({ type: "release", date, kind: "release", title: r[TITLE_COL], href: releaseHref(r), img: r._thumbUrl || "", text, tags: "" });
   });
   gigs.forEach(g => { if (/^\d{4}-\d{2}-\d{2}/.test(g.Date) && !gigDone.has(g.ID) && g.Cancelled !== "1") {
     const fl = g._images.find(i => i.Kind === "flyer") || g._images[0];
