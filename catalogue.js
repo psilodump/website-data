@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.18.0";
+const JS_VERSION = "1.19.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -203,6 +203,23 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-vpage h3 { font-size: 13px !important; margin: 14px 0 8px !important; color: inherit !important; opacity: .75 !important; font-weight: 600 !important; }
 .psd-vpage .psd-vothers { margin-top: 36px !important; padding-top: 18px !important; border-top: 1px solid rgba(127,127,127,.3) !important; opacity: .92 !important; }
 .psd-vpage .psd-vempty { opacity: .7 !important; font-size: 14px !important; }
+.psd-disco section { margin: 0 0 24px !important; }
+.psd-disco h2 { font-size: 15px !important; margin: 0 0 8px !important; color: inherit !important; opacity: .8 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
+.psd-disco h2 small { font-weight: normal !important; opacity: .7 !important; letter-spacing: 0 !important; text-transform: none !important; }
+.psd-disco ol { list-style: none !important; margin: 0 !important; padding: 0 !important; }
+.psd-disco li { display: flex !important; gap: 12px !important; align-items: baseline !important; padding: 5px 0 !important; border-top: 1px solid rgba(127,127,127,.18) !important; margin: 0 !important; list-style: none !important; font-size: 14px !important; }
+.psd-disco .y { flex: 0 0 3em !important; opacity: .65 !important; font-variant-numeric: tabular-nums !important; }
+.psd-disco .t { flex: 1 1 auto !important; min-width: 0 !important; }
+.psd-disco .t small { opacity: .7 !important; }
+.psd-disco .c { flex: 0 0 auto !important; opacity: .65 !important; font-size: 12px !important; text-align: right !important; }
+.psd-ctab-wrap { overflow-x: auto !important; }
+.psd-ctab { width: 100% !important; border-collapse: collapse !important; font-size: 13px !important; }
+.psd-ctab th, .psd-ctab td { text-align: left !important; padding: 5px 8px !important; border-bottom: 1px solid rgba(127,127,127,.2) !important; vertical-align: top !important; white-space: nowrap !important; }
+.psd-ctab td.w { white-space: normal !important; min-width: 180px !important; }
+.psd-ctab th { cursor: pointer !important; user-select: none !important; opacity: .85 !important; font-weight: 600 !important; }
+.psd-ctab th[aria-sort="ascending"]::after { content: " ▲" !important; font-size: 10px !important; }
+.psd-ctab th[aria-sort="descending"]::after { content: " ▼" !important; font-size: 10px !important; }
+.psd-ctab tr:hover td { background: rgba(127,127,127,.1) !important; }
 .psd-rel-videos { margin-top: 22px !important; }
 .psd-rel-videos h2 { font-size: 15px !important; margin: 0 0 10px !important; color: inherit !important; opacity: .75 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
 .psd-vgrid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important; gap: 14px !important; }
@@ -948,6 +965,8 @@ if (!window._psilodumpModalDelegated) {
       if (p) { if (p.audio.paused) playTrack(p.index); else p.audio.pause(); }
       return;
     }
+    const th = t.closest('[data-psd-sort]');
+    if (th) { const m = document.getElementById("psd-catalogue-table"); if (m && m._psdTab) { const k = th.getAttribute("data-psd-sort"); m._psdTab.dir = m._psdTab.sort === k ? -m._psdTab.dir : 1; m._psdTab.sort = k; m._psdTabRender(); } return; }
     const rb = t.closest('[data-psd-rby]');
     if (rb) { const m = document.getElementById("psd-remixes-page"); if (m && m._psdRemix) { m._psdRemix.by = rb.getAttribute("data-psd-rby"); m._psdRemixRender(); } return; }
     const vk = t.closest('[data-psd-vkind]');
@@ -1791,6 +1810,67 @@ function updateJsonLd(){
   if (el.textContent !== cat._jsonLd) el.textContent = cat._jsonLd;
 }
 
+// --- DISCOGRAPHY: <div id="psd-discography"> — compact list by type, newest first (parts hidden in the grid are left out) ---
+const TYPE_ORDER = ["Album", "MiniAlbum", "EP", "Single", "Compilation"];
+const TYPE_NAMES = { Album: "Albums", MiniAlbum: "Mini-albums", EP: "EPs", Single: "Singles", Compilation: "Compilations" };
+function initDiscography(){
+  const mount = document.getElementById("psd-discography");
+  if (!mount || mount._psdShown) return;
+  if (document.documentElement.hasAttribute("aria-busy")) return;
+  mount._psdShown = true;
+  ensureStyles();
+  mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading discography…</div>`;
+  loadCatalogue().then(rows => {
+    const when = r => r._catalogue || r._released || "";
+    const groups = {};
+    rows.filter(r => r["Hidden"] !== "1").forEach(r => { const t = (r._types[0] || "Other"); (groups[t] = groups[t] || []).push(r); });
+    const order = [...TYPE_ORDER.filter(t => groups[t]), ...Object.keys(groups).filter(t => !TYPE_ORDER.includes(t))];
+    mount.innerHTML = `<div class="psd-rel psd-disco">${order.map(t => {
+      const list = groups[t].sort((a, b) => when(b).localeCompare(when(a)) || catOrder(a, b));
+      return `<section><h2>${esc(TYPE_NAMES[t] || t)} <small>${list.length}</small></h2><ol>${list.map(r => {
+        const artist = releaseArtist(r);
+        return `<li><span class="y">${esc((when(r).match(/^\d{4}/) || [""])[0])}</span><span class="t"><a href="${esc(releaseHref(r))}">${esc(r[TITLE_COL] || "(untitled)")}</a>${artist.toLowerCase() !== "psilodump" ? ` <small>by ${esc(artist)}</small>` : ""}</span><span class="c">${esc([r[CAT_COL], r["Label"]].filter(Boolean).join(" · "))}</span></li>`;
+      }).join("")}</ol></section>`;
+    }).join("")}</div>`;
+  }).catch(err => { console.error("Failed to load discography:", err); mount.innerHTML = `<div class="psd-rel">Unable to load the discography right now. Please refresh the page.</div>`; });
+}
+
+// --- CATALOGUE table: <div id="psd-catalogue-table"> — every release, sortable, searchable ---
+const CTAB_COLS = [
+  ["cat", "Cat#", r => r[CAT_COL] || ""], ["title", "Title", r => r[TITLE_COL] || ""], ["artist", "Artist", r => releaseArtist(r)],
+  ["type", "Type", r => r[TYPE_COL] || ""], ["released", "Released", r => r._released || ""], ["catdate", "Cat. date", r => r._catalogue || ""],
+  ["label", "Label", r => r["Label"] || ""], ["format", "Format", r => r["Formats"] || ""], ["barcode", "Barcode", r => r["Barcode"] || ""],
+];
+function initCatalogueTable(){
+  const mount = document.getElementById("psd-catalogue-table");
+  if (!mount || mount._psdShown) return;
+  if (document.documentElement.hasAttribute("aria-busy")) return;
+  mount._psdShown = true;
+  ensureStyles();
+  mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading catalogue…</div>`;
+  loadCatalogue().then(rows => {
+    const st = mount._psdTab = { sort: "catdate", dir: -1, q: "" };
+    mount.innerHTML = `<div class="psd-rel psd-vpage"><div class="psd-vpage-bar"><input type="search" placeholder="Search the catalogue…" aria-label="Search the catalogue"><span class="psd-tcount" style="font-size:13px;opacity:.75"></span></div>
+      <div class="psd-ctab-wrap"><table class="psd-ctab"><thead><tr>${CTAB_COLS.map(([k, l]) => `<th data-psd-sort="${k}" scope="col">${l}</th>`).join("")}</tr></thead><tbody></tbody></table></div></div>`;
+    const render = () => {
+      const col = CTAB_COLS.find(c => c[0] === st.sort), q = st.q.trim().toLowerCase();
+      const list = rows.filter(r => !q || CTAB_COLS.some(c => String(c[2](r)).toLowerCase().includes(q)))
+        .sort((a, b) => { const x = String(col[2](a)), y = String(col[2](b));
+          if (!x !== !y) return !x ? 1 : -1;                     // empty values last, in both directions
+          return (x.localeCompare(y, undefined, { numeric: true, sensitivity: "base" }) || catOrder(a, b)) * st.dir; });
+      mount.querySelector("tbody").innerHTML = list.map(r => `<tr>${CTAB_COLS.map(([k, , get]) => {
+        const v = esc(get(r));
+        return k === "title" ? `<td class="w"><a href="${esc(releaseHref(r))}">${v || "(untitled)"}</a></td>` : `<td${k === "label" || k === "format" || k === "artist" ? ' class="w"' : ""}>${v}</td>`;
+      }).join("")}</tr>`).join("");
+      mount.querySelectorAll("[data-psd-sort]").forEach(th => th.setAttribute("aria-sort", th.getAttribute("data-psd-sort") === st.sort ? (st.dir > 0 ? "ascending" : "descending") : "none"));
+      mount.querySelector(".psd-tcount").textContent = list.length + " releases";
+    };
+    mount._psdTabRender = render;
+    mount.querySelector("input").addEventListener("input", e => { st.q = e.target.value; render(); });
+    render();
+  }).catch(err => { console.error("Failed to load catalogue:", err); mount.innerHTML = `<div class="psd-rel">Unable to load the catalogue right now. Please refresh the page.</div>`; });
+}
+
 // --- REMIXES page: <div id="psd-remixes-page"> — psilodump's remixes, from tracks.csv ---
 // A remix = type Remix and either another artist's track or psilodump named in the version.
 const PSILO_ALIAS = /psilodump|psilo|insekt|r\.?i\.?p\.?c|trmc|jumix/i;      // remix credits that are psilodump himself
@@ -1925,6 +2005,8 @@ function applyFixedType(){
 }
 
 function initApp(){
+  initDiscography();
+  initCatalogueTable();
   initVideosPage();
   initRemixesPage();
   initRelease();
@@ -1973,6 +2055,10 @@ new MutationObserver(() => {
   if (vp && !vp._psdShown) { initVideosPage(); return; }
   const rp = document.getElementById("psd-remixes-page");
   if (rp && !rp._psdShown) { initRemixesPage(); return; }
+  const dg = document.getElementById("psd-discography");
+  if (dg && !dg._psdShown) { initDiscography(); return; }
+  const ct = document.getElementById("psd-catalogue-table");
+  if (ct && !ct._psdShown) { initCatalogueTable(); return; }
   const grid = document.getElementById("rel-grid");
   if (grid && grid.querySelector(".sk")) initApp();
 }).observe(document.documentElement, { childList: true, subtree: true });
