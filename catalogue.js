@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.17.0";
+const JS_VERSION = "1.18.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -790,9 +790,11 @@ function copyViewLink(btn){
 
 function populateSelectOptions(){
   const cat = window._psilodumpCat;
-  const decades = Array.from(new Set(cat.rows.map(currentDecade))).filter(d => d !== "Unknown").sort((a,b) => Number(b.replace("s","")) - Number(a.replace("s","")));
-  const years = Array.from(new Set(cat.rows.map(currentYear))).sort((a,b) => (a === "Unknown") - (b === "Unknown") || Number(b) - Number(a));
+  const decades = Array.from(new Set((cat.fixedTypes && cat.fixedTypes.length ? cat.rows.filter(r => r._types.some(t => cat.fixedTypes.includes(t.toLowerCase()))) : cat.rows).map(currentDecade))).filter(d => d !== "Unknown").sort((a,b) => Number(b.replace("s","")) - Number(a.replace("s","")));
+  const years = Array.from(new Set((cat.fixedTypes && cat.fixedTypes.length ? cat.rows.filter(r => r._types.some(t => cat.fixedTypes.includes(t.toLowerCase()))) : cat.rows).map(currentYear))).sort((a,b) => (a === "Unknown") - (b === "Unknown") || Number(b) - Number(a));
   const types = Array.from(new Set(cat.rows.flatMap(r => r._types))).sort((a,b) => a.localeCompare(b));
+  const fixed = cat.fixedTypes || [];
+  const pool = fixed.length ? cat.rows.filter(r => r._types.some(t => fixed.includes(t.toLowerCase()))) : cat.rows;
   const series = Array.from(new Set(cat.rows.flatMap(r => r._series))).sort((a,b) => a.localeCompare(b));
   const labels = Array.from(new Set(cat.rows.flatMap(r => r._labels))).sort((a,b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
 
@@ -833,6 +835,7 @@ function applyFilters(){
     if (cat.activeDecade && currentDecade(r) !== cat.activeDecade) return false;
     if (cat.activeYear && currentYear(r) !== cat.activeYear) return false;
     if (cat.activeType && !r._types.some(t => t.toLowerCase() === cat.activeType.toLowerCase())) return false;
+    if (cat.fixedTypes && cat.fixedTypes.length && !r._types.some(t => cat.fixedTypes.includes(t.toLowerCase()))) return false;
     if (cat.activeSeries && !r._series.some(s => s.toLowerCase() === cat.activeSeries.toLowerCase())) return false;
     if (cat.activeLabel && !r._labels.some(s => s.toLowerCase() === cat.activeLabel.toLowerCase())) return false;
     if (cat.activeWork && !(work && (r === work || (r["Part Of"] && r["Part Of"] === work["MusicBrainz"])))) return false;
@@ -1909,6 +1912,18 @@ function buildVideosPage(mount, rows, data){
   render();
 }
 
+// Type pages: the embed's data-type ("Album" or "Album,MiniAlbum") fixes the types shown; the
+// type dropdown is hidden there. Read on every init so the home catalogue is never left filtered.
+function applyFixedType(){
+  const cat = window._psilodumpCat;
+  const mount = document.getElementById("psd-catalogue");
+  const raw = mount ? (mount.getAttribute("data-type") || "") : "";
+  cat.fixedTypes = raw.split(",").map(x => x.trim().toLowerCase()).filter(Boolean);
+  const sel = document.getElementById("rel-sel-type");
+  if (sel) sel.style.display = cat.fixedTypes.length ? "none" : "";
+  if (cat.fixedTypes.length) cat.activeType = "";
+}
+
 function initApp(){
   initVideosPage();
   initRemixesPage();
@@ -1919,6 +1934,7 @@ function initApp(){
   ensureStyles();
   moveModalsToBody();
   const cat = window._psilodumpCat;
+  applyFixedType();
 
   if (cat.loaded) {
     applyHash();
