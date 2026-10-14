@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.27.0";
+const JS_VERSION = "1.28.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -328,6 +328,11 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-innews ul { list-style: none !important; margin: 0 !important; padding: 0 !important; }
 .psd-innews li { font-size: 14px !important; padding: 3px 0 !important; margin: 0 !important; list-style: none !important; }
 .psd-innews li small { opacity: .65 !important; margin-right: 8px !important; font-variant-numeric: tabular-nums !important; }
+.psd-person-note { font-size: 14px !important; opacity: .85 !important; margin: 8px 0 0 !important; }
+.psd-person-sec { margin-top: 24px !important; }
+.psd-person-sec .by { opacity: .65 !important; font-size: 12px !important; }
+.psd-gig-role li small { opacity: .6 !important; font-size: 11px !important; margin-left: 4px !important; }
+.psd-rel .psd-post-tags a.person { border-style: solid !important; font-weight: 600 !important; }
 .psd-rel-videos { margin-top: 22px !important; }
 .psd-rel-videos h2 { font-size: 15px !important; margin: 0 0 10px !important; color: inherit !important; opacity: .75 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
 .psd-vgrid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important; gap: 14px !important; }
@@ -2247,10 +2252,10 @@ function initGig(){
   mount._psdShown = location.search;
   ensureStyles();
   mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading gig…</div>`;
-  Promise.all([loadCatalogue(), loadGigs()]).then(([, { gigs, data }]) => renderGig(mount, gigs, data))
+  Promise.all([loadCatalogue(), loadGigs(), loadPeople()]).then(([, { gigs, data }, pp]) => renderGig(mount, gigs, data, pp))
     .catch(err => { console.error("Failed to load gig:", err); mount.innerHTML = `<div class="psd-rel">Unable to load the gig right now. Please refresh the page.</div>`; });
 }
-function renderGig(mount, gigs, data){
+function renderGig(mount, gigs, data, pp){
   const key = (new URLSearchParams(location.search).get("g") || "").trim().toLowerCase();
   const i = gigs.findIndex(g => g._key.toLowerCase() === key || g.ID === key);
   if (i < 0) {
@@ -2276,9 +2281,18 @@ function renderGig(mount, gigs, data){
   if (/^[0-9a-f-]{36}$/.test(g.MusicBrainz || "")) links.push(`<a href="https://musicbrainz.org/event/${esc(g.MusicBrainz)}" target="_blank" rel="noopener">MusicBrainz</a>`);
   if (links.length) facts.push(["Links", links.join(" · ")]);
   // Line-up by role, psilodump's own entry highlighted
+  // line-up: rows with people (gig_lineup.csv) when there are any, else the text lines
   const roles = {};
-  g._acts.forEach(a => { const m = a.match(/^(live|dj|vj|mc):\s*(.*)$/i); const r = m ? m[1].toLowerCase() : "live"; (roles[r] = roles[r] || []).push(m ? m[2] : a); });
-  const lineup = Object.keys(GIG_ROLE_NAMES).filter(r => roles[r]).map(r => `<div class="psd-gig-role"><h3>${GIG_ROLE_NAMES[r]}</h3><ul>${roles[r].map(a => `<li${GIG_SELF.test(a) ? ' class="me"' : ""}>${esc(a)}</li>`).join("")}</ul></div>`).join("");
+  const rowsLU = pp && pp.lineups[g.ID];
+  if (rowsLU && rowsLU.length) rowsLU.forEach(x => {
+    const p = pp.byId[x["Person ID"]], billed = x["Billed As"] || "";
+    const name = p ? p.Name : billedName(billed) || billed;
+    const extra = billed && billed !== name ? ` <small>${esc(billed)}</small>` : "";
+    const html = p && p._self ? `<li class="me">${esc(billed || name)}</li>` : `<li>${p ? `<a href="${esc(personHref(p))}">${esc(name)}</a>` : esc(name)}${extra}</li>`;
+    (roles[x.Role] = roles[x.Role] || []).push(html);
+  });
+  else g._acts.forEach(a => { const m = a.match(/^(live|dj|vj|mc):\s*(.*)$/i); const r = m ? m[1].toLowerCase() : "live"; const t = m ? m[2] : a; (roles[r] = roles[r] || []).push(`<li${GIG_SELF.test(t) ? ' class="me"' : ""}>${esc(t)}</li>`); });
+  const lineup = Object.keys(LINEUP_ROLE_NAMES).filter(r => roles[r]).map(r => `<div class="psd-gig-role"><h3>${LINEUP_ROLE_NAMES[r]}</h3><ul>${roles[r].join("")}</ul></div>`).join("");
   const vids = g._videos.map(v => {
     const t = data.byId[v["Track ID"]];
     const label = t ? t.Title + (t.Version ? " (" + t.Version + ")" : "") : (v["YouTube Title"] || "Video");
@@ -2493,7 +2507,7 @@ function initPost(){
   mount._psdShown = location.search;
   ensureStyles();
   mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading…</div>`;
-  loadCatalogue().then(() => loadPosts()).then(({ posts }) => {
+  loadCatalogue().then(() => Promise.all([loadPosts(), loadPeople().catch(() => null)])).then(([{ posts }, pp]) => {
     const key = (new URLSearchParams(location.search).get("p") || "").trim().toLowerCase();
     const i = posts.findIndex(p => p._key.toLowerCase() === key || p.ID === key);
     if (i < 0) { mount.innerHTML = `<div class="psd-rel"><nav class="psd-rel-nav"><a href="${NEWS_PATH}">← News</a></nav><h1 class="psd-rel-title">Post not found</h1></div>`; document.title = "Post not found | psilodump"; return; }
@@ -2509,7 +2523,7 @@ function initPost(){
       <h1 class="psd-rel-title">${esc(p.Title)}</h1>
       <div class="psd-post-body">${postBodyHtml(p) || ""}</div>
       ${cards.length ? `<div class="psd-post-cards">${cards.join("")}</div>` : ""}
-      ${tags.length ? `<p class="psd-post-tags">${tags.map(t => `<a href="${NEWS_PATH}#tag=${encodeURIComponent(t)}">${esc(t)}</a>`).join("")}</p>` : ""}
+      ${tags.length ? `<p class="psd-post-tags">${tags.map(t => { const per = pp && pp.byKey[personKey(t)]; return per && !per._self ? `<a class="person" href="${esc(personHref(per))}">${esc(t)}</a>` : `<a href="${NEWS_PATH}#tag=${encodeURIComponent(t)}">${esc(t)}</a>`; }).join("")}</p>` : ""}
       ${p["Old URL"] ? `<p class="psd-post-old"><a href="${esc(String(p["Old URL"]).replace(/^http:/, "https:"))}"${/476\.digital/.test(p["Old URL"]) ? ' target="_blank" rel="noopener"' : ""}>${/476\.digital/.test(p["Old URL"]) ? "Originally in The X-Dump news archive" : "This post on the old blog"}</a></p>` : ""}
     </div>`;
     if (!document.getElementById("rel-lightbox")) mount.insertAdjacentHTML("beforeend", `<div id="rel-lightbox" class="rel-modal-overlay"><img id="rel-lightbox-img" class="rel-lightbox-img" src="" alt=""></div>`);
@@ -2543,6 +2557,91 @@ function appendInTheNews(box, test){
     box.insertAdjacentHTML("beforeend", `<section class="psd-innews"><h2>In the news</h2><ul>${list.map(p => `<li><small>${esc(String(p.Date).slice(0, 10))}</small><a href="${esc(postHref(p))}">${esc(p.Title)}</a></li>`).join("")}</ul></section>`);
   }).catch(() => {});
 }
+
+// --- PEOPLE: people.csv (names + aliases) + gig_lineup.csv (who played which gig, as what). One page per
+// person (<div id="psd-person"> on /person?p=<key>): gigs together, releases and remixes, posts tagged, videos.
+const PEOPLE_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/people.csv";
+const LINEUP_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/gig_lineup.csv";
+const PERSON_PATH = "/person";
+const LINEUP_ROLE_NAMES = { live: "Live", dj: "DJ", vj: "VJ", mc: "MC", host: "Host" };
+const personKey = s => String(s || "").toLowerCase().normalize("NFKC").replace(/[^\p{L}\p{N}]+/gu, "");
+function loadPeople(){
+  const cat = window._psilodumpCat;
+  if (!cat._peoplePromise) {
+    const get = url => fetch(url + "?v=" + Date.now()).then(r => r.ok ? r.text() : "").then(t => t ? toObjects(parseCSV(t)).rows : []).catch(() => []);
+    cat._peoplePromise = Promise.all([get(PEOPLE_URL), get(LINEUP_URL)]).then(([people, rows]) => {
+      const byId = {}, byKey = {}, seen = {};
+      people.forEach(p => {
+        p._names = [p.Name, ...String(p.Aliases || "").split(" | ")].map(s => s.trim()).filter(Boolean);
+        const k = slugify(p.Name) || "person"; p._key = seen[k] ? k + "-" + p.ID : k; seen[k] = 1;
+        p._self = p.Self === "1"; p._gigs = [];
+        byId[p.ID] = p; p._names.forEach(n => { const nk = personKey(n); if (nk && !byKey[nk]) byKey[nk] = p; });
+      });
+      const lineups = {};
+      rows.sort((a, b) => (+a.Position) - (+b.Position)).forEach(r => { (lineups[r["Gig ID"]] = lineups[r["Gig ID"]] || []).push(r); const p = byId[r["Person ID"]]; if (p) p._gigs.push(r); });
+      return { people, byId, byKey, lineups };
+    });
+  }
+  return cat._peoplePromise;
+}
+const personHref = p => PERSON_PATH + "?p=" + encodeURIComponent(p._key);
+// Does a credit text name this person? Whole words only ("Goto80 remix", "Methadump, psilodump").
+function namesPerson(text, p){
+  const t = " " + String(text || "").toLowerCase().normalize("NFKC") + " ";
+  return p._names.some(n => { const s = n.toLowerCase().normalize("NFKC").trim(); if (s.length < 2) return false;
+    const i = t.indexOf(s); if (i < 0) return false;
+    const before = t[i - 1], after = t[i + s.length];
+    return !/[\p{L}\p{N}]/u.test(before || " ") && !/[\p{L}\p{N}]/u.test(after || " "); });
+}
+
+function initPerson(){
+  const mount = document.getElementById("psd-person");
+  if (!mount || mount._psdShown === location.search) return;
+  if (document.documentElement.hasAttribute("aria-busy")) return;
+  if (location.pathname.replace(/\/+$/, "") !== PERSON_PATH) return;
+  mount._psdShown = location.search;
+  ensureStyles();
+  mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading…</div>`;
+  loadCatalogue().then(rows => Promise.all([loadPeople(), loadGigs(), loadTrackData(), loadPosts().catch(() => ({ posts: [] }))]).then(([pp, { gigs }, data, { posts }]) => {
+    const key = (new URLSearchParams(location.search).get("p") || "").trim().toLowerCase();
+    const p = pp.people.find(x => x._key.toLowerCase() === key || x.ID === key) || pp.byKey[personKey(key)];
+    if (!p) { mount.innerHTML = `<div class="psd-rel"><nav class="psd-rel-nav"><a href="${GIGS_PATH}">← Gigs</a></nav><h1 class="psd-rel-title">Not found</h1></div>`; document.title = "Not found | psilodump"; return; }
+    const gigById = {}; gigs.forEach(g => { gigById[g.ID] = g; });
+    // gigs together
+    const gl = p._gigs.map(r => ({ r, g: gigById[r["Gig ID"]] })).filter(x => x.g).sort((a, b) => String(b.g.Date).localeCompare(String(a.g.Date)));
+    // releases: credited on the release, or on one of its tracks (artist / version)
+    const relById = {}; rows.forEach(r => { relById[r["ID"]] = r; });
+    const relSet = new Map();
+    rows.forEach(r => { if (namesPerson(r["Artist"], p) || namesPerson(r["Original Credit"], p) || namesPerson(r["Label"], p)) relSet.set(r["ID"], r); });
+    const trackHits = Object.values(data.byId).filter(t => namesPerson(t.Artist, p) || namesPerson(t.Version, p));
+    Object.entries(data.lists).forEach(([rid, list]) => { if (relById[rid] && list.some(({ t }) => trackHits.includes(t))) relSet.set(rid, relById[rid]); });
+    const rels = [...relSet.values()].sort((a, b) => String(b._catalogue || b._released || "").localeCompare(String(a._catalogue || a._released || "")));
+    const remixes = trackHits.filter(t => /remix/i.test(t.Type || "") || /remix|mix|rmx/i.test(t.Version || ""));
+    const tagged = posts.filter(x => String(x.Tags || "").split(/\s*,\s*/).some(t => pp.byKey[personKey(t)] === p));
+    const vids = (data.videos || []).filter(v => namesPerson(v["Made By"], p));
+    const links = [];
+    if (/^https?:\/\//.test(p.URL || "")) links.push(`<a href="${esc(p.URL)}" target="_blank" rel="noopener">Website</a>`);
+    if (/^[0-9a-f-]{36}$/.test(p.MusicBrainz || "")) links.push(`<a href="https://musicbrainz.org/artist/${esc(p.MusicBrainz)}" target="_blank" rel="noopener">MusicBrainz</a>`);
+    if (p.Discogs) links.push(`<a href="${esc(/^https?:/.test(p.Discogs) ? p.Discogs : "https://www.discogs.com/artist/" + p.Discogs)}" target="_blank" rel="noopener">Discogs</a>`);
+    const aka = p._names.slice(1);
+    const relRow = r => `<li><small>${esc(String(r._catalogue || r._released || "").slice(0, 4))}</small><a href="${esc(releaseHref(r))}">${esc(r[TITLE_COL])}</a>${releaseArtist(r).toLowerCase() !== "psilodump" ? ` <span class="by">by ${esc(releaseArtist(r))}</span>` : ""}</li>`;
+    const sec = (title, n, body) => n ? `<section class="psd-innews psd-person-sec"><h2>${title} <small>${n}</small></h2>${body}</section>` : "";
+    mount.innerHTML = `<div class="psd-rel psd-person">
+      <nav class="psd-rel-nav"><a href="${GIGS_PATH}">← Gigs</a><a href="${NEWS_PATH}">News</a></nav>
+      <h1 class="psd-rel-title">${esc(p.Name)}</h1>
+      ${aka.length ? `<div class="psd-rel-sub">also ${aka.map(esc).join(", ")}</div>` : ""}
+      ${p.Note || p.Country || links.length ? `<p class="psd-person-note">${[p.Note ? linkify(p.Note) : "", p.Country ? esc(p.Country) : "", links.join(" · ")].filter(Boolean).join(" · ")}</p>` : ""}
+      ${sec("Gigs together", gl.length, `<ul>${gl.map(({ r, g }) => `<li><small>${esc(String(g.Date).slice(0, 10))}</small><a href="${esc(gigHref(g))}">${esc(g.Event || "Gig")}</a> <span class="by">${esc([g.City, g.Country].filter(Boolean).join(", "))} · ${esc(LINEUP_ROLE_NAMES[r.Role] || r.Role)}${billedName(r["Billed As"]) && personKey(billedName(r["Billed As"])) !== personKey(p.Name) ? " as “" + esc(r["Billed As"]) + "”" : ""}</span></li>`).join("")}</ul>`)}
+      ${sec("Releases", rels.length, `<ul>${rels.map(relRow).join("")}</ul>`)}
+      ${sec("Remixes", remixes.length, `<ul>${remixes.map(t => `<li><small>${esc(String(t.Released || t.Finished || "").slice(0, 4))}</small>${esc(t.Title)}${t.Version ? ` <span class="by">(${esc(t.Version)})</span>` : ""}${t.Artist && t.Artist.toLowerCase() !== "psilodump" ? ` <span class="by">by ${esc(t.Artist)}</span>` : ""}</li>`).join("")}</ul>`)}
+      ${sec("In the news", tagged.length, `<ul>${tagged.map(x => `<li><small>${esc(String(x.Date).slice(0, 10))}</small><a href="${esc(postHref(x))}">${esc(x.Title)}</a></li>`).join("")}</ul>`)}
+      ${vids.length ? `<section class="psd-rel-videos"><h2>Videos</h2><div class="psd-vgrid">${vids.map(v => `<figure class="psd-vcard">${liteYouTube(v["Video ID"], v["YouTube Title"] || "Video")}<figcaption>${esc(v["YouTube Title"] || "Video")}<small>${esc(VIDEO_KINDS[v.Kind] || "Video")}</small></figcaption></figure>`).join("")}</div></section>` : ""}
+      ${!gl.length && !rels.length && !remixes.length && !tagged.length && !vids.length ? `<p>Nothing linked yet.</p>` : ""}
+    </div>`;
+    document.title = p.Name + " | psilodump";
+  })).catch(err => { console.error("Failed to load person:", err); mount.innerHTML = `<div class="psd-rel">Unable to load this page right now. Please refresh the page.</div>`; });
+}
+function billedName(s){ return String(s || "").replace(/^[\s\-–+]+/, "").replace(/\s*[\(\[].*$/, "").replace(/[:\s]+$/, "").trim(); }
 
 // --- REMIXES page: <div id="psd-remixes-page"> — psilodump's remixes, from tracks.csv ---
 // A remix = type Remix and either another artist's track or psilodump named in the version.
@@ -2678,6 +2777,7 @@ function applyFixedType(){
 }
 
 function initApp(){
+  initPerson();
   initNews();
   initPost();
   initGigsList();
@@ -2734,6 +2834,8 @@ new MutationObserver(() => {
   if (vp && !vp._psdShown) { initVideosPage(); return; }
   const rp = document.getElementById("psd-remixes-page");
   if (rp && !rp._psdShown) { initRemixesPage(); return; }
+  const pe = document.getElementById("psd-person");
+  if (pe && pe._psdShown !== location.search) { initPerson(); return; }
   const nw = document.getElementById("psd-news");
   if (nw && !nw._psdShown) { initNews(); return; }
   const po = document.getElementById("psd-post");
