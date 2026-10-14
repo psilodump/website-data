@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.19.0";
+const JS_VERSION = "1.20.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -220,6 +220,21 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-ctab th[aria-sort="ascending"]::after { content: " ▲" !important; font-size: 10px !important; }
 .psd-ctab th[aria-sort="descending"]::after { content: " ▼" !important; font-size: 10px !important; }
 .psd-ctab tr:hover td { background: rgba(127,127,127,.1) !important; }
+.psd-phys-grid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)) !important; gap: 16px !important; }
+.psd-phys-card { margin: 0 !important; display: flex !important; flex-direction: column !important; gap: 8px !important; }
+.psd-phys-card .cv { position: relative !important; aspect-ratio: 1 !important; border-radius: 8px !important; overflow: hidden !important; background: rgba(127,127,127,.15) !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+.psd-phys-card .cv img { width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important; }
+.psd-phys-card .cv .psd-phys-icon { width: 46px !important; height: 46px !important; opacity: .6 !important; }
+.psd-phys-card .cv .kind { position: absolute !important; left: 8px !important; bottom: 8px !important; display: inline-flex !important; gap: 5px !important; align-items: center !important; background: rgba(0,0,0,.7) !important; color: #fff !important; border-radius: 999px !important; padding: 3px 9px 3px 6px !important; font-size: 12px !important; }
+.psd-phys-card .cv .kind .psd-phys-icon { width: 15px !important; height: 15px !important; opacity: 1 !important; }
+.psd-phys-card h3 { font-size: 15px !important; margin: 0 !important; color: inherit !important; line-height: 1.3 !important; }
+.psd-phys-card h3 small { font-weight: normal !important; opacity: .75 !important; }
+.psd-phys-card .meta { font-size: 12px !important; opacity: .75 !important; line-height: 1.45 !important; }
+.psd-phys-card .meta a { color: inherit !important; }
+.psd-phys-card .act { margin-top: auto !important; }
+.psd-phys-card .act a.buy { display: inline-block !important; padding: 6px 14px !important; border-radius: 999px !important; background: var(--rel-deep, #2a2a2a) !important; color: var(--rel-deep-text, #fff) !important; font-weight: 600 !important; font-size: 13px !important; text-decoration: none !important; }
+.psd-phys-card .act .st { font-size: 12px !important; opacity: .7 !important; }
+.psd-phys-card.past .cv img { filter: grayscale(.6) !important; opacity: .75 !important; }
 .psd-rel-videos { margin-top: 22px !important; }
 .psd-rel-videos h2 { font-size: 15px !important; margin: 0 0 10px !important; color: inherit !important; opacity: .75 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
 .psd-vgrid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important; gap: 14px !important; }
@@ -965,6 +980,8 @@ if (!window._psilodumpModalDelegated) {
       if (p) { if (p.audio.paused) playTrack(p.index); else p.audio.pause(); }
       return;
     }
+    const pk = t.closest('[data-psd-pkind]');
+    if (pk) { const m = document.getElementById("psd-physical"); if (m && m._psdPhys) { m._psdPhys.kind = pk.getAttribute("data-psd-pkind"); m._psdPhysRender(); } return; }
     const th = t.closest('[data-psd-sort]');
     if (th) { const m = document.getElementById("psd-catalogue-table"); if (m && m._psdTab) { const k = th.getAttribute("data-psd-sort"); m._psdTab.dir = m._psdTab.sort === k ? -m._psdTab.dir : 1; m._psdTab.sort = k; m._psdTabRender(); } return; }
     const rb = t.closest('[data-psd-rby]');
@@ -1871,6 +1888,53 @@ function initCatalogueTable(){
   }).catch(err => { console.error("Failed to load catalogue:", err); mount.innerHTML = `<div class="psd-rel">Unable to load the catalogue right now. Please refresh the page.</div>`; });
 }
 
+// --- PHYSICAL page: <div id="psd-physical" data-kind="Vinyl"> — every physical edition (editions.csv) ---
+const PHYS_STATUS = [["available", "Available now"], ["upcoming", "Coming soon"], ["sold_out", "Sold out"], ["not_for_sale", "Not for sale"]];
+function initPhysical(){
+  const mount = document.getElementById("psd-physical");
+  if (!mount || mount._psdShown) return;
+  if (document.documentElement.hasAttribute("aria-busy")) return;
+  mount._psdShown = true;
+  ensureStyles();
+  mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading physical editions…</div>`;
+  loadCatalogue().then(rows => {
+    const cat = window._psilodumpCat, relById = {};
+    rows.forEach(r => { relById[r["ID"]] = r; });
+    const eds = (cat.editions || []).map(e => {
+      const rels = splitList(e["Releases"]).map(id => relById[id]).filter(Boolean);
+      return { e, kind: editionKind(e.Format) || "Other", rels, cover: (rels.find(r => r._thumbUrl) || {})._thumbUrl || "" };
+    });
+    const kinds = [...EDITION_KINDS.filter(k => eds.some(x => x.kind === k)), ...(eds.some(x => x.kind === "Other") ? ["Other"] : [])];
+    const preset = mount.getAttribute("data-kind") || "";
+    const st = mount._psdPhys = { kind: "" };
+    const fromHash = () => { const k = new URLSearchParams(location.hash.replace(/^#/, "")).get("kind") || preset; st.kind = kinds.find(x => x.toLowerCase() === String(k).toLowerCase()) || ""; };
+    fromHash();
+    const card = x => {
+      const e = x.e, past = editionPast(e), artist = e.Artist && e.Artist.toLowerCase() !== "psilodump" ? e.Artist : "";
+      const buy = e.Status === "available" && e.URL ? `<a class="buy" href="${esc(e.URL)}" target="_blank" rel="noopener">Buy</a>` : `<span class="st">${esc(EDITION_STATUS_LABELS[e.Status] || (e.Status === "available" ? "Available" : ""))}</span>`;
+      const contains = x.rels.length ? "Contains " + x.rels.map(r => `<a href="${esc(releaseHref(r))}">${esc(r[TITLE_COL])}</a>`).join(", ") : "";
+      return `<figure class="psd-phys-card${past ? " past" : ""}"><div class="cv">${x.cover ? `<img src="${esc(x.cover)}" alt="" loading="lazy">` : (PHYS_ICONS[x.kind] || "")}<span class="kind">${PHYS_ICONS[x.kind] || ""}${esc(e.Format || x.kind)}</span></div>
+        <h3>${esc(e.Title || "(untitled)")}${artist ? ` <small>by ${esc(artist)}</small>` : ""}</h3>
+        <div class="meta">${esc([e["Cat#"], e.Label, e.Year].filter(Boolean).join(" · "))}${e.Note ? "<br>" + esc(e.Note) : ""}${contains ? "<br>" + contains : ""}${/^https:\/\/www\.discogs\.com\//.test(e.Discogs || "") ? ` · <a href="${esc(e.Discogs)}" target="_blank" rel="noopener">Discogs</a>` : ""}</div>
+        <div class="act">${buy}</div></figure>`;
+    };
+    const render = () => {
+      const shown = eds.filter(x => !st.kind || x.kind === st.kind);
+      mount.querySelector(".psd-phys-list").innerHTML = PHYS_STATUS.map(([k, label]) => {
+        const list = shown.filter(x => (x.e.Status || "available") === k).sort((a, b) => String(b.e.Year).localeCompare(String(a.e.Year)) || String(a.e.Title).localeCompare(String(b.e.Title)));
+        return list.length ? `<section><h2>${label} <small>${list.length}</small></h2><div class="psd-phys-grid">${list.map(card).join("")}</div></section>` : "";
+      }).join("") || `<p class="psd-vempty">Nothing here yet.</p>`;
+      mount.querySelectorAll("[data-psd-pkind]").forEach(b => b.setAttribute("aria-pressed", b.getAttribute("data-psd-pkind") === st.kind ? "true" : "false"));
+      const h = st.kind && st.kind !== preset ? "kind=" + st.kind.toLowerCase() : "";
+      if (h !== location.hash.replace(/^#/, "")) history.replaceState(history.state, "", location.pathname + location.search + (h ? "#" + h : ""));
+    };
+    mount._psdPhysRender = render;
+    mount.innerHTML = `<div class="psd-rel psd-vpage"><div class="psd-vpage-bar"><button type="button" data-psd-pkind="">All <small>${eds.length}</small></button>${kinds.map(k => `<button type="button" data-psd-pkind="${k}">${esc(k)} <small>${eds.filter(x => x.kind === k).length}</small></button>`).join("")}</div><div class="psd-phys-list"></div></div>`;
+    if (!mount._psdHash) { mount._psdHash = true; window.addEventListener("hashchange", () => { const m = document.getElementById("psd-physical"); if (m && m._psdPhys) { const k = new URLSearchParams(location.hash.replace(/^#/, "")).get("kind") || m.getAttribute("data-kind") || ""; m._psdPhys.kind = kinds.find(x => x.toLowerCase() === k.toLowerCase()) || ""; m._psdPhysRender(); } }); }
+    render();
+  }).catch(err => { console.error("Failed to load editions:", err); mount.innerHTML = `<div class="psd-rel">Unable to load the physical editions right now. Please refresh the page.</div>`; });
+}
+
 // --- REMIXES page: <div id="psd-remixes-page"> — psilodump's remixes, from tracks.csv ---
 // A remix = type Remix and either another artist's track or psilodump named in the version.
 const PSILO_ALIAS = /psilodump|psilo|insekt|r\.?i\.?p\.?c|trmc|jumix/i;      // remix credits that are psilodump himself
@@ -2005,6 +2069,7 @@ function applyFixedType(){
 }
 
 function initApp(){
+  initPhysical();
   initDiscography();
   initCatalogueTable();
   initVideosPage();
@@ -2055,6 +2120,8 @@ new MutationObserver(() => {
   if (vp && !vp._psdShown) { initVideosPage(); return; }
   const rp = document.getElementById("psd-remixes-page");
   if (rp && !rp._psdShown) { initRemixesPage(); return; }
+  const ph = document.getElementById("psd-physical");
+  if (ph && !ph._psdShown) { initPhysical(); return; }
   const dg = document.getElementById("psd-discography");
   if (dg && !dg._psdShown) { initDiscography(); return; }
   const ct = document.getElementById("psd-catalogue-table");
