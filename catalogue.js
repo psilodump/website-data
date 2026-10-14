@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.28.2";
+const JS_VERSION = "1.29.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -333,6 +333,9 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-person-sec .by { opacity: .65 !important; font-size: 12px !important; }
 .psd-gig-role li small { opacity: .6 !important; font-size: 11px !important; margin-left: 4px !important; }
 .psd-rel .psd-post-tags a.person { border-style: solid !important; font-weight: 600 !important; }
+.psd-app-card .app-tracks { font-style: italic !important; }
+.psd-app-card .cv .kind { padding: 3px 9px !important; }
+.psd-alsoon { margin-top: 24px !important; }
 .psd-rel-videos { margin-top: 22px !important; }
 .psd-rel-videos h2 { font-size: 15px !important; margin: 0 0 10px !important; color: inherit !important; opacity: .75 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
 .psd-vgrid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important; gap: 14px !important; }
@@ -1079,6 +1082,8 @@ if (!window._psilodumpModalDelegated) {
       if (p) { if (p.audio.paused) { if (p.cues && p.audio.getAttribute("src")) p.audio.play().catch(() => {}); else playTrack(p.index); } else p.audio.pause(); }
       return;
     }
+    const ak = t.closest('[data-psd-akind]');
+    if (ak) { const m = document.getElementById("psd-appearances"); if (m && m._psdApp) { m._psdApp.type = ak.getAttribute("data-psd-akind"); m._psdAppRender(); } return; }
     const nk = t.closest('[data-psd-nkind]');
     if (nk) { const m = document.getElementById("psd-news"); if (m && m._psdNews) { m._psdNews.kind = nk.getAttribute("data-psd-nkind"); m._psdNews.shown = 20; m._psdNewsRender(); } return; }
     if (t.closest('[data-psd-nmore]')) { const m = document.getElementById("psd-news"); if (m && m._psdNews) { m._psdNews.shown += 30; m._psdNewsRender(); } return; }
@@ -1575,6 +1580,7 @@ function renderRelease(mount, rows){
   document.title = title + " | psilodump";
   renderPlayer(document.getElementById("psd-player"), r, albumId);
   appendReleasePictures(mount.querySelector(".psd-rel"), r);
+  appendAlsoOn(mount.querySelector(".psd-rel"), r);
   appendInTheNews(mount.querySelector(".psd-rel"), p => p["Release ID"] === r["ID"]);
 }
 
@@ -2602,7 +2608,7 @@ function initPerson(){
   mount._psdShown = location.search;
   ensureStyles();
   mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading…</div>`;
-  loadCatalogue().then(rows => Promise.all([loadPeople(), loadGigs(), loadTrackData(), loadPosts().catch(() => ({ posts: [] }))]).then(([pp, { gigs }, data, { posts }]) => {
+  loadCatalogue().then(rows => Promise.all([loadPeople(), loadGigs(), loadTrackData(), loadPosts().catch(() => ({ posts: [] })), loadAppearances().catch(() => ({ apps: [] }))]).then(([pp, { gigs }, data, { posts }, { apps }]) => {
     const key = (new URLSearchParams(location.search).get("p") || "").trim().toLowerCase();
     const p = pp.people.find(x => x._key.toLowerCase() === key || x.ID === key) || pp.byKey[personKey(key)];
     if (!p) { mount.innerHTML = `<div class="psd-rel"><nav class="psd-rel-nav"><a href="${GIGS_PATH}">← Gigs</a></nav><h1 class="psd-rel-title">Not found</h1></div>`; document.title = "Not found | psilodump"; return; }
@@ -2626,6 +2632,7 @@ function initPerson(){
     const remixes = trackHits.filter(t => /remix/i.test(t.Type || "") || /remix|mix|rmx/i.test(t.Version || ""));
     const tagged = posts.filter(x => String(x.Tags || "").split(/\s*,\s*/).some(t => pp.byKey[personKey(t)] === p));
     const vids = (data.videos || []).filter(v => namesPerson(v["Made By"], p));
+    const appsBy = apps.filter(a => namesPerson(a.Artist, p) || namesPerson(a.Label, p));
     const links = [];
     if (/^https?:\/\//.test(p.URL || "")) links.push(`<a href="${esc(p.URL)}" target="_blank" rel="noopener">Website</a>`);
     if (/^[0-9a-f-]{36}$/.test(p.MusicBrainz || "")) links.push(`<a href="https://musicbrainz.org/artist/${esc(p.MusicBrainz)}" target="_blank" rel="noopener">MusicBrainz</a>`);
@@ -2640,15 +2647,89 @@ function initPerson(){
       ${p.Note || p.Country || links.length ? `<p class="psd-person-note">${[p.Note ? linkify(p.Note) : "", p.Country ? esc(p.Country) : "", links.join(" · ")].filter(Boolean).join(" · ")}</p>` : ""}
       ${sec("Gigs together", gl.length, `<ul>${gl.map(({ r, g }) => `<li><small>${esc(String(g.Date).slice(0, 10))}</small><a href="${esc(gigHref(g))}">${esc(g.Event || "Gig")}</a> <span class="by">${esc([g.City, g.Country].filter(Boolean).join(", "))} · ${esc(LINEUP_ROLE_NAMES[r.Role] || r.Role)}${billedName(r["Billed As"]) && personKey(billedName(r["Billed As"])) !== personKey(p.Name) ? " as “" + esc(r["Billed As"]) + "”" : ""}</span></li>`).join("")}</ul>`)}
       ${sec("Releases", rels.length, `<ul>${rels.map(relRow).join("")}</ul>`)}
+      ${appsBy.length ? `<section class="psd-person-sec"><h2>Appearances <small>${appsBy.length}</small></h2><div class="psd-phys-grid">${appsBy.map(a => appCard(a)).join("")}</div></section>` : ""}
       ${sec("Remixes", remixes.length, `<ul>${remixes.map(t => `<li><small>${esc(String(t.Released || t.Finished || "").slice(0, 4))}</small>${esc(t.Title)}${t.Version ? ` <span class="by">(${esc(t.Version)})</span>` : ""}${t.Artist && t.Artist.toLowerCase() !== "psilodump" ? ` <span class="by">by ${esc(t.Artist)}</span>` : ""}</li>`).join("")}</ul>`)}
       ${sec("In the news", tagged.length, `<ul>${tagged.map(x => `<li><small>${esc(String(x.Date).slice(0, 10))}</small><a href="${esc(postHref(x))}">${esc(x.Title)}</a></li>`).join("")}</ul>`)}
       ${vids.length ? `<section class="psd-rel-videos"><h2>Videos</h2><div class="psd-vgrid">${vids.map(v => `<figure class="psd-vcard">${liteYouTube(v["Video ID"], v["YouTube Title"] || "Video")}<figcaption>${esc(v["YouTube Title"] || "Video")}<small>${esc(VIDEO_KINDS[v.Kind] || "Video")}</small></figcaption></figure>`).join("")}</div></section>` : ""}
-      ${!gl.length && !rels.length && !remixes.length && !tagged.length && !vids.length ? `<p>Nothing linked yet.</p>` : ""}
+      ${!gl.length && !rels.length && !remixes.length && !tagged.length && !vids.length && !appsBy.length ? `<p>Nothing linked yet.</p>` : ""}
     </div>`;
     document.title = p.Name + " | psilodump";
   })).catch(err => { console.error("Failed to load person:", err); mount.innerHTML = `<div class="psd-rel">Unable to load this page right now. Please refresh the page.</div>`; });
 }
 function billedName(s){ return String(s || "").replace(/^[\s\-–+]+/, "").replace(/\s*[\(\[].*$/, "").replace(/[:\s]+$/, "").trim(); }
+
+// --- APPEARANCES: compilations and others' releases with psilodump's tracks (appearances.csv + appearance_tracks.csv).
+// Page <div id="psd-appearances"> (/v-a-compilations); "Also on" on release pages; "Appearances" on person pages.
+const APPEARANCES_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/appearances.csv";
+const APPEARANCE_TRACKS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/appearance_tracks.csv";
+function loadAppearances(){
+  const cat = window._psilodumpCat;
+  if (!cat._appPromise) {
+    const get = url => fetch(url + "?v=" + Date.now()).then(r => r.ok ? r.text() : "").then(t => t ? toObjects(parseCSV(t)).rows : []).catch(() => []);
+    cat._appPromise = Promise.all([get(APPEARANCES_URL), get(APPEARANCE_TRACKS_URL), loadTrackData()]).then(([apps, rows, data]) => {
+      const byId = {};
+      apps.forEach(a => { a._tracks = []; a._links = String(a.Links || "").split(" | ").filter(u => /^https?:\/\//.test(u)); byId[a.ID] = a; });
+      rows.sort((x, y) => (+x.Position) - (+y.Position)).forEach(r => { const a = byId[r["Appearance ID"]]; if (a) a._tracks.push({ r, t: data.byId[r["Track ID"]] || null }); });
+      apps.sort((x, y) => String(y.Date).localeCompare(String(x.Date)));
+      return { apps, byId, data };
+    });
+  }
+  return cat._appPromise;
+}
+function appLinkLabel(u){
+  const host = ((String(u).match(/^https?:\/\/(?:www\.)?([^/]+)/i) || [])[1] || "").toLowerCase();
+  if (/bandcamp\.com$/.test(host)) return "Bandcamp";
+  return { "discogs.com": "Discogs", "open.spotify.com": "Spotify", "music.apple.com": "Apple Music", "youtube.com": "YouTube", "soundcloud.com": "SoundCloud", "archive.org": "Internet Archive", "beatport.com": "Beatport", "mixcloud.com": "Mixcloud" }[host] || host;
+}
+function appCard(a, extra){
+  const tracks = a._tracks.map(({ r, t }) => esc(t ? t.Title + (t.Version ? " (" + t.Version + ")" : "") : r.Title)).join(", ");
+  const links = [...(/^[0-9a-f-]{36}$/.test(a.MusicBrainz || "") ? [`<a href="https://musicbrainz.org/release-group/${esc(a.MusicBrainz)}" target="_blank" rel="noopener">MusicBrainz</a>`] : []),
+                 ...a._links.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener nofollow">${esc(appLinkLabel(u))}</a>`)];
+  return `<figure class="psd-phys-card psd-app-card"><div class="cv">${a.Cover ? `<img src="${esc(a.Cover)}" alt="" loading="lazy">` : ""}<span class="kind">${esc(a.Type || "")}</span></div>
+    <h3>${esc(a.Title)}${a.Artist && !/^various artists$/i.test(a.Artist) ? ` <small>by ${esc(a.Artist)}</small>` : ""}</h3>
+    <div class="meta">${esc([String(a.Date).slice(0, 4), a.Label, a["Cat#"], a.Formats].filter(Boolean).join(" · "))}</div>
+    ${tracks ? `<div class="meta app-tracks">with ${tracks}</div>` : ""}${a.Note ? `<div class="meta">${linkify(a.Note)}</div>` : ""}${extra || ""}
+    ${links.length ? `<div class="meta">${links.join(" · ")}</div>` : ""}</figure>`;
+}
+function initAppearances(){
+  const mount = document.getElementById("psd-appearances");
+  if (!mount || mount._psdShown) return;
+  if (document.documentElement.hasAttribute("aria-busy")) return;
+  mount._psdShown = true;
+  ensureStyles();
+  mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading…</div>`;
+  loadCatalogue().then(() => loadAppearances()).then(({ apps }) => {
+    const types = [...new Set(apps.map(a => a.Type).filter(Boolean))];
+    const h = new URLSearchParams(location.hash.replace(/^#/, ""));
+    const st = mount._psdApp = { type: h.get("type") || "", q: h.get("q") || "" };
+    mount.innerHTML = `<div class="psd-rel psd-vpage"><div class="psd-vpage-bar"><button type="button" data-psd-akind="">All <small>${apps.length}</small></button>${types.map(t => `<button type="button" data-psd-akind="${esc(t)}">${esc(t)} <small>${apps.filter(a => a.Type === t).length}</small></button>`).join("")}
+      <input type="search" placeholder="Search compilations, labels, tracks…" aria-label="Search" value="${esc(st.q)}"></div><div class="psd-app-list"></div></div>`;
+    const render = () => {
+      const q = st.q.trim().toLowerCase();
+      const list = apps.filter(a => (!st.type || a.Type === st.type) && (!q || [a.Title, a.Artist, a.Label, a["Cat#"], a.Date, ...a._tracks.map(({ r, t }) => t ? t.Title + " " + t.Version : r.Title)].join(" ").toLowerCase().includes(q)));
+      mount.querySelector(".psd-app-list").innerHTML = list.length ? `<div class="psd-phys-grid">${list.map(a => appCard(a)).join("")}</div>` : `<p class="psd-vempty">Nothing found.</p>`;
+      mount.querySelectorAll("[data-psd-akind]").forEach(b => b.setAttribute("aria-pressed", b.getAttribute("data-psd-akind") === st.type ? "true" : "false"));
+      const p = new URLSearchParams(); if (st.type) p.set("type", st.type); if (st.q) p.set("q", st.q);
+      const hs = p.toString(); if (hs !== location.hash.replace(/^#/, "")) history.replaceState(history.state, "", location.pathname + location.search + (hs ? "#" + hs : ""));
+    };
+    mount._psdAppRender = render;
+    mount.querySelector("input[type=search]").addEventListener("input", e => { st.q = e.target.value; render(); });
+    render();
+  }).catch(err => { console.error("Failed to load appearances:", err); mount.innerHTML = `<div class="psd-rel">Unable to load this right now. Please refresh the page.</div>`; });
+}
+// "Also on": compilations / others' releases with one of this release's tracks
+function appendAlsoOn(box, r){
+  if (!box) return;
+  loadAppearances().then(({ apps, data }) => {
+    const ids = new Set((data.lists[r["ID"]] || []).map(({ t }) => t.ID));
+    const list = apps.filter(a => a._tracks.some(({ t }) => t && ids.has(t.ID)));
+    if (!list.length || !document.body.contains(box) || box.querySelector(".psd-alsoon")) return;
+    const html = `<section class="psd-innews psd-alsoon"><h2>Tracks also on</h2><ul>${list.map(a => `<li><small>${esc(String(a.Date).slice(0, 4))}</small>${esc(a.Title)}${a.Artist && !/^various artists$/i.test(a.Artist) ? ` <span class="by">by ${esc(a.Artist)}</span>` : ""} <span class="by">· ${esc(a._tracks.filter(({ t }) => t && ids.has(t.ID)).map(({ t }) => t.Title).join(", "))}${a.Label ? " · " + esc(a.Label) : ""}</span></li>`).join("")}</ul><p class="by"><a href="${APPEARANCES_PATH}">All compilations &amp; appearances</a></p></section>`;
+    const anchor = box.querySelector(".psd-rel-editions, .psd-rel-credits, .psd-rel-more");
+    if (anchor) anchor.insertAdjacentHTML("beforebegin", html); else box.insertAdjacentHTML("beforeend", html);
+  }).catch(() => {});
+}
+const APPEARANCES_PATH = "/v-a-compilations";
 
 // --- REMIXES page: <div id="psd-remixes-page"> — psilodump's remixes, from tracks.csv ---
 // A remix = type Remix and either another artist's track or psilodump named in the version.
@@ -2784,6 +2865,7 @@ function applyFixedType(){
 }
 
 function initApp(){
+  initAppearances();
   initPerson();
   initNews();
   initPost();
@@ -2841,6 +2923,8 @@ new MutationObserver(() => {
   if (vp && !vp._psdShown) { initVideosPage(); return; }
   const rp = document.getElementById("psd-remixes-page");
   if (rp && !rp._psdShown) { initRemixesPage(); return; }
+  const ap = document.getElementById("psd-appearances");
+  if (ap && !ap._psdShown) { initAppearances(); return; }
   const pe = document.getElementById("psd-person");
   if (pe && pe._psdShown !== location.search) { initPerson(); return; }
   const nw = document.getElementById("psd-news");
