@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.26.3";
+const JS_VERSION = "1.27.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -281,6 +281,10 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-gig-img button { display: block !important; width: 100% !important; padding: 0 !important; border: 0 !important; background: rgba(127,127,127,.15) !important; border-radius: 6px !important; overflow: hidden !important; cursor: zoom-in !important; aspect-ratio: 1 !important; }
 .psd-gig-img img { width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important; }
 .psd-gig-img.flyer img { object-fit: contain !important; }
+.psd-gig-img.banner { grid-column: 1 / -1 !important; }
+.psd-gig-img.banner button { aspect-ratio: auto !important; }
+.psd-gig-img.banner img { height: auto !important; object-fit: contain !important; }
+.psd-relpics { margin-top: 26px !important; }
 .psd-gig-img figcaption { font-size: 12px !important; margin-top: 4px !important; opacity: .85 !important; line-height: 1.4 !important; }
 .psd-gig-img figcaption small { display: block !important; opacity: .75 !important; }
 .psd-today-gigs { list-style: none !important; margin: 0 !important; padding: 0 !important; }
@@ -1565,6 +1569,7 @@ function renderRelease(mount, rows){
   moveModalsToBody();
   document.title = title + " | psilodump";
   renderPlayer(document.getElementById("psd-player"), r, albumId);
+  appendReleasePictures(mount.querySelector(".psd-rel"), r);
   appendInTheNews(mount.querySelector(".psd-rel"), p => p["Release ID"] === r["ID"]);
 }
 
@@ -2511,6 +2516,22 @@ function initPost(){
     moveModalsToBody();
     document.title = p.Title + " | psilodump";
   }).catch(err => { console.error("Failed to load post:", err); mount.innerHTML = `<div class="psd-rel">Unable to load the post right now. Please refresh the page.</div>`; });
+}
+
+// "Pictures" on a release page: banners, photos, scans (release_images.csv; banners full width).
+const RELEASE_IMAGES_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/release_images.csv";
+function appendReleasePictures(box, r){
+  if (!box) return;
+  const cat = window._psilodumpCat;
+  if (!cat._relImgPromise) cat._relImgPromise = fetch(RELEASE_IMAGES_URL + "?v=" + Date.now()).then(x => x.ok ? x.text() : "").then(t => t ? toObjects(parseCSV(t)).rows : []).catch(() => []);
+  cat._relImgPromise.then(rows => {
+    const list = rows.filter(x => x["Release ID"] === r["ID"] && x.Image).sort((a, b) => (+a.Position - +b.Position) || (+a.ID - +b.ID));
+    if (!list.length || !document.body.contains(box) || box.querySelector(".psd-relpics")) return;
+    const fig = x => `<figure class="psd-gig-img${x.Kind === "banner" ? " banner" : x.Kind === "photo" ? "" : " flyer"}"><button type="button" data-lightbox="${esc(x.Image.replace("/thumb_", "/large_"))}" data-thumb="${esc(x.Image)}" aria-label="View larger"><img src="${esc(x.Kind === "banner" ? x.Image.replace("/thumb_", "/large_") : x.Image)}" alt="${esc(x.Caption || "")}" loading="lazy"></button>${x.Caption || x.Credit ? `<figcaption>${esc(x.Caption || "")}${x.Credit ? `<small>${esc(x.Credit)}</small>` : ""}</figcaption>` : ""}</figure>`;
+    const html = `<section class="psd-relpics"><h2>Pictures</h2><div class="psd-gig-grid">${list.map(fig).join("")}</div></section>`;
+    const anchor = box.querySelector(".psd-rel-editions, .psd-rel-credits, .psd-rel-more");
+    if (anchor) anchor.insertAdjacentHTML("beforebegin", html); else box.insertAdjacentHTML("beforeend", html);
+  });
 }
 
 // "In the news" under a release or a gig: the posts about it.
