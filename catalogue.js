@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.28.0";
+const JS_VERSION = "1.28.1";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -2611,10 +2611,17 @@ function initPerson(){
     const gl = p._gigs.map(r => ({ r, g: gigById[r["Gig ID"]] })).filter(x => x.g).sort((a, b) => String(b.g.Date).localeCompare(String(a.g.Date)));
     // releases: credited on the release, or on one of its tracks (artist / version)
     const relById = {}; rows.forEach(r => { relById[r["ID"]] = r; });
-    const relSet = new Map();
-    rows.forEach(r => { if (namesPerson(r["Artist"], p) || namesPerson(r["Original Credit"], p) || namesPerson(r["Label"], p)) relSet.set(r["ID"], r); });
+    // releases they are on, with how: artist, writing, remix, mastering, artwork, other credits, label, a track
+    const relSet = new Map(), roleOf = {};
+    const addRole = (r, role) => { relSet.set(r["ID"], r); (roleOf[r["ID"]] = roleOf[r["ID"]] || new Set()).add(role); };
+    const CREDIT_ROLES = { written_by: "writing", remixed_by: "remix", mastered_by: "mastering", artwork_by: "artwork", other: "credits" };
+    rows.forEach(r => {
+      if (namesPerson(r["Artist"], p) || namesPerson(r["Original Credit"], p)) addRole(r, "artist");
+      if (namesPerson(r["Label"], p)) addRole(r, "label");
+      const c = releaseCredits(r); Object.entries(CREDIT_ROLES).forEach(([k, role]) => { if (namesPerson(c[k], p)) addRole(r, role); });
+    });
     const trackHits = Object.values(data.byId).filter(t => namesPerson(t.Artist, p) || namesPerson(t.Version, p));
-    Object.entries(data.lists).forEach(([rid, list]) => { if (relById[rid] && list.some(({ t }) => trackHits.includes(t))) relSet.set(rid, relById[rid]); });
+    Object.entries(data.lists).forEach(([rid, list]) => { if (relById[rid] && list.some(({ t }) => trackHits.includes(t))) addRole(relById[rid], "track"); });
     const rels = [...relSet.values()].sort((a, b) => String(b._catalogue || b._released || "").localeCompare(String(a._catalogue || a._released || "")));
     const remixes = trackHits.filter(t => /remix/i.test(t.Type || "") || /remix|mix|rmx/i.test(t.Version || ""));
     const tagged = posts.filter(x => String(x.Tags || "").split(/\s*,\s*/).some(t => pp.byKey[personKey(t)] === p));
@@ -2624,7 +2631,7 @@ function initPerson(){
     if (/^[0-9a-f-]{36}$/.test(p.MusicBrainz || "")) links.push(`<a href="https://musicbrainz.org/artist/${esc(p.MusicBrainz)}" target="_blank" rel="noopener">MusicBrainz</a>`);
     if (p.Discogs) links.push(`<a href="${esc(/^https?:/.test(p.Discogs) ? p.Discogs : "https://www.discogs.com/artist/" + p.Discogs)}" target="_blank" rel="noopener">Discogs</a>`);
     const aka = p._names.slice(1);
-    const relRow = r => `<li><small>${esc(String(r._catalogue || r._released || "").slice(0, 4))}</small><a href="${esc(releaseHref(r))}">${esc(r[TITLE_COL])}</a>${releaseArtist(r).toLowerCase() !== "psilodump" ? ` <span class="by">by ${esc(releaseArtist(r))}</span>` : ""}</li>`;
+    const relRow = r => `<li><small>${esc(String(r._catalogue || r._released || "").slice(0, 4))}</small><a href="${esc(releaseHref(r))}">${esc(r[TITLE_COL])}</a>${releaseArtist(r).toLowerCase() !== "psilodump" ? ` <span class="by">by ${esc(releaseArtist(r))}</span>` : ""}${(() => { const ro = [...(roleOf[r["ID"]] || [])].filter(x => x !== "artist"); return ro.length ? `<span class="by"> · ${esc(ro.join(", "))}</span>` : ""; })()}</li>`;
     const sec = (title, n, body) => n ? `<section class="psd-innews psd-person-sec"><h2>${title} <small>${n}</small></h2>${body}</section>` : "";
     mount.innerHTML = `<div class="psd-rel psd-person">
       <nav class="psd-rel-nav"><a href="${GIGS_PATH}">← Gigs</a><a href="${NEWS_PATH}">News</a></nav>
