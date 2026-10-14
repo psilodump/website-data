@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.21.1";
+const JS_VERSION = "1.22.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -1248,6 +1248,12 @@ function physicalFormats(r){
 // player, built from their album page's track list (same site, so it can be read).
 const RELEASE_PATH = "/release";
 const CATALOGUE_PATH = "/";
+const TODAY_PATH = "/today";
+// A full YYYY-MM-DD date as a link to "On this day" for that day; other dates (YYYY, empty) as plain text.
+function dayLink(date){
+  const m = String(date || "").match(/^\d{4}-(\d{2})-(\d{2})$/);
+  return m ? `<a class="psd-day" href="${TODAY_PATH}?date=${m[1]}-${m[2]}" title="On this day">${esc(date)}</a>` : esc(date || "");
+}
 // Catalogue titles link to the release page (the Bandzoogle page /release exists since 2026-10-09).
 const RELEASE_LINKS = true;
 
@@ -1396,8 +1402,8 @@ function renderRelease(mount, rows){
   const title = r[TITLE_COL] || "(untitled)";
   const link = (x, label) => `<a href="${esc(releaseHref(x))}">${esc(label || x[TITLE_COL] || "(untitled)")}</a>`;
   const facts = [];
-  if (r._released) facts.push(["Released", esc(r._released)]);
-  if (r._catalogue && r._catalogue !== r._released) facts.push(["Catalogue date", esc(r._catalogue)]);
+  if (r._released) facts.push(["Released", dayLink(r._released)]);
+  if (r._catalogue && r._catalogue !== r._released) facts.push(["Catalogue date", dayLink(r._catalogue)]);
   if (r[TYPE_COL]) facts.push(["Type", esc(r[TYPE_COL])]);
   if (r[CAT_COL]) facts.push(["Cat#", esc(r[CAT_COL])]);
   if (r._labels.length) facts.push(["Label", r._labels.map(l => `<a href="${CATALOGUE_PATH}#label=${encodeURIComponent(l)}">${esc(l)}</a>`).join(", ")]);
@@ -1894,6 +1900,7 @@ function initCatalogueTable(){
           return (x.localeCompare(y, undefined, { numeric: true, sensitivity: "base" }) || catOrder(a, b)) * st.dir; });
       mount.querySelector("tbody").innerHTML = list.map(r => `<tr>${CTAB_COLS.map(([k, , get]) => {
         const v = esc(get(r));
+        if (k === "released" || k === "catdate") return `<td>${dayLink(get(r))}</td>`;
         return k === "title" ? `<td class="w"><a href="${esc(releaseHref(r))}">${v || "(untitled)"}</a></td>` : `<td${k === "label" || k === "format" || k === "artist" ? ' class="w"' : ""}>${v}</td>`;
       }).join("")}</tr>`).join("");
       mount.querySelectorAll("[data-psd-sort]").forEach(th => th.setAttribute("aria-sort", th.getAttribute("data-psd-sort") === st.sort ? (st.dir > 0 ? "ascending" : "descending") : "none"));
