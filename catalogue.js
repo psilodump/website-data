@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.14.0";
+const JS_VERSION = "1.15.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -201,6 +201,7 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-vpage h2 { font-size: 15px !important; margin: 0 0 10px !important; color: inherit !important; opacity: .8 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
 .psd-vpage h2 small { font-weight: normal !important; opacity: .7 !important; text-transform: none !important; letter-spacing: 0 !important; }
 .psd-vpage h3 { font-size: 13px !important; margin: 14px 0 8px !important; color: inherit !important; opacity: .75 !important; font-weight: 600 !important; }
+.psd-vpage .psd-vothers { margin-top: 36px !important; padding-top: 18px !important; border-top: 1px solid rgba(127,127,127,.3) !important; opacity: .92 !important; }
 .psd-vpage .psd-vempty { opacity: .7 !important; font-size: 14px !important; }
 .psd-rel-videos { margin-top: 22px !important; }
 .psd-rel-videos h2 { font-size: 15px !important; margin: 0 0 10px !important; color: inherit !important; opacity: .75 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
@@ -354,7 +355,7 @@ const TRACKLISTS_URL = "https://raw.githubusercontent.com/psilodump/website-data
 const VIDEOS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/videos.csv";
 // Order and names of video kinds (admin: VIDEO_KINDS in videos_lib.php).
 const VIDEO_KINDS = { music_video: "Music video", tracker: "Tracker video", visualiser: "Visualiser", vinyl: "Vinyl playback", live: "Live",
-  teaser: "Teaser / trailer", full_album: "Full album audio", audio: "Audio", scrapbook: "Scrapbook", other: "Video" };
+  teaser: "Teaser / trailer", full_album: "Full album audio", audio: "Audio", scrapbook: "Scrapbook", dj_set: "DJ set / mix", tribute: "Cover / tribute", other: "Video" };
 // Icons come from GitHub Pages like this script (jsDelivr's @main can serve an old commit
 // for hours, so a newly added icon would 404 there).
 const ICON_BASE = "https://psilodump.github.io/website-data/icons/";
@@ -1234,7 +1235,8 @@ function loadTrackData(){
       rows.forEach(r => { const t = byId[r["Track ID"]]; if (t) (lists[r["Release ID"]] = lists[r["Release ID"]] || []).push({ row: r, t }); });
       Object.values(lists).forEach(l => l.sort((a, b) => (+a.row.Disc - +b.row.Disc) || (+a.row.Position - +b.row.Position)));
       const videosByTrack = {}, videosByRelease = {};
-      videos.forEach(v => {
+      // "From Others" (fan videos, DJ sets, audience recordings) only appear on the VIDEOS page.
+      videos.filter(v => v["From Others"] !== "1").forEach(v => {
         if (v["Track ID"]) (videosByTrack[v["Track ID"]] = videosByTrack[v["Track ID"]] || []).push(v);
         if (v["Release ID"]) (videosByRelease[v["Release ID"]] = videosByRelease[v["Release ID"]] || []).push(v);
       });
@@ -1809,27 +1811,31 @@ function buildVideosPage(mount, rows, data){
     const rel = relById[v["Release ID"]] || (t ? trackRel[t.ID] : null);
     const label = t ? t.Title + (t.Version ? " (" + t.Version + ")" : "") : (relById[v["Release ID"]] ? relById[v["Release ID"]][TITLE_COL] : (v["YouTube Title"] || "Video"));
     const artist = t && t.Artist && t.Artist.toLowerCase() !== "psilodump" ? t.Artist : "";
-    return { id: v["Video ID"], kind: VIDEO_KINDS[v.Kind] ? v.Kind : "other", label, artist, note: v.Note || "", rel, date: relDate(rel) || v.Published || "",
-      search: [label, artist, v.Note, rel ? rel[TITLE_COL] : "", v["YouTube Title"]].join(" ").toLowerCase() };
+    return { id: v["Video ID"], kind: VIDEO_KINDS[v.Kind] ? v.Kind : "other", label, artist, by: v["Made By"] || "", others: v["From Others"] === "1", note: v.Note || "", rel, date: relDate(rel) || v.Published || "",
+      search: [label, artist, v.Note, v["Made By"], rel ? rel[TITLE_COL] : "", v["YouTube Title"]].join(" ").toLowerCase() };
   }).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
   const preset = mount.getAttribute("data-kind") || "";
   const st = mount._psdState = { kind: preset, q: "" };
-  const fromHash = () => { const p = new URLSearchParams(location.hash.replace(/^#/, "")); if (p.has("kind")) st.kind = VIDEO_KINDS[p.get("kind")] ? p.get("kind") : ""; if (p.has("q")) st.q = p.get("q"); };
+  const OTHERS = "others";      // pseudo-kind: everything made by others
+  const validKind = k => VIDEO_KINDS[k] || k === OTHERS;
+  const fromHash = () => { const p = new URLSearchParams(location.hash.replace(/^#/, "")); if (p.has("kind")) st.kind = validKind(p.get("kind")) ? p.get("kind") : ""; if (p.has("q")) st.q = p.get("q"); };
   fromHash();
-  const counts = {}; items.forEach(x => { counts[x.kind] = (counts[x.kind] || 0) + 1; });
-  const kinds = Object.keys(VIDEO_KINDS).filter(k => counts[k]);
-  const card = x => `<figure class="psd-vcard" id="psd-v-${esc(x.id)}">${liteYouTube(x.id, x.label)}<figcaption>${esc(x.label)}${x.artist ? " <small style=\"display:inline!important\">by " + esc(x.artist) + "</small>" : ""}<small>${[st.kind ? "" : esc(VIDEO_KINDS[x.kind]), x.note && x.kind !== "tracker" ? esc(x.note) : "", x.rel ? `from <a href="${esc(releaseHref(x.rel))}">${esc(x.rel[TITLE_COL])}</a>${x.date ? " (" + esc(x.date.slice(0, 4)) + ")" : ""}` : ""].filter(Boolean).join(" · ")}</small></figcaption></figure>`;
+  const counts = {}; items.forEach(x => { const k = x.others ? OTHERS : x.kind; counts[k] = (counts[k] || 0) + 1; });
+  const kinds = Object.keys(VIDEO_KINDS).filter(k => counts[k]);   // (OTHERS is added separately, last)
+  const card = x => `<figure class="psd-vcard" id="psd-v-${esc(x.id)}">${liteYouTube(x.id, x.label)}<figcaption>${esc(x.label)}${x.artist ? " <small style=\"display:inline!important\">by " + esc(x.artist) + "</small>" : ""}<small>${[st.kind && !x.others ? "" : esc(VIDEO_KINDS[x.kind]), x.by ? (x.others ? "by " : "video by ") + esc(x.by) : "", x.note && x.kind !== "tracker" ? esc(x.note) : "", x.rel ? `from <a href="${esc(releaseHref(x.rel))}">${esc(x.rel[TITLE_COL])}</a>${x.date ? " (" + esc(x.date.slice(0, 4)) + ")" : ""}` : ""].filter(Boolean).join(" · ")}</small></figcaption></figure>`;
   const grid = list => `<div class="psd-vgrid">${list.map(card).join("")}</div>`;
   const render = () => {
     const q = st.q.trim().toLowerCase();
-    const shown = items.filter(x => (!st.kind || x.kind === st.kind) && (!q || x.search.includes(q)));
-    const sections = (st.kind ? [st.kind] : kinds).map(k => {
-      const list = shown.filter(x => x.kind === k);
+    const shown = items.filter(x => (!st.kind || (st.kind === OTHERS ? x.others : !x.others && x.kind === st.kind)) && (!q || x.search.includes(q)));
+    const sections = (st.kind ? [st.kind] : [...kinds, OTHERS]).map(k => {
+      // "From others" collects every kind made by others, at the end of the page
+      const list = k === OTHERS ? shown.filter(x => x.others) : shown.filter(x => !x.others && x.kind === k);
       if (!list.length) return "";
       // tracker videos: grouped by the tracker software (the video's note)
       const body = k === "tracker"
         ? [...new Set(list.map(x => x.note))].map(n => (n ? `<h3>${esc(n)}</h3>` : "") + grid(list.filter(x => x.note === n))).join("")
         : grid(list);
+      if (k === OTHERS) return `<section class="psd-vothers"><h2>From others <small>${list.length} · fan videos, DJ sets, covers, audience recordings</small></h2>${grid(list)}</section>`;
       return `<section><h2>${esc(VIDEO_KINDS[k])} <small>${list.length}</small></h2>${body}</section>`;
     }).join("");
     mount.querySelector(".psd-vpage-list").innerHTML = sections || `<p class="psd-vempty">No videos match.</p>`;
@@ -1840,11 +1846,11 @@ function buildVideosPage(mount, rows, data){
   };
   mount._psdRender = render;
   mount.innerHTML = `<div class="psd-rel psd-vpage">
-    <div class="psd-vpage-bar"><button type="button" data-psd-vkind="">All <small>${items.length}</small></button>${kinds.map(k => `<button type="button" data-psd-vkind="${k}">${esc(VIDEO_KINDS[k])} <small>${counts[k]}</small></button>`).join("")}
+    <div class="psd-vpage-bar"><button type="button" data-psd-vkind="">All <small>${items.length}</small></button>${kinds.map(k => `<button type="button" data-psd-vkind="${k}">${esc(VIDEO_KINDS[k])} <small>${counts[k]}</small></button>`).join("")}${counts[OTHERS] ? `<button type="button" data-psd-vkind="${OTHERS}">From others <small>${counts[OTHERS]}</small></button>` : ""}
       <input type="search" placeholder="Search videos…" aria-label="Search videos" value="${esc(st.q)}"></div>
     <div class="psd-vpage-list"></div></div>`;
   mount.querySelector(".psd-vpage-bar input").addEventListener("input", e => { st.q = e.target.value; render(); });
-  if (!mount._psdHash) { mount._psdHash = true; window.addEventListener("hashchange", () => { const m = document.getElementById("psd-videos-page"); if (m && m._psdState && m._psdRender) { const p = new URLSearchParams(location.hash.replace(/^#/, "")); m._psdState.kind = VIDEO_KINDS[p.get("kind")] ? p.get("kind") : (m.getAttribute("data-kind") || ""); m._psdRender(); } }); }
+  if (!mount._psdHash) { mount._psdHash = true; window.addEventListener("hashchange", () => { const m = document.getElementById("psd-videos-page"); if (m && m._psdState && m._psdRender) { const p = new URLSearchParams(location.hash.replace(/^#/, "")); m._psdState.kind = (VIDEO_KINDS[p.get("kind")] || p.get("kind") === "others") ? p.get("kind") : (m.getAttribute("data-kind") || ""); m._psdRender(); } }); }
   render();
 }
 
