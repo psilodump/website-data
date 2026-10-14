@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.16.0";
+const JS_VERSION = "1.17.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -945,6 +945,8 @@ if (!window._psilodumpModalDelegated) {
       if (p) { if (p.audio.paused) playTrack(p.index); else p.audio.pause(); }
       return;
     }
+    const rb = t.closest('[data-psd-rby]');
+    if (rb) { const m = document.getElementById("psd-remixes-page"); if (m && m._psdRemix) { m._psdRemix.by = rb.getAttribute("data-psd-rby"); m._psdRemixRender(); } return; }
     const vk = t.closest('[data-psd-vkind]');
     if (vk) { const m = document.getElementById("psd-videos-page"); if (m && m._psdState) { m._psdState.kind = vk.getAttribute("data-psd-vkind"); m._psdRender(); } return; }
     const yt = t.closest('[data-psd-yt]');
@@ -1788,7 +1790,10 @@ function updateJsonLd(){
 
 // --- REMIXES page: <div id="psd-remixes-page"> — psilodump's remixes, from tracks.csv ---
 // A remix = type Remix and either another artist's track or psilodump named in the version.
-const isPsilodumpRemix = t => /remix/i.test(t.Type || "") && ((t.Artist && !/^psilodump$/i.test(t.Artist.trim())) || /psilodump|psilo/i.test(t.Version || ""));
+const PSILO_ALIAS = /psilodump|psilo|insekt|r\.?i\.?p\.?c|trmc|jumix/i;      // remix credits that are psilodump himself
+const isPsilodumpRemix = t => /remix/i.test(t.Type || "") && ((t.Artist && !/psilodump/i.test(t.Artist)) || PSILO_ALIAS.test(t.Version || ""));
+// Others' remixes of psilodump tracks: type Remix, the original is psilodump's (artist empty / incl. psilodump), remixer not psilodump.
+const isRemixOfPsilodump = t => /remix/i.test(t.Type || "") && (!t.Artist || /psilodump/i.test(t.Artist)) && !!t.Version && !PSILO_ALIAS.test(t.Version);
 function initRemixesPage(){
   const mount = document.getElementById("psd-remixes-page");
   if (!mount || mount._psdShown) return;
@@ -1805,10 +1810,9 @@ function buildRemixesPage(mount, rows, data){
   const onRelease = {};       // track ID → the catalogue releases it is on
   Object.entries(data.lists).forEach(([rid, list]) => list.forEach(({ t }) => { if (relById[rid]) (onRelease[t.ID] = onRelease[t.ID] || []).push(relById[rid]); }));
   const date = t => t.Released || t.Finished || "";
-  const remixes = Object.values(data.byId).filter(isPsilodumpRemix).sort((a, b) => date(b).localeCompare(date(a)) || a.Title.localeCompare(b.Title));
-  let lastYear = null;
-  const items = remixes.map(t => {
-    const year = (date(t).match(/^\d{4}/) || ["Undated"])[0];
+  const listFor = test => { let lastYear = null;
+    return Object.values(data.byId).filter(test).sort((a, b) => date(b).localeCompare(date(a)) || a.Title.localeCompare(b.Title)).map(t => {
+    const year = (date(t).match(/^\d{4}/) || ["Undated"])[0];   // (inside listFor)
     const heading = year !== lastYear ? year : ""; lastYear = year;
     const bz = (String(t.Source || "").match(/track\/(\d+)/) || [])[1];
     const ytm = (String(t.YouTube || "").match(/music\.youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/) || [])[1] || "";
@@ -1816,13 +1820,25 @@ function buildRemixesPage(mount, rows, data){
     return { title: t.Title || "(untitled)", version: t.Version || "", artist: t.Artist || "", former: [], duration: secToTime(t.Length), disc: 1, pos: null, heading,
       note: [t.Description, rels.length ? "on " + rels.map(r => r[TITLE_COL]).join(", ") : ""].filter(Boolean).join(" · "),
       src: bz ? "/player/tracks/" + bz + ".mp3" : "", trackId: t.ID, ytMusic: ytm, video: ((data.videosByTrack[t.ID] || [])[0] || {})["Video ID"] || "" };
-  });
-  mount.innerHTML = `<div class="psd-rel"><p class="psd-rel-sub">${items.length} remixes · ${items.filter(x => x.src).length} playable here</p>
-    <section class="psd-rel-player" id="psd-player"></section><section class="psd-rel-videos" id="psd-videos"></section></div>`;
-  const box = document.getElementById("psd-player");
-  if (items.some(x => x.src)) buildTrackPlayer(box, { [TITLE_COL]: "psilodump remixes" }, items, "");
-  else box.innerHTML = trackListHtml(items, false);
-  renderVideos({ ID: "" }, data, items);
+    }); };
+  const views = { mine: { label: "psilodump remixes", items: listFor(isPsilodumpRemix) }, others: { label: "Remixes of psilodump", items: listFor(isRemixOfPsilodump) } };
+  const st = mount._psdRemix = { by: /(^|[#&])by=others(&|$)/.test(location.hash) ? "others" : "mine" };
+  mount.innerHTML = `<div class="psd-rel psd-vpage"><div class="psd-vpage-bar">${Object.entries(views).map(([k, v]) => `<button type="button" data-psd-rby="${k}">${esc(v.label)} <small>${v.items.length}</small></button>`).join("")}</div>
+    <p class="psd-rel-sub psd-rcount"></p><section class="psd-rel-player" id="psd-player"></section><section class="psd-rel-videos" id="psd-videos"></section></div>`;
+  const render = () => {
+    const v = views[st.by], items = v.items;
+    stopPlayer();
+    mount.querySelectorAll("[data-psd-rby]").forEach(b => b.setAttribute("aria-pressed", b.getAttribute("data-psd-rby") === st.by ? "true" : "false"));
+    mount.querySelector(".psd-rcount").textContent = `${items.length} remixes · ${items.filter(x => x.src).length} playable here`;
+    const box = document.getElementById("psd-player");
+    if (items.some(x => x.src)) buildTrackPlayer(box, { [TITLE_COL]: v.label }, items, "");
+    else box.innerHTML = trackListHtml(items, false);
+    renderVideos({ ID: "" }, data, items);
+    const h = st.by === "others" ? "by=others" : "";
+    if (h !== location.hash.replace(/^#/, "")) history.replaceState(history.state, "", location.pathname + location.search + (h ? "#" + h : ""));
+  };
+  mount._psdRemixRender = render;
+  render();
 }
 
 // --- VIDEOS page: <div id="psd-videos-page" data-kind="tracker"> (data-kind optional: preset filter) ---
