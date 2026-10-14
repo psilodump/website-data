@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.24.0";
+const JS_VERSION = "1.25.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -1026,12 +1026,13 @@ if (!window._psilodumpModalDelegated) {
     const track = t.closest('[data-psd-track]');
     if (track) {
       const i = Number(track.getAttribute('data-psd-track')), p = window._psdPlayer;
-      if (p && p.index === i && !p.audio.paused) p.audio.pause(); else playTrack(i);
+      if (p && p.cues) playTrack(i);              // a setlist row always jumps to its start
+      else if (p && p.index === i && !p.audio.paused) p.audio.pause(); else playTrack(i);
       return;
     }
     if (t.closest('[data-psd-play]')) {
       const p = window._psdPlayer;
-      if (p) { if (p.audio.paused) playTrack(p.index); else p.audio.pause(); }
+      if (p) { if (p.audio.paused) { if (p.cues && p.audio.getAttribute("src")) p.audio.play().catch(() => {}); else playTrack(p.index); } else p.audio.pause(); }
       return;
     }
     const dy = t.closest('[data-psd-day]');
@@ -1669,7 +1670,7 @@ function buildTrackPlayer(box, r, tracks, albumId){
     <div class="psd-player">
       <div class="psd-player-bar">
         <button type="button" class="psd-pp" data-psd-play aria-label="Play">${PLAY_ICON}</button>
-        <div class="psd-now"><span class="psd-now-title">${esc(tracks[first].title)}</span><span class="psd-time">0:00 / ${esc(tracks[first].duration)}</span></div>
+        <div class="psd-now"><span class="psd-now-title">${esc(tracks[first].title)}</span><span class="psd-time">0:00 / ${tracks.some(t => t.start != null) ? "" : esc(tracks[first].duration)}</span></div>
       </div>
       <div class="psd-progress" data-psd-seek role="slider" tabindex="0" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="psd-progress-fill"></div></div>
       ${trackListHtml(tracks, true)}
@@ -1677,13 +1678,21 @@ function buildTrackPlayer(box, r, tracks, albumId){
   const audio = new Audio();
   audio.preload = "none";
   const p = window._psdPlayer = { audio, tracks, index: first, box, title: r[TITLE_COL] || "", cover: r._largeUrl || r._thumbUrl || "" };
-  audio.addEventListener("timeupdate", () => updatePlayerUI());
+  // Cue mode: every row is a start position in the same recording (a gig's setlist over its live set).
+  p.cues = tracks.some(t => t.start != null);
+  audio.addEventListener("timeupdate", () => {
+    if (p.cues && !audio.seeking) {           // the row under the playhead becomes the current one
+      let k = -1; p.tracks.forEach((t, j) => { if (t.start != null && t.start <= audio.currentTime + 0.5) k = j; });
+      if (k >= 0) p.index = k;
+    }
+    updatePlayerUI();
+  });
   audio.addEventListener("loadedmetadata", () => updatePlayerUI());
   audio.addEventListener("play", () => updatePlayerUI());
   audio.addEventListener("pause", () => updatePlayerUI());
   const nextPlayable = from => { for (let k = from; k < p.tracks.length; k++) if (p.tracks[k].src && !p.tracks[k].broken) return k; return -1; };
   p.next = nextPlayable;
-  audio.addEventListener("ended", () => { const n = nextPlayable(p.index + 1); if (n >= 0) playTrack(n); else updatePlayerUI(); });
+  audio.addEventListener("ended", () => { if (p.cues) { updatePlayerUI(); return; } const n = nextPlayable(p.index + 1); if (n >= 0) playTrack(n); else updatePlayerUI(); });
   // A track page that no longer exists: mark it and go on with the next one.
   audio.addEventListener("error", () => {
     const t = p.tracks[p.index]; if (!t || !audio.getAttribute("src")) return;
@@ -1696,6 +1705,16 @@ function buildTrackPlayer(box, r, tracks, albumId){
 function playTrack(i){
   const p = window._psdPlayer;
   if (!p || !p.tracks[i] || !p.tracks[i].src || p.tracks[i].broken) return;
+  if (p.cues) {                                // jump to the row's position in the recording
+    const tr = p.tracks[i];
+    if (p.audio.getAttribute("src") !== tr.src) p.audio.src = tr.src;
+    p.index = i;
+    const go = () => { try { p.audio.currentTime = tr.start || 0; } catch (e) {} };
+    if (p.audio.readyState >= 1) go(); else p.audio.addEventListener("loadedmetadata", go, { once: true });
+    p.audio.play().catch(() => {});
+    updatePlayerUI();
+    return;
+  }
   if (i !== p.index || !p.audio.src) {
     p.index = i;
     p.audio.src = p.tracks[i].src;
@@ -1718,7 +1737,7 @@ function updatePlayerUI(){
   const pp = p.box.querySelector(".psd-pp");
   if (pp) { pp.innerHTML = playing ? PAUSE_ICON : PLAY_ICON; pp.setAttribute("aria-label", playing ? "Pause" : "Play"); }
   const nowT = p.box.querySelector(".psd-now-title"); if (nowT) nowT.textContent = t.title + (t.version ? " (" + t.version + ")" : "");
-  const time = p.box.querySelector(".psd-time"); if (time) time.textContent = fmtTime(a.currentTime) + " / " + (isFinite(a.duration) ? fmtTime(a.duration) : t.duration);
+  const time = p.box.querySelector(".psd-time"); if (time) time.textContent = fmtTime(a.currentTime) + " / " + (isFinite(a.duration) ? fmtTime(a.duration) : (p.cues ? "" : t.duration));
   const pct = isFinite(a.duration) && a.duration > 0 ? (a.currentTime / a.duration) * 100 : 0;
   const fill = p.box.querySelector(".psd-progress-fill"); if (fill) fill.style.width = pct + "%";
   const bar = p.box.querySelector(".psd-progress"); if (bar) bar.setAttribute("aria-valuenow", String(Math.round(pct)));
@@ -2221,12 +2240,19 @@ function renderGig(mount, gigs, data){
   }).join("");
   const imgFig = x => `<figure class="psd-gig-img${x.Kind === "flyer" ? " flyer" : ""}"><button type="button" data-lightbox="${esc(gigLarge(x))}" data-thumb="${esc(x.Image)}" aria-label="View larger: ${esc(x.Caption || (x.Kind === "flyer" ? "flyer" : "photo"))}"><img src="${esc(x.Image)}" alt="${esc(x.Caption || "")}" loading="lazy"></button>${x.Caption || x.Credit ? `<figcaption>${esc(x.Caption || "")}${x.Credit ? `<small>${x.Kind === "flyer" ? "Design" : "Photo"}: ${esc(x.Credit)}</small>` : ""}</figcaption>` : ""}</figure>`;
   const bz = (String(g.Source || "").match(/track\/(\d+)/) || [])[1];
+  const tName = t => t.Title + (t.Version ? " (" + t.Version + ")" : "");
   const setItems = g._setlist.map(x => {
     const t = x["Track ID"] ? data.byId[x["Track ID"]] : null;
-    return { title: t ? t.Title || "(untitled)" : x.Title, version: t ? t.Version || "" : "", artist: t ? t.Artist || "" : "",
-      former: t ? String(t["Former Titles"] || "").split(" | ").filter(Boolean) : [], duration: "", disc: 1, pos: +x.Position || 0, heading: "",
-      note: x.Note || "", src: "", trackId: t ? t.ID : "", ytMusic: "", video: t ? ((data.videosByTrack[t.ID] || [])[0] || {})["Video ID"] || "" : "" };
+    const also = String(x.Also || "").split(",").map(id => data.byId[id.trim()]).filter(Boolean);   // played at the same time
+    const start = /^\d+$/.test(x.Start || "") ? +x.Start : null;
+    return { title: t ? (also.length ? [t, ...also].map(tName).join(" + ") : t.Title || "(untitled)") : x.Title, version: t && !also.length ? t.Version || "" : "",
+      artist: t && !also.length ? t.Artist || "" : "", former: t && !also.length ? String(t["Former Titles"] || "").split(" | ").filter(Boolean) : [],
+      duration: start != null ? fmtTime(start) : "", disc: 1, pos: +x.Position || 0, heading: "", note: x.Note || "",
+      start, src: "", trackId: t ? t.ID : "", ytMusic: "", video: t ? ((data.videosByTrack[t.ID] || [])[0] || {})["Video ID"] || "" : "" };
   });
+  // With start times and a live recording, the setlist is the player: each row jumps into the recording.
+  const cues = bz && setItems.some(x => x.start != null);
+  if (cues) setItems.forEach(x => { if (x.start != null) x.src = "/player/tracks/" + bz + ".mp3"; });
   mount.innerHTML = `
   <div class="psd-rel psd-gig">
     <nav class="psd-rel-nav"><a href="${GIGS_PATH}">← All gigs</a>
@@ -2240,8 +2266,8 @@ function renderGig(mount, gigs, data){
         ${g.Note ? `<p class="psd-gig-note">${linkify(g.Note.replace(/<br\s*\/?>/gi, "\n")).replace(/\n/g, "<br>")}</p>` : ""}
       </div>
     </div>
-    ${bz ? `<section class="psd-rel-player" id="psd-player"></section>` : ""}
-    ${setItems.length ? `<section class="psd-gig-setlist"><h2>Setlist</h2>${trackListHtml(setItems, false)}</section>` : ""}
+    ${bz ? `${cues ? "<h2>Live recording &amp; setlist</h2>" : ""}<section class="psd-rel-player" id="psd-player"></section>` : ""}
+    ${setItems.length && !cues ? `<section class="psd-gig-setlist"><h2>Setlist</h2>${trackListHtml(setItems, false)}</section>` : ""}
     ${lineup ? `<section class="psd-gig-lineup"><h2>Line-up</h2><div class="psd-gig-roles">${lineup}</div></section>` : ""}
     ${vids ? `<section class="psd-rel-videos"><h2>Video</h2><div class="psd-vgrid">${vids}</div></section>` : ""}
     ${g._images.length > 1 ? `<section class="psd-gig-photos"><h2>${flyers.length && photos.length ? "Flyers & photos" : photos.length ? "Photos" : "Flyers"}</h2><div class="psd-gig-grid">${[...flyers, ...photos].map(imgFig).join("")}</div></section>` : ""}
@@ -2249,7 +2275,8 @@ function renderGig(mount, gigs, data){
   if (!document.getElementById("rel-lightbox")) mount.insertAdjacentHTML("beforeend", `<div id="rel-lightbox" class="rel-modal-overlay"><img id="rel-lightbox-img" class="rel-lightbox-img" src="" alt=""></div>`);
   moveModalsToBody();
   document.title = (g.Event || "Gig") + " · " + String(g.Date).slice(0, 4) + " | psilodump";
-  if (bz) buildTrackPlayer(document.getElementById("psd-player"), { [TITLE_COL]: g.Event }, [{ title: "Live at " + (g.Event || "the gig"), version: "", artist: "", former: [], duration: "", disc: 1, pos: 1, heading: "", note: "Live recording", src: "/player/tracks/" + bz + ".mp3", trackId: "", ytMusic: "", video: "" }], "");
+  if (cues) buildTrackPlayer(document.getElementById("psd-player"), { [TITLE_COL]: g.Event }, setItems, "");
+  else if (bz) buildTrackPlayer(document.getElementById("psd-player"), { [TITLE_COL]: g.Event }, [{ title: "Live at " + (g.Event || "the gig"), version: "", artist: "", former: [], duration: "", disc: 1, pos: 1, heading: "", note: "Live recording", src: "/player/tracks/" + bz + ".mp3", trackId: "", ytMusic: "", video: "" }], "");
 }
 
 // --- REMIXES page: <div id="psd-remixes-page"> — psilodump's remixes, from tracks.csv ---
