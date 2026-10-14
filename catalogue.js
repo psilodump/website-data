@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.21.0";
+const JS_VERSION = "1.21.1";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -248,6 +248,7 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-today-rel b { display: block !important; font-size: 15px !important; line-height: 1.3 !important; }
 .psd-today-rel small { display: block !important; font-size: 12px !important; opacity: .8 !important; line-height: 1.45 !important; }
 .psd-rel a.psd-today-rel, .psd-today-rel * { text-decoration: none !important; }
+.psd-rel a.psd-today-rel { color: var(--rel-text, inherit) !important; }
 .psd-today-empty { opacity: .75 !important; }
 .psd-rel-videos { margin-top: 22px !important; }
 .psd-rel-videos h2 { font-size: 15px !important; margin: 0 0 10px !important; color: inherit !important; opacity: .75 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
