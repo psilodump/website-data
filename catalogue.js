@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.22.0";
+const JS_VERSION = "1.23.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -250,6 +250,44 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-rel a.psd-today-rel, .psd-today-rel * { text-decoration: none !important; }
 .psd-rel a.psd-today-rel { color: var(--rel-text, inherit) !important; }
 .psd-today-empty { opacity: .75 !important; }
+.psd-gigs .psd-vpage-bar select { font: inherit !important; font-size: 13px !important; padding: 5px 8px !important; border-radius: 6px !important; border: 1px solid rgba(127,127,127,.35) !important; background: transparent !important; color: inherit !important; }
+.psd-gigs .psd-vpage-bar select option { color: #111 !important; }
+.psd-gig-media { font-size: 13px !important; opacity: .85 !important; display: inline-flex !important; gap: 6px !important; align-items: center !important; }
+.psd-gcount { font-size: 13px !important; opacity: .75 !important; }
+.psd-gig-list section { margin: 0 0 22px !important; }
+.psd-gig-list h2 { font-size: 15px !important; margin: 0 0 6px !important; color: inherit !important; opacity: .8 !important; font-weight: 600 !important; letter-spacing: .06em !important; }
+.psd-gig-list h2 small { font-weight: normal !important; opacity: .7 !important; }
+.psd-gig-list ol { list-style: none !important; margin: 0 !important; padding: 0 !important; }
+.psd-gig-list li { display: flex !important; gap: 12px !important; align-items: baseline !important; padding: 6px 0 !important; border-top: 1px solid rgba(127,127,127,.18) !important; margin: 0 !important; list-style: none !important; font-size: 14px !important; }
+.psd-gig-list .d { flex: 0 0 3.2em !important; opacity: .65 !important; font-variant-numeric: tabular-nums !important; }
+.psd-gig-list .e { flex: 1 1 auto !important; min-width: 0 !important; }
+.psd-gig-list .e small { opacity: .7 !important; }
+.psd-gig-list .e small.p { display: block !important; font-size: 12px !important; }
+.psd-gig-list .i { flex: 0 0 auto !important; display: inline-flex !important; gap: 6px !important; opacity: .7 !important; }
+.psd-gig-list .i svg, .psd-today-gig .i svg { width: 16px !important; height: 16px !important; display: block !important; }
+.psd-gig-list li.psd-gig-off .e a { text-decoration: line-through !important; }
+.psd-gig-main { width: 100% !important; border-radius: 8px !important; overflow: hidden !important; box-shadow: 0 8px 30px rgba(0,0,0,.35) !important; cursor: zoom-in !important; background: rgba(127,127,127,.15) !important; }
+.psd-gig-main img { width: 100% !important; height: auto !important; display: block !important; }
+.psd-rel-hero.psd-gig-noimg { grid-template-columns: minmax(0, 1fr) !important; }
+.psd-gig-note { font-size: 14px !important; line-height: 1.55 !important; opacity: .9 !important; margin: 14px 0 0 !important; }
+.psd-gig section { margin-top: 26px !important; }
+.psd-gig-roles { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important; gap: 8px 24px !important; }
+.psd-gig-role h3 { font-size: 13px !important; margin: 0 0 4px !important; color: inherit !important; opacity: .7 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
+.psd-gig-role ul { list-style: none !important; margin: 0 !important; padding: 0 !important; }
+.psd-gig-role li { font-size: 14px !important; padding: 2px 0 !important; margin: 0 !important; list-style: none !important; }
+.psd-gig-role li.me { font-weight: 700 !important; }
+.psd-gig-grid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important; gap: 12px !important; }
+.psd-gig-img { margin: 0 !important; }
+.psd-gig-img button { display: block !important; width: 100% !important; padding: 0 !important; border: 0 !important; background: rgba(127,127,127,.15) !important; border-radius: 6px !important; overflow: hidden !important; cursor: zoom-in !important; aspect-ratio: 1 !important; }
+.psd-gig-img img { width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important; }
+.psd-gig-img figcaption { font-size: 12px !important; margin-top: 4px !important; opacity: .85 !important; line-height: 1.4 !important; }
+.psd-gig-img figcaption small { display: block !important; opacity: .75 !important; }
+.psd-today-gigs { list-style: none !important; margin: 0 !important; padding: 0 !important; }
+.psd-today-gig { display: flex !important; gap: 12px !important; align-items: baseline !important; padding: 6px 0 !important; border-top: 1px solid rgba(127,127,127,.18) !important; margin: 0 !important; list-style: none !important; font-size: 14px !important; }
+.psd-today-gig .y { flex: 0 0 3em !important; opacity: .65 !important; }
+.psd-today-gig .e { flex: 1 1 auto !important; }
+.psd-today-gig .e small { display: block !important; font-size: 12px !important; opacity: .7 !important; }
+.psd-today-gig .i { display: inline-flex !important; gap: 6px !important; opacity: .7 !important; }
 .psd-rel-videos { margin-top: 22px !important; }
 .psd-rel-videos h2 { font-size: 15px !important; margin: 0 0 10px !important; color: inherit !important; opacity: .75 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
 .psd-vgrid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important; gap: 14px !important; }
@@ -1979,7 +2017,7 @@ function initToday(){
   mount._psdShown = true;
   ensureStyles();
   mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading “On this day”…</div>`;
-  Promise.all([loadCatalogue(), loadTrackData()]).then(([rows, data]) => {
+  Promise.all([loadCatalogue(), loadTrackData(), loadGigs().catch(() => ({ gigs: [] }))]).then(([rows, data, { gigs }]) => {
     const relById = {}; rows.forEach(r => { relById[r["ID"]] = r; });
     const onRelease = {};
     Object.entries(data.lists).forEach(([rid, list]) => list.forEach(({ t }) => { if (relById[rid] && !(onRelease[t.ID] || []).includes(relById[rid])) (onRelease[t.ID] = onRelease[t.ID] || []).push(relById[rid]); }));
@@ -1989,7 +2027,8 @@ function initToday(){
     const videos = (data.videos || []).filter(v => v["From Others"] !== "1");
     // Everything per day, so empty days can point to the next day with something.
     const byDay = {};
-    const add = (md, kind, x) => { if (!md) return; const d = byDay[md] = byDay[md] || { rels: [], tracks: [], vids: [] }; d[kind].push(x); };
+    const add = (md, kind, x) => { if (!md) return; const d = byDay[md] = byDay[md] || { rels: [], tracks: [], vids: [], gigs: [] }; d[kind].push(x); };
+    gigs.filter(g => g.Cancelled !== "1").forEach(g => add(mdOf(g.Date), "gigs", g));
     rows.forEach(r => add(mdOf(r._released), "rels", r));
     tracks.forEach(t => {
       add(mdOf(t.Finished), "tracks", { t, date: t.Finished, how: "finished" });
@@ -1998,7 +2037,7 @@ function initToday(){
     videos.forEach(v => add(mdOf(v.Published), "vids", v));
     const st = mount._psdToday = { md: todayTarget() };
     const render = () => {
-      const md = st.md, day = byDay[md] || { rels: [], tracks: [], vids: [] };
+      const md = st.md, day = byDay[md] || { rels: [], tracks: [], vids: [], gigs: [] };
       const now = new Date(), isToday = md === pad2(now.getMonth() + 1) + "-" + pad2(now.getDate());
       const label = +md.slice(3) + " " + MONTHS[+md.slice(0, 2) - 1];
       stopPlayer();
@@ -2022,12 +2061,14 @@ function initToday(){
         const title = t ? t.Title + (t.Version ? " (" + t.Version + ")" : "") : (r ? r[TITLE_COL] : (v["YouTube Title"] || "Video"));
         return `<figure class="psd-vcard">${liteYouTube(v["Video ID"], title)}<figcaption>${esc(title)}<small>${esc(VIDEO_KINDS[v.Kind] || "Video")} · ${esc(String(v.Published).slice(0, 4))}${esc(ago(String(v.Published)))}</small></figcaption></figure>`;
       }).join("");
+      const gigList = day.gigs.slice().sort((a, b) => String(a.Date).localeCompare(String(b.Date))).map(g => `<li class="psd-today-gig"><span class="y">${esc(String(g.Date).slice(0, 4))}</span><span class="e"><a href="${esc(gigHref(g))}">${esc(g.Event || "Gig")}</a><small>${esc(gigPlace(g))}${esc(ago(String(g.Date)))}</small></span><span class="i">${gigIcons(g)}</span></li>`).join("");
       let next = "";
-      if (!rels.length && !items.length && !vids.length) { for (let i = 1; i <= 366; i++) { const n = shiftDay(md, i); if (byDay[n]) { next = n; break; } } }
+      if (!rels.length && !items.length && !vids.length && !gigList) { for (let i = 1; i <= 366; i++) { const n = shiftDay(md, i); if (byDay[n]) { next = n; break; } } }
       mount.innerHTML = `<div class="psd-rel psd-today"><div class="psd-today-nav"><button type="button" data-psd-day="${shiftDay(md, -1)}">← ${esc(+shiftDay(md, -1).slice(3) + " " + MONTHS[+shiftDay(md, -1).slice(0, 2) - 1].slice(0, 3))}</button><h2>${esc(label)}</h2><button type="button" data-psd-day="${shiftDay(md, 1)}">${esc(+shiftDay(md, 1).slice(3) + " " + MONTHS[+shiftDay(md, 1).slice(0, 2) - 1].slice(0, 3))} →</button></div>
         ${!isToday ? `<p style="text-align:center;margin:-8px 0 18px"><button type="button" data-psd-day="today" style="font:inherit;font-size:13px;background:none;border:0;color:inherit;text-decoration:underline;cursor:pointer">back to today</button></p>` : ""}
         ${rels.length ? `<section><h3>Released <small>${rels.length}</small></h3><div class="psd-today-rels">${relHtml}</div></section>` : ""}
         ${items.length ? `<section><h3>Tracks <small>${items.length}</small></h3><div class="psd-rel-player" id="psd-player"></div></section>` : ""}
+        ${gigList ? `<section><h3>Gigs <small>${day.gigs.length}</small></h3><ul class="psd-today-gigs">${gigList}</ul></section>` : ""}
         ${vids.length ? `<section><h3>Videos <small>${day.vids.length}</small></h3><div class="psd-vgrid">${vids}</div></section>` : ""}
         ${next ? `<p class="psd-today-empty">Nothing on ${esc(label)} yet. Next: <button type="button" data-psd-day="${next}" style="font:inherit;background:none;border:0;color:inherit;text-decoration:underline;cursor:pointer;padding:0">${esc(+next.slice(3) + " " + MONTHS[+next.slice(0, 2) - 1])}</button></p>` : ""}</div>`;
       const box = document.getElementById("psd-player");
@@ -2039,6 +2080,160 @@ function initToday(){
     mount._psdTodayRender = render;
     render();
   }).catch(err => { console.error("Failed to load On this day:", err); mount.innerHTML = `<div class="psd-rel">Unable to load “On this day” right now. Please refresh the page.</div>`; });
+}
+
+// --- GIGS: list (<div id="psd-gigs">) and one gig (<div id="psd-gig"> on /gig?g=<key>) from gigs.csv ---
+const GIGS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/gigs.csv";
+const GIG_IMAGES_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/gig_images.csv";
+const GIG_PATH = "/gig", GIGS_PATH = "/gigs";
+const GIG_ROLE_NAMES = { live: "Live", dj: "DJ", vj: "VJ", mc: "MC" };
+const GIG_SELF = /psilodump|r\.?i\.?p\.?c|psilodumputer|pushiro|insekt 476|art of realistix|simon rahm/i;
+const PHOTO_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12.5" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 6l1.5-2h5L16 6" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+const FLYER_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 11h7M9 15h7" stroke="currentColor" stroke-width="2"/></svg>';
+const AUDIO_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="3" y="13" width="4" height="7" rx="1.5" fill="currentColor"/><rect x="17" y="13" width="4" height="7" rx="1.5" fill="currentColor"/></svg>';
+function loadGigs(){
+  const cat = window._psilodumpCat;
+  if (!cat._gigPromise) {
+    const get = url => fetch(url + "?v=" + Date.now()).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); }).then(t => toObjects(parseCSV(t)).rows);
+    cat._gigPromise = Promise.all([get(GIGS_URL), get(GIG_IMAGES_URL).catch(() => []), loadTrackData()]).then(([gigs, imgs, data]) => {
+      gigs.sort((a, b) => String(b.Date).localeCompare(String(a.Date)) || (+b.ID - +a.ID));
+      const images = {}, videos = {};
+      imgs.forEach(i => { if (i.Image) (images[i["Gig ID"]] = images[i["Gig ID"]] || []).push(i); });
+      (data.videos || []).forEach(v => { if (v["Gig ID"]) (videos[v["Gig ID"]] = videos[v["Gig ID"]] || []).push(v); });
+      const seen = {};
+      gigs.forEach(g => { const k = (g.Date + "-" + slugify(g.Event || "gig")).replace(/-+$/, ""); g._key = seen[k] ? k + "-" + g.ID : k; seen[k] = 1;
+        g._images = images[g.ID] || []; g._videos = videos[g.ID] || []; g._acts = String(g["Line-up"] || "").split(" | ").filter(Boolean); });
+      return { gigs, data };
+    }).catch(err => { cat._gigPromise = null; throw err; });
+  }
+  return cat._gigPromise;
+}
+const gigHref = g => GIG_PATH + "?g=" + encodeURIComponent(g._key);
+const gigPlace = g => [g.Venue, g.City, g.Country].filter(Boolean).join(", ");
+function gigDateText(d){
+  const m = String(d || "").match(/^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?/);
+  if (!m) return "";
+  return [m[3] ? +m[3] : "", m[2] ? MONTHS[+m[2] - 1] : "", m[1]].filter(Boolean).join(" ");
+}
+const gigLarge = i => String(i.Image).replace("/thumb_", "/large_");
+function gigIcons(g){
+  const f = g._images.some(i => i.Kind === "flyer"), p = g._images.some(i => i.Kind === "photo");
+  return [f ? `<span title="Flyer">${FLYER_ICON}</span>` : "", p ? `<span title="Photos">${PHOTO_ICON}</span>` : "", g.Source ? `<span title="Live recording">${AUDIO_ICON}</span>` : "", g._videos.length ? `<span title="Video">${VIDEO_ICON}</span>` : ""].join("");
+}
+
+function initGigsList(){
+  const mount = document.getElementById("psd-gigs");
+  if (!mount || mount._psdShown) return;
+  if (document.documentElement.hasAttribute("aria-busy")) return;
+  mount._psdShown = true;
+  ensureStyles();
+  mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading gigs…</div>`;
+  Promise.all([loadCatalogue(), loadGigs()]).then(([, { gigs }]) => {
+    const countries = [...new Set(gigs.map(g => g.Country).filter(Boolean))].sort();
+    const types = [...new Set(gigs.map(g => g.Type).filter(Boolean))].sort();
+    const st = mount._psdGigs = { q: "", country: "", type: "", media: false };
+    const h = new URLSearchParams(location.hash.replace(/^#/, ""));
+    st.q = h.get("q") || ""; st.country = h.get("country") || ""; st.type = h.get("type") || ""; st.media = h.get("media") === "1";
+    const opt = (list, v, all) => `<option value="">${all}</option>` + list.map(x => `<option${x === v ? " selected" : ""}>${esc(x)}</option>`).join("");
+    mount.innerHTML = `<div class="psd-rel psd-vpage psd-gigs"><div class="psd-vpage-bar">
+      <input type="search" placeholder="Search gigs, places, line-ups…" aria-label="Search gigs" value="${esc(st.q)}">
+      <select data-k="country" aria-label="Country">${opt(countries, st.country, "All countries")}</select>
+      <select data-k="type" aria-label="Type">${opt(types, st.type, "All types")}</select>
+      <label class="psd-gig-media"><input type="checkbox"${st.media ? " checked" : ""}> with flyers, photos, recordings or video</label>
+      <span class="psd-gcount"></span></div><div class="psd-gig-list"></div></div>`;
+    const render = () => {
+      const q = st.q.trim().toLowerCase();
+      const list = gigs.filter(g => (!st.country || g.Country === st.country) && (!st.type || g.Type === st.type)
+        && (!st.media || g._images.length || g.Source || g._videos.length)
+        && (!q || [g.Date, g.Event, g.Venue, g.City, g.Country, g.Credit, g["Line-up"], g.Organizer].join(" ").toLowerCase().includes(q)));
+      let year = null;
+      const rows = list.map(g => {
+        const y = String(g.Date).slice(0, 4), head = y !== year ? `${year !== null ? "</ol></section>" : ""}<section><h2>${esc(y)} <small>${list.filter(x => String(x.Date).startsWith(y)).length}</small></h2><ol>` : "";
+        year = y;
+        return head + `<li class="${g.Cancelled === "1" ? "psd-gig-off" : ""}"><span class="d">${esc(String(g.Date).slice(5).replace("-", "/"))}</span><span class="e"><a href="${esc(gigHref(g))}">${esc(g.Event || "(untitled)")}</a>${g.Cancelled === "1" ? " <small>cancelled</small>" : ""}${g.Role && g.Role !== "Live" ? ` <small>${esc(g.Role)}</small>` : ""}<small class="p">${esc(gigPlace(g))}</small></span><span class="i">${gigIcons(g)}</span></li>`;
+      }).join("") + (year !== null ? "</ol></section>" : "");
+      mount.querySelector(".psd-gig-list").innerHTML = rows || `<p class="psd-vempty">No gigs match.</p>`;
+      mount.querySelector(".psd-gcount").textContent = list.length + " gig" + (list.length === 1 ? "" : "s");
+      const p = new URLSearchParams();
+      if (st.q) p.set("q", st.q); if (st.country) p.set("country", st.country); if (st.type) p.set("type", st.type); if (st.media) p.set("media", "1");
+      const hs = p.toString();
+      if (hs !== location.hash.replace(/^#/, "")) history.replaceState(history.state, "", location.pathname + location.search + (hs ? "#" + hs : ""));
+    };
+    mount.querySelector("input[type=search]").addEventListener("input", e => { st.q = e.target.value; render(); });
+    mount.querySelectorAll("select[data-k]").forEach(s => s.addEventListener("change", e => { st[s.getAttribute("data-k")] = e.target.value; render(); }));
+    mount.querySelector(".psd-gig-media input").addEventListener("change", e => { st.media = e.target.checked; render(); });
+    render();
+  }).catch(err => { console.error("Failed to load gigs:", err); mount.innerHTML = `<div class="psd-rel">Unable to load the gigs right now. Please refresh the page.</div>`; });
+}
+
+function initGig(){
+  const mount = document.getElementById("psd-gig");
+  if (!mount || mount._psdShown === location.search) return;
+  if (document.documentElement.hasAttribute("aria-busy")) return;
+  if (location.pathname.replace(/\/+$/, "") !== GIG_PATH) return;
+  mount._psdShown = location.search;
+  ensureStyles();
+  mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading gig…</div>`;
+  Promise.all([loadCatalogue(), loadGigs()]).then(([, { gigs, data }]) => renderGig(mount, gigs, data))
+    .catch(err => { console.error("Failed to load gig:", err); mount.innerHTML = `<div class="psd-rel">Unable to load the gig right now. Please refresh the page.</div>`; });
+}
+function renderGig(mount, gigs, data){
+  const key = (new URLSearchParams(location.search).get("g") || "").trim().toLowerCase();
+  const i = gigs.findIndex(g => g._key.toLowerCase() === key || g.ID === key);
+  if (i < 0) {
+    mount.innerHTML = `<div class="psd-rel"><nav class="psd-rel-nav"><a href="${GIGS_PATH}">← All gigs</a></nav><h1 class="psd-rel-title">Gig not found</h1>
+      <p><a href="${GIGS_PATH}${key ? "#q=" + encodeURIComponent(key) : ""}">Search the gigs</a>.</p></div>`;
+    document.title = "Gig not found | psilodump";
+    return;
+  }
+  const g = gigs[i], newer = gigs[i - 1], older = gigs[i + 1];
+  const flyers = g._images.filter(x => x.Kind === "flyer"), photos = g._images.filter(x => x.Kind !== "flyer");
+  const main = flyers[0] || photos[0];
+  const facts = [];
+  facts.push(["Date", dayLink(g.Date)]);
+  if (g.Venue) facts.push(["Venue", esc(g.Venue)]);
+  if (g.City || g.Country) facts.push(["Place", esc([g.City, g.Country].filter(Boolean).join(", "))]);
+  if (g.Type) facts.push(["Type", `<a href="${GIGS_PATH}#type=${encodeURIComponent(g.Type)}">${esc(g.Type)}</a>`]);
+  if (g.Role) facts.push(["psilodump", esc(g.Role === "Live" ? "Live set" : g.Role)]);
+  if (g.Credit && !/^psilodump$/i.test(g.Credit)) facts.push(["Billed as", esc(g.Credit)]);
+  if (g.Organizer) facts.push(["Organiser", esc(g.Organizer)]);
+  const links = [];
+  if (/^https?:\/\//.test(g.URL || "")) links.push(`<a href="${esc(g.URL)}" target="_blank" rel="noopener nofollow">Event page</a> <small>(may be gone)</small>`);
+  if (/^[0-9a-f-]{36}$/.test(g.MusicBrainz || "")) links.push(`<a href="https://musicbrainz.org/event/${esc(g.MusicBrainz)}" target="_blank" rel="noopener">MusicBrainz</a>`);
+  if (links.length) facts.push(["Links", links.join(" · ")]);
+  // Line-up by role, psilodump's own entry highlighted
+  const roles = {};
+  g._acts.forEach(a => { const m = a.match(/^(live|dj|vj|mc):\s*(.*)$/i); const r = m ? m[1].toLowerCase() : "live"; (roles[r] = roles[r] || []).push(m ? m[2] : a); });
+  const lineup = Object.keys(GIG_ROLE_NAMES).filter(r => roles[r]).map(r => `<div class="psd-gig-role"><h3>${GIG_ROLE_NAMES[r]}</h3><ul>${roles[r].map(a => `<li${GIG_SELF.test(a) ? ' class="me"' : ""}>${esc(a)}</li>`).join("")}</ul></div>`).join("");
+  const vids = g._videos.map(v => {
+    const t = data.byId[v["Track ID"]];
+    const label = t ? t.Title + (t.Version ? " (" + t.Version + ")" : "") : (v["YouTube Title"] || "Video");
+    return `<figure class="psd-vcard">${liteYouTube(v["Video ID"], label)}<figcaption>${esc(label)}<small>${[VIDEO_KINDS[v.Kind] || "Video", v["Made By"] ? (v["From Others"] === "1" ? "by " : "video by ") + esc(v["Made By"]) : (v["From Others"] === "1" ? "from the audience" : "")].filter(Boolean).join(" · ")}</small></figcaption></figure>`;
+  }).join("");
+  const imgFig = x => `<figure class="psd-gig-img"><button type="button" data-lightbox="${esc(gigLarge(x))}" data-thumb="${esc(x.Image)}" aria-label="View larger: ${esc(x.Caption || (x.Kind === "flyer" ? "flyer" : "photo"))}"><img src="${esc(x.Image)}" alt="${esc(x.Caption || "")}" loading="lazy"></button>${x.Caption || x.Credit ? `<figcaption>${esc(x.Caption || "")}${x.Credit ? `<small>${x.Kind === "flyer" ? "Design" : "Photo"}: ${esc(x.Credit)}</small>` : ""}</figcaption>` : ""}</figure>`;
+  const bz = (String(g.Source || "").match(/track\/(\d+)/) || [])[1];
+  mount.innerHTML = `
+  <div class="psd-rel psd-gig">
+    <nav class="psd-rel-nav"><a href="${GIGS_PATH}">← All gigs</a>
+      <span class="psd-rel-step">${newer ? `<a href="${esc(gigHref(newer))}" title="${esc(newer.Event)}">‹ Newer</a>` : ""}${older ? `<a href="${esc(gigHref(older))}" title="${esc(older.Event)}">Older ›</a>` : ""}</span></nav>
+    <div class="psd-rel-hero${main ? "" : " psd-gig-noimg"}">
+      ${main ? `<div class="psd-gig-main" data-lightbox="${esc(gigLarge(main))}" data-thumb="${esc(main.Image)}" role="button" tabindex="0" aria-label="View larger"><img src="${esc(main.Image)}" alt="${esc(main.Caption || (main.Kind === "flyer" ? "Flyer" : "Photo"))}"></div>` : ""}
+      <div class="psd-rel-info">
+        <h1 class="psd-rel-title">${esc(g.Event || "Gig")}</h1>
+        <div class="psd-rel-sub">${esc([gigDateText(g.Date), g.City].filter(Boolean).join(" · "))}${g.Cancelled === "1" ? " · <b>cancelled</b>" : ""}</div>
+        <dl class="psd-rel-facts">${facts.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("")}</dl>
+        ${g.Note ? `<p class="psd-gig-note">${linkify(g.Note.replace(/<br\s*\/?>/gi, "\n")).replace(/\n/g, "<br>")}</p>` : ""}
+      </div>
+    </div>
+    ${bz ? `<section class="psd-rel-player" id="psd-player"></section>` : ""}
+    ${lineup ? `<section class="psd-gig-lineup"><h2>Line-up</h2><div class="psd-gig-roles">${lineup}</div></section>` : ""}
+    ${vids ? `<section class="psd-rel-videos"><h2>Video</h2><div class="psd-vgrid">${vids}</div></section>` : ""}
+    ${g._images.length > 1 ? `<section class="psd-gig-photos"><h2>${flyers.length && photos.length ? "Flyers & photos" : photos.length ? "Photos" : "Flyers"}</h2><div class="psd-gig-grid">${[...flyers, ...photos].map(imgFig).join("")}</div></section>` : ""}
+  </div>`;
+  if (!document.getElementById("rel-lightbox")) mount.insertAdjacentHTML("beforeend", `<div id="rel-lightbox" class="rel-modal-overlay"><img id="rel-lightbox-img" class="rel-lightbox-img" src="" alt=""></div>`);
+  moveModalsToBody();
+  document.title = (g.Event || "Gig") + " · " + String(g.Date).slice(0, 4) + " | psilodump";
+  if (bz) buildTrackPlayer(document.getElementById("psd-player"), { [TITLE_COL]: g.Event }, [{ title: "Live at " + (g.Event || "the gig"), version: "", artist: "", former: [], duration: "", disc: 1, pos: 1, heading: "", note: "Live recording", src: "/player/tracks/" + bz + ".mp3", trackId: "", ytMusic: "", video: "" }], "");
 }
 
 // --- REMIXES page: <div id="psd-remixes-page"> — psilodump's remixes, from tracks.csv ---
@@ -2175,6 +2370,8 @@ function applyFixedType(){
 }
 
 function initApp(){
+  initGigsList();
+  initGig();
   initToday();
   initPhysical();
   initDiscography();
@@ -2227,6 +2424,10 @@ new MutationObserver(() => {
   if (vp && !vp._psdShown) { initVideosPage(); return; }
   const rp = document.getElementById("psd-remixes-page");
   if (rp && !rp._psdShown) { initRemixesPage(); return; }
+  const gl = document.getElementById("psd-gigs");
+  if (gl && !gl._psdShown) { initGigsList(); return; }
+  const gp = document.getElementById("psd-gig");
+  if (gp && gp._psdShown !== location.search) { initGig(); return; }
   const td = document.getElementById("psd-today");
   if (td && !td._psdShown) { initToday(); return; }
   const ph = document.getElementById("psd-physical");
