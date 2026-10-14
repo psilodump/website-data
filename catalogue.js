@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.30.0";
+const JS_VERSION = "1.31.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -149,6 +149,37 @@ a.rel-cover { display: block !important; text-decoration: none !important; }
 .sk-cover { width: 100% !important; aspect-ratio: 1/1 !important; }
 .sk-title { height: 14px !important; margin: 10px 12px 6px !important; border-radius: 4px !important; width: 70% !important; }
 .sk-meta { height: 11px !important; margin: 0 12px 12px !important; border-radius: 4px !important; width: 45% !important; }
+/* Card look (v1.31.0): like the Physical and V/A pages — a dark panel, frameless cards, cover with a type badge */
+.rel-wrap { background: #181818 !important; color: #fff !important; padding: 20px !important; border-radius: 12px !important; box-sizing: border-box !important; }
+.rel-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important; gap: 20px 16px !important; }
+.rel-card { border: 0 !important; background: transparent !important; color: inherit !important; border-radius: 0 !important; overflow: visible !important; }
+.rel-card:hover { transform: none !important; box-shadow: none !important; }
+.rel-cover { border-radius: 8px !important; overflow: hidden !important; background: rgba(127,127,127,.15) !important; }
+.rel-cover img { transition: transform .2s ease !important; }
+.rel-card:hover .rel-cover img { transform: scale(1.03) !important; }
+.rel-kind { position: absolute !important; left: 8px !important; bottom: 8px !important; z-index: 2 !important; background: rgba(0,0,0,.7) !important; color: #fff !important; border-radius: 999px !important; padding: 3px 9px !important; font-size: 12px !important; line-height: 1.3 !important; pointer-events: none !important; }
+.rel-body { padding: 8px 0 0 !important; }
+.rel-title { color: inherit !important; }
+.rel-meta { color: inherit !important; opacity: .75 !important; line-height: 1.45 !important; }
+.rel-meta .rel-mtype { display: none !important; }
+.rel-phys { color: inherit !important; }
+.btn-listen { width: auto !important; align-self: flex-start !important; border-radius: 999px !important; padding: 6px 14px !important; font-size: 13px !important; }
+.rel-wrap.compact .rel-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important; }
+.rel-wrap.compact .rel-kind { font-size: 11px !important; padding: 2px 7px !important; left: 6px !important; bottom: 6px !important; }
+.rel-wrap.row-view .rel-card { padding: 8px 0 !important; border-top: 1px solid rgba(127,127,127,.2) !important; }
+.rel-wrap.row-view .rel-kind { display: none !important; }
+.rel-wrap.row-view .rel-meta .rel-mtype { display: inline !important; }
+.rel-wrap.row-view .rel-card:hover .rel-cover img { transform: none !important; }
+.rel-card.sk { border: 0 !important; }
+.rel-card.sk .sk-block { background: linear-gradient(90deg, rgba(255,255,255,.05) 25%, rgba(255,255,255,.11) 50%, rgba(255,255,255,.05) 75%) !important; background-size: 200% 100% !important; }
+.rel-card.sk .sk-cover { border-radius: 8px !important; }
+.rel-card.sk .sk-title, .rel-card.sk .sk-meta { margin-left: 0 !important; margin-right: 0 !important; }
+@media (max-width: 560px) {
+  .rel-wrap { padding: 12px !important; }
+  .rel-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 16px 12px !important; }
+  .rel-title { font-size: 14px !important; }
+  .btn-listen { padding: 5px 11px !important; font-size: 12px !important; }
+}
 /* Release page (psilodu.mp/release?r=...) — colours come from the release (--rel-*) */
 .psd-rel { max-width: 1000px !important; margin: 0 auto !important; padding: 20px !important; box-sizing: border-box !important; font-family: system-ui, -apple-system, sans-serif !important; background: var(--rel-bg, #181818) !important; color: var(--rel-text, #fff) !important; border-radius: 12px !important; }
 .psd-rel a { color: inherit !important; text-decoration: underline !important; text-underline-offset: 2px !important; }
@@ -763,16 +794,19 @@ function card(r, idx){
   // of keyboard/screen-reader navigation so each card has one link, not two the same.
   // Without release pages: data-* attributes + the shared click listener open the lightbox.
   const coverClick = r._largeUrl ? `data-lightbox="${esc(r._largeUrl)}" data-thumb="${esc(r._thumbUrl)}" role="button" tabindex="0" aria-label="View larger artwork: ${esc(r[TITLE_COL] || "")}"` : '';
+  const kind = r[TYPE_COL] ? `<span class="rel-kind">${esc(r[TYPE_COL] === "MiniAlbum" ? "Mini-album" : r[TYPE_COL])}</span>` : "";
   const cover = RELEASE_LINKS
-    ? `<a class="rel-cover" href="${esc(releaseHref(r))}" tabindex="-1" aria-hidden="true">${coverHtml}</a>`
-    : `<div class="rel-cover" ${coverClick}>${coverHtml}</div>`;
+    ? `<a class="rel-cover" href="${esc(releaseHref(r))}" tabindex="-1" aria-hidden="true">${coverHtml}${kind}</a>`
+    : `<div class="rel-cover" ${coverClick}>${coverHtml}${kind}</div>`;
   const title = RELEASE_LINKS
     ? `<a href="${esc(releaseHref(r))}">${esc(r[TITLE_COL] || "(untitled)")}</a>`
     : r._titleHref ? `<a href="${esc(r._titleHref)}" target="_blank" rel="noopener nofollow">${esc(r[TITLE_COL] || "(untitled)")}</a>` : esc(r[TITLE_COL] || "(untitled)");
   const activeDate = window._psilodumpCat.dateMode === "catalogue" ? r._catalogue : r._released;
-  const metaBits = [ activeDate, r[TYPE_COL], r[CAT_COL] ].filter(Boolean).map(esc);
+  // the type is on the cover badge; in the row view (no badge) it shows in the line
+  const metaBits = [ activeDate, r[CAT_COL], r["Label"] ].filter(Boolean).map(esc);
+  if (r[TYPE_COL]) metaBits[0] = (metaBits[0] || "") + `<span class="rel-mtype">${metaBits.length ? " · " : ""}${esc(r[TYPE_COL])}</span>`;
   if (r._hiddenParts) metaBits.push(`<a class="rel-parts" href="${esc(workHref(r))}">${r._hiddenParts} part${r._hiddenParts === 1 ? "" : "s"}</a>`);
-  const meta = metaBits.join(" • ");
+  const meta = metaBits.join(" · ");
   
   const btn = releaseSurface(r['Bg Color'] || r['bg_color'], 0.85);
   const btnStyle = btn
