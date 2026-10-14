@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.29.0";
+const JS_VERSION = "1.30.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -336,6 +336,7 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-app-card .app-tracks { font-style: italic !important; }
 .psd-app-card .cv .kind { padding: 3px 9px !important; }
 .psd-alsoon { margin-top: 24px !important; }
+.psd-post-tracks { margin-top: 20px !important; max-width: 760px !important; }
 .psd-rel-videos { margin-top: 22px !important; }
 .psd-rel-videos h2 { font-size: 15px !important; margin: 0 0 10px !important; color: inherit !important; opacity: .75 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
 .psd-vgrid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important; gap: 14px !important; }
@@ -1591,6 +1592,7 @@ const PAUSE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y=
 // Bandzoogle album: read the track list from the album page and play the tracks
 // with one <audio> element. Otherwise: the Spotify / Apple Music / YouTube player.
 const VIDEO_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 10.5l5-3v9l-5-3z" fill="currentColor"/></svg>';
+const POST_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="2"/></svg>';
 const YTMUSIC_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 8.5v7l6-3.5z" fill="currentColor"/></svg>';
 // A YouTube video that only loads (from youtube-nocookie.com) when clicked.
 function liteYouTube(id, label){
@@ -1687,7 +1689,7 @@ function renderBzPlayer(box, r, albumId, items){
 function trackListHtml(items, playable){
   const discs = new Set(items.map(x => x.disc)).size > 1;
   // Icons sit right of the length; every row reserves the same width so the lengths line up.
-  const iconSlots = Math.max(0, ...items.map(x => (x.video ? 1 : 0) + (x.ytMusic ? 1 : 0)));
+  const iconSlots = Math.max(0, ...items.map(x => (x.video ? 1 : 0) + (x.ytMusic ? 1 : 0) + (x.post ? 1 : 0)));
   let html = "", lastDisc = 0;
   items.forEach((x, i) => {
     if (discs && x.disc !== lastDisc) html += `<li class="psd-h">Disc ${x.disc}${x.heading ? " · " + esc(x.heading) : ""}</li>`;
@@ -1696,7 +1698,8 @@ function trackListHtml(items, playable){
     const sub = [x.artist && x.artist.toLowerCase() !== "psilodump" ? "by " + esc(x.artist) : "", x.former.length ? "previously " + x.former.map(esc).join(", ") : "", x.note ? esc(x.note) : ""].filter(Boolean).join(" · ");
     const inner = `<span class="psd-n">${x.pos === null ? "" : (x.pos || i + 1)}</span><span class="psd-t">${esc(x.title)}${x.version ? ` <span class="psd-v">(${esc(x.version)})</span>` : ""}${sub ? `<span class="psd-sub">${sub}</span>` : ""}</span><span class="psd-d">${esc(x.duration)}</span>`;
     const links = (x.video ? `<button type="button" data-psd-video="${esc(x.video)}" title="Video" aria-label="Video: ${esc(x.title)}">${VIDEO_ICON}</button>` : "")
-      + (x.ytMusic ? `<a href="https://music.youtube.com/watch?v=${esc(x.ytMusic)}" target="_blank" rel="noopener" title="YouTube Music" aria-label="${esc(x.title)} on YouTube Music">${YTMUSIC_ICON}</a>` : "");
+      + (x.ytMusic ? `<a href="https://music.youtube.com/watch?v=${esc(x.ytMusic)}" target="_blank" rel="noopener" title="YouTube Music" aria-label="${esc(x.title)} on YouTube Music">${YTMUSIC_ICON}</a>` : "")
+      + (x.post ? `<a href="${esc(x.post)}" title="Read the post" aria-label="Read the post about ${esc(x.title)}">${POST_ICON}</a>` : "");
     const body = playable && x.src ? `<button type="button" data-psd-track="${i}">${inner}</button>` : `<div class="psd-off">${inner}</div>`;
     html += `<li class="psd-row">${body}${iconSlots ? `<span class="psd-tlinks" style="width:${iconSlots * 30}px">${links}</span>` : ""}</li>`;
   });
@@ -2513,7 +2516,7 @@ function initPost(){
   mount._psdShown = location.search;
   ensureStyles();
   mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading…</div>`;
-  loadCatalogue().then(() => Promise.all([loadPosts(), loadPeople().catch(() => null)])).then(([{ posts }, pp]) => {
+  loadCatalogue().then(() => Promise.all([loadPosts(), loadPeople().catch(() => null), loadTrackData()])).then(([{ posts }, pp, tdata]) => {
     const key = (new URLSearchParams(location.search).get("p") || "").trim().toLowerCase();
     const i = posts.findIndex(p => p._key.toLowerCase() === key || p.ID === key);
     if (i < 0) { mount.innerHTML = `<div class="psd-rel"><nav class="psd-rel-nav"><a href="${NEWS_PATH}">← News</a></nav><h1 class="psd-rel-title">Post not found</h1></div>`; document.title = "Post not found | psilodump"; return; }
@@ -2528,6 +2531,7 @@ function initPost(){
       <div class="psd-post-meta">${dayLink(String(p.Date).slice(0, 10))} · <a href="${NEWS_PATH}#kind=${esc(p.Kind || "news")}">${esc(POST_KINDS[p.Kind] || "News")}</a></div>
       <h1 class="psd-rel-title">${esc(p.Title)}</h1>
       <div class="psd-post-body">${postBodyHtml(p) || ""}</div>
+      ${String(p["Track IDs"] || "").split(",").some(id => tdata.byId[id]) ? `<section class="psd-rel-player psd-post-tracks" id="psd-player"></section>` : ""}
       ${cards.length ? `<div class="psd-post-cards">${cards.join("")}</div>` : ""}
       ${tags.length ? `<p class="psd-post-tags">${tags.map(t => { const per = pp && pp.byKey[personKey(t)]; return per && !per._self ? `<a class="person" href="${esc(personHref(per))}">${esc(t)}</a>` : `<a href="${NEWS_PATH}#tag=${encodeURIComponent(t)}">${esc(t)}</a>`; }).join("")}</p>` : ""}
       ${p["Old URL"] ? `<p class="psd-post-old"><a href="${esc(String(p["Old URL"]).replace(/^http:/, "https:"))}"${/476\.digital/.test(p["Old URL"]) ? ' target="_blank" rel="noopener"' : ""}>${/476\.digital/.test(p["Old URL"]) ? "Originally in The X-Dump news archive" : "This post on the old blog"}</a></p>` : ""}
@@ -2535,6 +2539,16 @@ function initPost(){
     if (!document.getElementById("rel-lightbox")) mount.insertAdjacentHTML("beforeend", `<div id="rel-lightbox" class="rel-modal-overlay"><img id="rel-lightbox-img" class="rel-lightbox-img" src="" alt=""></div>`);
     moveModalsToBody();
     document.title = p.Title + " | psilodump";
+    // the track(s) the post is about: playable when there's audio on psilodu.mp
+    const box = document.getElementById("psd-player");
+    if (box) {
+      const items = String(p["Track IDs"] || "").split(",").map(id => tdata.byId[id]).filter(Boolean).map((t, k) => {
+        const bz = (String(t.Source || "").match(/track\/(\d+)/) || [])[1];
+        return { title: t.Title || "(untitled)", version: t.Version || "", artist: t.Artist || "", former: String(t["Former Titles"] || "").split(" | ").filter(Boolean), duration: secToTime(t.Length), disc: 1, pos: k + 1, heading: "",
+          note: t.Description || "", src: bz ? "/player/tracks/" + bz + ".mp3" : "", trackId: t.ID, ytMusic: (String(t.YouTube || "").match(/music\.youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/) || [])[1] || "", video: ((tdata.videosByTrack[t.ID] || [])[0] || {})["Video ID"] || "" };
+      });
+      if (items.some(x => x.src)) buildTrackPlayer(box, { [TITLE_COL]: p.Title }, items, ""); else box.innerHTML = trackListHtml(items, false);
+    }
   }).catch(err => { console.error("Failed to load post:", err); mount.innerHTML = `<div class="psd-rel">Unable to load the post right now. Please refresh the page.</div>`; });
 }
 
@@ -2744,8 +2758,8 @@ function initRemixesPage(){
   mount._psdShown = true;
   ensureStyles();
   mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading remixes…</div>`;
-  Promise.all([loadCatalogue(), loadTrackData()])
-    .then(([rows, data]) => buildRemixesPage(mount, rows, data))
+  Promise.all([loadCatalogue(), loadTrackData(), loadPosts().catch(() => ({ posts: [] }))])
+    .then(([rows, data, { posts }]) => { data._postByTrack = {}; posts.forEach(p => String(p["Track IDs"] || "").split(",").filter(Boolean).forEach(id => { if (!data._postByTrack[id]) data._postByTrack[id] = postHref(p); })); return buildRemixesPage(mount, rows, data); })
     .catch(err => { console.error("Failed to load remixes:", err); mount.innerHTML = `<div class="psd-rel">Unable to load the remixes right now. Please refresh the page.</div>`; });
 }
 function buildRemixesPage(mount, rows, data){
@@ -2762,7 +2776,7 @@ function buildRemixesPage(mount, rows, data){
     const rels = onRelease[t.ID] || [];
     return { title: t.Title || "(untitled)", version: t.Version || "", artist: t.Artist || "", former: [], duration: secToTime(t.Length), disc: 1, pos: null, heading,
       note: [t.Description, rels.length ? "on " + rels.map(r => r[TITLE_COL]).join(", ") : ""].filter(Boolean).join(" · "),
-      src: bz ? "/player/tracks/" + bz + ".mp3" : "", trackId: t.ID, ytMusic: ytm, video: ((data.videosByTrack[t.ID] || [])[0] || {})["Video ID"] || "" };
+      src: bz ? "/player/tracks/" + bz + ".mp3" : "", trackId: t.ID, ytMusic: ytm, video: ((data.videosByTrack[t.ID] || [])[0] || {})["Video ID"] || "", post: (data._postByTrack || {})[t.ID] || "" };
     }); };
   const views = { mine: { label: "psilodump remixes", items: listFor(isPsilodumpRemix) }, others: { label: "Remixes of psilodump", items: listFor(isRemixOfPsilodump) } };
   const st = mount._psdRemix = { by: /(^|[#&])by=others(&|$)/.test(location.hash) ? "others" : "mine" };
