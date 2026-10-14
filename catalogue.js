@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.12.1";
+const JS_VERSION = "1.13.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -193,6 +193,25 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-rel-facts dd { margin: 0 !important; }
 .psd-rel-player { margin-top: 24px !important; }
 .psd-rel-more { margin-top: 18px !important; font-size: 13px !important; opacity: .85 !important; }
+.psd-rel-videos { margin-top: 22px !important; }
+.psd-rel-videos h2 { font-size: 15px !important; margin: 0 0 10px !important; color: inherit !important; opacity: .75 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
+.psd-vgrid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important; gap: 14px !important; }
+.psd-vcard { margin: 0 !important; }
+.psd-vcard figcaption { font-size: 13px !important; margin-top: 6px !important; line-height: 1.35 !important; }
+.psd-vcard figcaption small { display: block !important; opacity: .7 !important; font-size: 12px !important; }
+.psd-yt { position: relative !important; display: block !important; width: 100% !important; aspect-ratio: 16 / 9 !important; padding: 0 !important; border: 0 !important; border-radius: 10px !important; overflow: hidden !important; cursor: pointer !important; background: #000 !important; }
+.psd-yt img { width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important; opacity: .9 !important; }
+.psd-yt:hover img { opacity: 1 !important; }
+.psd-yt .psd-yt-play { position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; width: 56px !important; height: 56px !important; border-radius: 50% !important; background: rgba(0,0,0,.65) !important; color: #fff !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+.psd-yt .psd-yt-play svg { width: 26px !important; height: 26px !important; }
+.psd-yt iframe, iframe.psd-yt-frame { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; border: 0 !important; }
+.psd-ytbox { position: relative !important; width: 100% !important; aspect-ratio: 16 / 9 !important; border-radius: 10px !important; overflow: hidden !important; background: #000 !important; }
+.psd-tracks li.psd-row { display: flex !important; align-items: center !important; gap: 4px !important; }
+.psd-tracks li.psd-row > button, .psd-tracks li.psd-row > .psd-off { flex: 1 1 auto !important; min-width: 0 !important; }
+.psd-tlinks { display: flex !important; gap: 2px !important; flex: 0 0 auto !important; }
+.psd-tlinks a, .psd-tlinks button { display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 28px !important; height: 28px !important; border-radius: 6px !important; border: 0 !important; background: transparent !important; color: inherit !important; opacity: .65 !important; cursor: pointer !important; padding: 0 !important; text-decoration: none !important; }
+.psd-tlinks a:hover, .psd-tlinks button:hover { opacity: 1 !important; background: rgba(127,127,127,.18) !important; }
+.psd-tlinks svg { width: 16px !important; height: 16px !important; }
 .psd-embed { width: 100% !important; border: 0 !important; border-radius: 12px !important; display: block !important; }
 .psd-player { background: var(--rel-soft, #222) !important; color: var(--rel-soft-text, #fff) !important; border-radius: 10px !important; padding: 12px !important; }
 .psd-player-note { opacity: .75 !important; font-size: 13px !important; padding: 8px 0 !important; }
@@ -323,6 +342,10 @@ const EDITIONS_URL = "https://raw.githubusercontent.com/psilodump/website-data/r
 // Tracks and track lists (release pages only; loaded when a release page is opened).
 const TRACKS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/tracks.csv";
 const TRACKLISTS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/tracklists.csv";
+const VIDEOS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/videos.csv";
+// Order and names of video kinds (admin: VIDEO_KINDS in videos_lib.php).
+const VIDEO_KINDS = { music_video: "Music video", tracker: "Tracker video", visualiser: "Visualiser", vinyl: "Vinyl playback", live: "Live",
+  teaser: "Teaser / trailer", full_album: "Full album audio", audio: "Audio", scrapbook: "Scrapbook", other: "Video" };
 // Icons come from GitHub Pages like this script (jsDelivr's @main can serve an old commit
 // for hours, so a newly added icon would 404 there).
 const ICON_BASE = "https://psilodump.github.io/website-data/icons/";
@@ -912,6 +935,14 @@ if (!window._psilodumpModalDelegated) {
       if (p) { if (p.audio.paused) playTrack(p.index); else p.audio.pause(); }
       return;
     }
+    const yt = t.closest('[data-psd-yt]');
+    if (yt) { playLiteYouTube(yt); return; }
+    const tv = t.closest('[data-psd-video]');
+    if (tv) {
+      const card = document.getElementById("psd-v-" + tv.getAttribute("data-psd-video"));
+      if (card) { card.scrollIntoView({ behavior: "smooth", block: "center" }); const b = card.querySelector("[data-psd-yt]"); if (b) playLiteYouTube(b); }
+      return;
+    }
     const seek = t.closest('[data-psd-seek]');
     if (seek) {
       const p = window._psdPlayer;
@@ -1185,13 +1216,19 @@ function loadTrackData(){
   const cat = window._psilodumpCat;
   if (!cat._trackPromise) {
     const get = url => fetch(url + "?v=" + Date.now()).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); }).then(t => toObjects(parseCSV(t)).rows);
-    cat._trackPromise = Promise.all([get(TRACKS_URL), get(TRACKLISTS_URL)]).then(([tracks, rows]) => {
+    const vids = get(VIDEOS_URL).catch(() => []);   // optional
+    cat._trackPromise = Promise.all([get(TRACKS_URL), get(TRACKLISTS_URL), vids]).then(([tracks, rows, videos]) => {
       const byId = {}; tracks.forEach(t => { byId[t.ID] = t; });
       const lists = {};
       rows.forEach(r => { const t = byId[r["Track ID"]]; if (t) (lists[r["Release ID"]] = lists[r["Release ID"]] || []).push({ row: r, t }); });
       Object.values(lists).forEach(l => l.sort((a, b) => (+a.row.Disc - +b.row.Disc) || (+a.row.Position - +b.row.Position)));
-      return { byId, lists };
-    }).catch(err => { console.warn("Track lists unavailable:", err.message); cat._trackPromise = null; return { byId: {}, lists: {} }; });
+      const videosByTrack = {}, videosByRelease = {};
+      videos.forEach(v => {
+        if (v["Track ID"]) (videosByTrack[v["Track ID"]] = videosByTrack[v["Track ID"]] || []).push(v);
+        if (v["Release ID"]) (videosByRelease[v["Release ID"]] = videosByRelease[v["Release ID"]] || []).push(v);
+      });
+      return { byId, lists, videosByTrack, videosByRelease };
+    }).catch(err => { console.warn("Track lists unavailable:", err.message); cat._trackPromise = null; return { byId: {}, lists: {}, videosByTrack: {}, videosByRelease: {} }; });
   }
   return cat._trackPromise;
 }
@@ -1208,6 +1245,7 @@ function releaseTrackItems(list){
       former: String(t["Former Titles"] || "").split(" | ").filter(Boolean),
       duration: secToTime(row.Length) || secToTime(t.Length), disc: +row.Disc || 1, pos: +row.Position || 0,
       heading: row.Heading || "", note: row.Note || "", src: bz ? "/player/tracks/" + bz + ".mp3" : "",
+      trackId: t.ID, ytMusic: row["YouTube Music"] || "",
     };
   });
 }
@@ -1354,6 +1392,7 @@ function renderRelease(mount, rows){
       </div>
     </div>
     <section class="psd-rel-player" id="psd-player"></section>
+    <section class="psd-rel-videos" id="psd-videos"></section>
     ${r._editions.length ? `<section class="psd-rel-editions"><h2>Physical editions</h2><ul>${r._editions.map(e => {
         const k = editionKind(e.Format);
         const status = e.Status === "available" && e.URL ? `<a class="psd-ed-buy" href="${esc(e.URL)}" target="_blank" rel="noopener">Buy</a>`
@@ -1377,6 +1416,42 @@ const PLAY_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v1
 const PAUSE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5.5" width="4" height="13" rx="1" fill="currentColor"/><rect x="13.5" y="5.5" width="4" height="13" rx="1" fill="currentColor"/></svg>';
 // Bandzoogle album: read the track list from the album page and play the tracks
 // with one <audio> element. Otherwise: the Spotify / Apple Music / YouTube player.
+const VIDEO_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 10.5l5-3v9l-5-3z" fill="currentColor"/></svg>';
+const YTMUSIC_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 8.5v7l6-3.5z" fill="currentColor"/></svg>';
+// A YouTube video that only loads (from youtube-nocookie.com) when clicked.
+function liteYouTube(id, label){
+  return `<button type="button" class="psd-yt" data-psd-yt="${esc(id)}" aria-label="Play video: ${esc(label)}"><img src="https://i.ytimg.com/vi/${esc(id)}/hqdefault.jpg" alt="" loading="lazy"><span class="psd-yt-play">${PLAY_ICON}</span></button>`;
+}
+function playLiteYouTube(btn){
+  const id = btn.getAttribute("data-psd-yt");
+  if (!/^[A-Za-z0-9_-]{11}$/.test(id || "")) return;
+  const p = window._psdPlayer; if (p && !p.audio.paused) p.audio.pause();      // one sound at a time
+  const frame = document.createElement("iframe");
+  frame.className = "psd-yt-frame";
+  frame.src = "https://www.youtube-nocookie.com/embed/" + id + "?autoplay=1&rel=0";
+  frame.allow = "autoplay; encrypted-media; fullscreen; picture-in-picture";
+  frame.allowFullscreen = true;
+  frame.title = btn.getAttribute("aria-label") || "Video";
+  const box = document.createElement("div"); box.className = "psd-ytbox"; box.appendChild(frame);
+  btn.replaceWith(box);
+}
+const kindOrder = k => { const i = Object.keys(VIDEO_KINDS).indexOf(k); return i < 0 ? 99 : i; };
+// The release's videos: its own (full album audio, teasers …) and those of its tracks, without duplicates.
+function releaseVideos(r, data, items){
+  const seen = new Set(), out = [];
+  const add = (v, label) => { if (seen.has(v["Video ID"])) return; seen.add(v["Video ID"]); out.push({ id: v["Video ID"], kind: v.Kind, label, note: v.Note || "" }); };
+  (data.videosByRelease[r["ID"]] || []).forEach(v => add(v, r[TITLE_COL] || ""));
+  (items || []).forEach(x => (data.videosByTrack[x.trackId] || []).forEach(v => add(v, x.title + (x.version ? " (" + x.version + ")" : ""))));
+  return out.sort((a, b) => kindOrder(a.kind) - kindOrder(b.kind));
+}
+function renderVideos(r, data, items){
+  const sec = document.getElementById("psd-videos");
+  if (!sec) return;
+  const vids = releaseVideos(r, data, items);
+  if (!vids.length) { sec.innerHTML = ""; return; }
+  sec.innerHTML = `<h2>Videos</h2><div class="psd-vgrid">${vids.map(v => `<figure class="psd-vcard" id="psd-v-${esc(v.id)}">${liteYouTube(v.id, v.label)}<figcaption>${esc(v.label)}<small>${esc(VIDEO_KINDS[v.kind] || "Video")}${v.note ? " · " + esc(v.note) : ""}</small></figcaption></figure>`).join("")}</div>`;
+}
+
 function renderPlayer(box, r, albumId){
   if (!box) return;
   stopPlayer();
@@ -1384,8 +1459,13 @@ function renderPlayer(box, r, albumId){
   loadTrackData().then(data => {
     if (!document.body.contains(box)) return;
     const list = data.lists[r["ID"]];
+    const full = (data.videosByRelease[r["ID"]] || []).find(v => v.Kind === "full_album");
+    r._fullAlbum = full ? full["Video ID"] : "";          // the player for releases without our audio
+    const items0 = list && list.length ? releaseTrackItems(list) : [];
+    items0.forEach(x => { x.video = ((data.videosByTrack[x.trackId] || [])[0] || {})["Video ID"] || ""; });
+    renderVideos(r, data, items0);
     if (list && list.length) {
-      const items = releaseTrackItems(list);
+      const items = items0;
       if (items.some(x => x.src)) return buildTrackPlayer(box, r, items, albumId);
       if (albumId) return renderBzPlayer(box, r, albumId, items);    // our list has no audio: Bandzoogle's
       box.innerHTML = trackListHtml(items, false);                    // list only, plus an embed below
@@ -1439,12 +1519,16 @@ function trackListHtml(items, playable){
     lastDisc = x.disc;
     const sub = [x.artist && x.artist.toLowerCase() !== "psilodump" ? "by " + esc(x.artist) : "", x.former.length ? "previously " + x.former.map(esc).join(", ") : "", x.note ? esc(x.note) : ""].filter(Boolean).join(" · ");
     const inner = `<span class="psd-n">${x.pos || i + 1}</span><span class="psd-t">${esc(x.title)}${x.version ? ` <span class="psd-v">(${esc(x.version)})</span>` : ""}${sub ? `<span class="psd-sub">${sub}</span>` : ""}</span><span class="psd-d">${esc(x.duration)}</span>`;
-    html += playable && x.src ? `<li><button type="button" data-psd-track="${i}">${inner}</button></li>` : `<li><div class="psd-off">${inner}</div></li>`;
+    const links = (x.video ? `<button type="button" data-psd-video="${esc(x.video)}" title="Video" aria-label="Video: ${esc(x.title)}">${VIDEO_ICON}</button>` : "")
+      + (x.ytMusic ? `<a href="https://music.youtube.com/watch?v=${esc(x.ytMusic)}" target="_blank" rel="noopener" title="YouTube Music" aria-label="${esc(x.title)} on YouTube Music">${YTMUSIC_ICON}</a>` : "");
+    const body = playable && x.src ? `<button type="button" data-psd-track="${i}">${inner}</button>` : `<div class="psd-off">${inner}</div>`;
+    html += `<li class="psd-row">${body}${links ? `<span class="psd-tlinks">${links}</span>` : ""}</li>`;
   });
   return `<ol class="psd-tracks">${html}</ol>`;
 }
 
 function renderEmbed(box, r){
+  if (r._fullAlbum) { box.innerHTML = liteYouTube(r._fullAlbum, (r[TITLE_COL] || "") + " – full album"); return; }
   const spotify = platformId(r, "Spotify", /album\/([A-Za-z0-9]+)/);
   const apple = platformId(r, "Apple", /(?:album\/[^/]*\/|\/)(\d+)(?:\?|$)/);
   const yt = String(r["YouTube"] || "").trim();
