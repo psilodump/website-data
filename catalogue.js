@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.28.1";
+const JS_VERSION = "1.28.2";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -2287,7 +2287,7 @@ function renderGig(mount, gigs, data, pp){
   if (rowsLU && rowsLU.length) rowsLU.forEach(x => {
     const p = pp.byId[x["Person ID"]], billed = x["Billed As"] || "";
     const name = p ? p.Name : billedName(billed) || billed;
-    const extra = billed && billed !== name ? ` <small>${esc(billed)}</small>` : "";
+    const extra = billed && personKey(billed) !== personKey(name) ? ` <small>${esc(billed)}</small>` : "";   // only when billed differently, not just in capitals
     const html = p && p._self ? `<li class="me">${esc(billed || name)}</li>` : `<li>${p ? `<a href="${esc(personHref(p))}">${esc(name)}</a>` : esc(name)}${extra}</li>`;
     (roles[x.Role] = roles[x.Role] || []).push(html);
   });
