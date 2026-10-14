@@ -1,57 +1,66 @@
-ID,Platform,"Video ID",Kind,"Track ID","Release ID",Length,Published,Note,"YouTube Title"
-8,youtube,BYfszVZjEwA,audio,,,494,,,"Casbah - Tricky Game (tricky trip mix by psilodump)"
-16,youtube,vhgBJKr2uSA,audio,,,2358,,,"tunez (Official Audio)"
-3,youtube,VRv0WOwfA9Q,live,,,3260,,,"psilodump live at MicroMilano Micromusic Party"
-9,youtube,QoedR8Bl86E,live,,,2159,,,"The Art of Realistix Live @ Kulturnatten II"
-28,youtube,HtjYPjVZtvU,live,,,3724,,,"psilodump Live @ Betongkulvert 7 (Live)"
-31,youtube,txobyPGtw5I,live,,,385,,,"psilodump & Matophonia - 1st Live Acid Web Stream"
-35,youtube,fNaOClz8sV4,music_video,,,151,,,Aerobics
-7,youtube,kTpGNFdPIP0,scrapbook,,,368,,,"Little Cat in Big World (from The King of Kong DVD)"
-20,youtube,IZVPPEDgTyg,tracker,186,,337,,"Protracker [Amiga]","psilodump - Down with Da Bass (Official Audio Visualizer)"
-37,youtube,r-jBjo8G49Y,tracker,209,,379,,"Protracker [Amiga]","psilodump - Party On! (Official Audio Visualizer)"
-19,youtube,nmfnigulkXU,tracker,212,,491,,"Protracker [Amiga]","psilodump - Recovery (Official Audio Visualizer)"
-24,youtube,02CQzRWJ6T8,tracker,305,,488,,"OctaMED Soundstudio [Amiga]","psilodump - Apocryphal Somnambulist (Official Audio Visualizer)"
-22,youtube,OKtx11XGXII,tracker,309,,432,,"OctaMED Soundstudio [Amiga]","psilodump - The Snabelnaut with the Green Pants (Official Audio Visualizer)"
-21,youtube,hNjIjCUYQiU,tracker,315,,564,,"OctaMED Soundstudio [Amiga]","psilodump - unnamed (Official Audio Visualizer)"
-25,youtube,Go2q-7y_eF0,tracker,317,,529,,"OctaMED Soundstudio [Amiga]","psilodump - Don't You Just Love Drums (Official Audio Visualizer)"
-23,youtube,d4h5kuCXoUQ,tracker,323,,305,,"OctaMED Soundstudio [Amiga]","psilodump - Toothpaste (Official Audio Visualizer)"
-32,youtube,mjAjFhbrhqE,music_video,494,,240,,,"psilodump - Two (Official Music Video Edit)"
-55,youtube,vWQ2El9YMJ0,music_video,611,,201,,,"psilodump - I'm So Full of You (Official Video)"
-50,youtube,fPsPdW2fbGk,music_video,614,,308,,,"Sbindon & psilodump - Shareware"
-6,youtube,ZHvcXOAQQHk,audio,704,,195,,,"Antti the Elephant (cover)"
-53,youtube,cQLxcgkJi2o,live,729,,293,,,"Psilodump - Diskmusik4 [Live, 2003]"
-52,youtube,I3obkIpaiLE,live,781,,71,,,"psilodump - Sitting Down (Live in London 2005)"
-30,youtube,hDeuUZb68es,teaser,833,,142,,,"Brinn / Never Heal Promo Trailer"
-39,youtube,lRwFcrZENKs,music_video,853,,207,,,"psilodump - The Somnambulist (Official Music Video)"
-51,youtube,wau_7K5t56s,music_video,853,,208,,,"psilodump - The Somnambulist"
-46,youtube,Tngo-kDpRXM,live,896,,320,,,"psilodump - psilodrunkuter (Live 2007)"
-45,youtube,OkQHZAkV91U,music_video,917,,164,,,"psilodump - psilodumputer (Dorothy's Magic Bag Rock Me-Mix)"
-33,youtube,zb8gFx19wxQ,music_video,965,,184,,,"Fist of Punch - The Story / Elkabel (Oldskool Ninja Mix)"
-47,youtube,SW0U1MVIkVM,live,968,,51,,,"psilodump - Phonebook [Live @ Microdisko 2007]"
-48,youtube,S2ld1oQGMc4,live,996,,81,,,"psilodump - Drop (Live @ Microdisko 2007-02-10)"
-38,youtube,zSffhhAH3-Y,music_video,1045,,292,,,"psilodump - Droidredux (Official Music Video)"
-40,youtube,TGktdxRQkqA,music_video,1067,,150,,,"psilodump - Bolldans"
-34,youtube,-Cbi8xEjpjU,music_video,1081,,245,,,"Digijam Dub (Official Music Video)"
-2,youtube,mhzn_3OqJbM,visualiser,1172,,340,,,"Simon From Space"
-49,youtube,6N3XqvrnNls,live,1182,,284,,,"psilodump - Tangens (Elithora Remix) | Live 2006"
-10,youtube,2EdQLMv8oyo,vinyl,1188,,344,,,"Untitled (The Miller Redux)"
-29,youtube,8S0dp8dHBHM,music_video,1225,,166,,,"psilodump - Gallop (Official Audio Visualizer)"
-56,youtube,soXUs9Z1d4c,visualiser,1263,,197,,,"Methadump, psilodump - English Teacher / Happy Faces"
-1,youtube,TwHayjspYPo,scrapbook,1273,,268,,,"µ-Ziq - Goodbye, Goodbye (psilodump remix) - Meemo & Mu: Reloaded Clip"
-54,youtube,iD9hmzCZo1o,music_video,1333,,240,,,"psilodump - Two (Video Edit)"
-43,youtube,Ao2egVR6i1Y,full_album,,17,2111,,,"psilodump - Behind the False Smile (Official Full Album Audio)"
-15,youtube,wnw9zydBpSw,full_album,,32,4314,,,"psilodump - Don't Get Anesthetized (Official Full Album Audio)"
-4,youtube,bDSmnHWR9v0,full_album,,69,1775,,,"psilodump - Jag och psilodump (Official Full Album Audio)"
-17,youtube,NOM34U6jXU0,full_album,,72,4257,,,"psilodump - Kanske Lite (Official Full Album Audio)"
-27,youtube,XDtqWIuoBu8,full_album,,86,4003,,,"psilodump - Moral Panic (Official Full Album Audio)"
-11,youtube,Zw881LUgA9Y,full_album,,91,4724,,,"psilodump - Never Heal (Official Full Album Audio)"
-12,youtube,dKF85zHGvWc,full_album,,94,7562,,,"psilodump - Not Today (Official Full Album Audio)"
-42,youtube,DinsvOF-faY,full_album,,106,4537,,,"psilodump - psilodumputer (Official Full Album Audio)"
-18,youtube,WgVw2uaMykE,full_album,,136,4914,,,"psilodump - Suspiciously Average (Official Full Album Audio)"
-44,youtube,K4q9G_EyVlY,full_album,,147,1201,,,"psilodump - The Droidwhatever EP (Official Full Album Audio)"
-26,youtube,JggcdUclg4U,full_album,,151,4918,,,"psilodump - The Ground (Official Full Album Audio)"
-36,youtube,p2OPW3TMrIQ,full_album,,153,4296,,,"psilodump - The Nearly Island (Official Full Album Audio)"
-5,youtube,fORvf0DOetI,full_album,,154,3778,,,"psilodump - The Night I Lost You All You All (Official Full Album Audio)"
-13,youtube,k97ECR3mlaY,full_album,,156,9462,,,"psilodump - The Nya Albumet (Official Full Album Audio)"
-14,youtube,kl8mHsEZ6XA,full_album,,159,3209,,,"psilodump - The Snabelnaut with the Green Pants (Official Full Album Audio)"
-41,youtube,EIZEqu3hEoI,full_album,,181,1773,,,"psilodump - You Sick Little Monkey (Official Full Album Audio)"
+ID,Platform,"Video ID",Kind,"Track ID","Release ID",Length,Published,Note,"YouTube Title","Made By","From Others"
+8,youtube,BYfszVZjEwA,audio,,,494,,,"Casbah - Tricky Game (tricky trip mix by psilodump)",,
+16,youtube,vhgBJKr2uSA,audio,,,2358,,,"tunez (Official Audio)",,
+60,youtube,8wFmppUWGN4,dj_set,,,,,,"Psilodump party session - Marginal Radio Dj Set 124 - Ukraine 2026","Marginal Radio",1
+3,youtube,VRv0WOwfA9Q,live,,,3260,,,"psilodump live at MicroMilano Micromusic Party",,
+9,youtube,QoedR8Bl86E,live,,,2159,,,"The Art of Realistix Live @ Kulturnatten II",,
+28,youtube,HtjYPjVZtvU,live,,,3724,,,"psilodump Live @ Betongkulvert 7 (Live)",,
+31,youtube,txobyPGtw5I,live,,,385,,,"psilodump & Matophonia - 1st Live Acid Web Stream",,
+64,youtube,YqBOpHJQupU,live,,,266,,,"Psilodump vs Goto80 - Exy II - Live @ Microdisko 2007-02-10",Microdisko,1
+65,youtube,KgxrfOqyBLU,live,,,151,,,"Psilodump feat. Malin Vulcano live@Norberg Festival 2008",Tävenlös,1
+66,youtube,xZ8cXu4F1Ds,live,,,87,,,"Psilodump feat. Malin Vulcano @ Peace and love festival 2008",Tävenlös,1
+67,youtube,9UMInJai83Q,live,,,176,,,"The X-Dump Live @ Norberg Modul, Copenhagen, Denmark 2006",,
+35,youtube,fNaOClz8sV4,music_video,,,151,,,Aerobics,,
+7,youtube,kTpGNFdPIP0,scrapbook,,,368,,,"Little Cat in Big World (from The King of Kong DVD)",,
+20,youtube,IZVPPEDgTyg,tracker,186,,337,,"Protracker [Amiga]","psilodump - Down with Da Bass (Official Audio Visualizer)",,
+37,youtube,r-jBjo8G49Y,tracker,209,,379,,"Protracker [Amiga]","psilodump - Party On! (Official Audio Visualizer)",,
+19,youtube,nmfnigulkXU,tracker,212,,491,,"Protracker [Amiga]","psilodump - Recovery (Official Audio Visualizer)",,
+24,youtube,02CQzRWJ6T8,tracker,305,,488,,"OctaMED Soundstudio [Amiga]","psilodump - Apocryphal Somnambulist (Official Audio Visualizer)",,
+22,youtube,OKtx11XGXII,tracker,309,,432,,"OctaMED Soundstudio [Amiga]","psilodump - The Snabelnaut with the Green Pants (Official Audio Visualizer)",,
+21,youtube,hNjIjCUYQiU,tracker,315,,564,,"OctaMED Soundstudio [Amiga]","psilodump - unnamed (Official Audio Visualizer)",,
+25,youtube,Go2q-7y_eF0,tracker,317,,529,,"OctaMED Soundstudio [Amiga]","psilodump - Don't You Just Love Drums (Official Audio Visualizer)",,
+23,youtube,d4h5kuCXoUQ,tracker,323,,305,,"OctaMED Soundstudio [Amiga]","psilodump - Toothpaste (Official Audio Visualizer)",,
+32,youtube,mjAjFhbrhqE,music_video,494,,240,,,"psilodump - Two (Official Music Video Edit)",,
+55,youtube,vWQ2El9YMJ0,music_video,611,,201,,,"psilodump - I'm So Full of You (Official Video)",,
+50,youtube,fPsPdW2fbGk,music_video,614,,308,,,"Sbindon & psilodump - Shareware",,
+6,youtube,ZHvcXOAQQHk,audio,704,,195,,,"Antti the Elephant (cover)",,
+53,youtube,cQLxcgkJi2o,live,729,,293,,,"Psilodump - Diskmusik4 [Live, 2003]",,
+52,youtube,I3obkIpaiLE,live,781,,71,,,"psilodump - Sitting Down (Live in London 2005)",,
+63,youtube,_GCB040H9Fc,live,817,,54,,,"Psilodump LIVE @ Chipwrecked 2018, Denmark",Hepokatti,1
+30,youtube,hDeuUZb68es,teaser,833,,142,,,"Brinn / Never Heal Promo Trailer",,
+39,youtube,lRwFcrZENKs,music_video,853,,207,,,"psilodump - The Somnambulist (Official Music Video)",,
+62,youtube,9K0s2DISiMU,tribute,853,,,,,"Psilodump - The Somnambulist (Radio Courtoisie Dub Edition)",,1
+46,youtube,Tngo-kDpRXM,live,896,,320,,,"psilodump - psilodrunkuter (Live 2007)",,
+45,youtube,OkQHZAkV91U,music_video,917,,164,,,"psilodump - psilodumputer (Dorothy's Magic Bag Rock Me-Mix)",,
+33,youtube,zb8gFx19wxQ,music_video,965,,184,,,"Fist of Punch - The Story / Elkabel (Oldskool Ninja Mix)",,
+58,youtube,qTPwp4qFW68,music_video,966,,,,,"The Droidduck","Raquel Meyers",
+47,youtube,SW0U1MVIkVM,live,968,,51,,,"psilodump - Phonebook [Live @ Microdisko 2007]",,
+48,youtube,S2ld1oQGMc4,live,996,,81,,,"psilodump - Drop (Live @ Microdisko 2007-02-10)",,
+61,youtube,KLykWVLjs7s,tribute,996,,,,,"Psilodump - Drop (Shnabubula Cover)",Shnabubula,1
+38,youtube,zSffhhAH3-Y,music_video,1045,,292,,,"psilodump - Droidredux (Official Music Video)",,
+40,youtube,TGktdxRQkqA,music_video,1067,,150,,,"psilodump - Bolldans",,
+34,youtube,-Cbi8xEjpjU,music_video,1081,,245,,,"Digijam Dub (Official Music Video)",,
+59,youtube,IZFgWTUwGeM,audio,1092,,,,,"Psilodump - ""All You Need Is Love""(8-BIT OPERATORS - Beatles Cover)",,
+2,youtube,mhzn_3OqJbM,visualiser,1172,,340,,,"Simon From Space",,
+49,youtube,6N3XqvrnNls,live,1182,,284,,,"psilodump - Tangens (Elithora Remix) | Live 2006",,
+10,youtube,2EdQLMv8oyo,vinyl,1188,,344,,,"Untitled (The Miller Redux)",,
+29,youtube,8S0dp8dHBHM,music_video,1225,,166,,,"psilodump - Gallop (Official Audio Visualizer)",,
+56,youtube,soXUs9Z1d4c,visualiser,1263,,197,,,"Methadump, psilodump - English Teacher / Happy Faces",,
+1,youtube,TwHayjspYPo,scrapbook,1273,,268,,,"µ-Ziq - Goodbye, Goodbye (psilodump remix) - Meemo & Mu: Reloaded Clip",,
+54,youtube,iD9hmzCZo1o,music_video,1333,,240,,,"psilodump - Two (Video Edit)",,
+43,youtube,Ao2egVR6i1Y,full_album,,17,2111,,,"psilodump - Behind the False Smile (Official Full Album Audio)",,
+15,youtube,wnw9zydBpSw,full_album,,32,4314,,,"psilodump - Don't Get Anesthetized (Official Full Album Audio)",,
+4,youtube,bDSmnHWR9v0,full_album,,69,1775,,,"psilodump - Jag och psilodump (Official Full Album Audio)",,
+17,youtube,NOM34U6jXU0,full_album,,72,4257,,,"psilodump - Kanske Lite (Official Full Album Audio)",,
+27,youtube,XDtqWIuoBu8,full_album,,86,4003,,,"psilodump - Moral Panic (Official Full Album Audio)",,
+11,youtube,Zw881LUgA9Y,full_album,,91,4724,,,"psilodump - Never Heal (Official Full Album Audio)",,
+12,youtube,dKF85zHGvWc,full_album,,94,7562,,,"psilodump - Not Today (Official Full Album Audio)",,
+42,youtube,DinsvOF-faY,full_album,,106,4537,,,"psilodump - psilodumputer (Official Full Album Audio)",,
+18,youtube,WgVw2uaMykE,full_album,,136,4914,,,"psilodump - Suspiciously Average (Official Full Album Audio)",,
+44,youtube,K4q9G_EyVlY,full_album,,147,1201,,,"psilodump - The Droidwhatever EP (Official Full Album Audio)",,
+26,youtube,JggcdUclg4U,full_album,,151,4918,,,"psilodump - The Ground (Official Full Album Audio)",,
+36,youtube,p2OPW3TMrIQ,full_album,,153,4296,,,"psilodump - The Nearly Island (Official Full Album Audio)",,
+5,youtube,fORvf0DOetI,full_album,,154,3778,,,"psilodump - The Night I Lost You All You All (Official Full Album Audio)",,
+13,youtube,k97ECR3mlaY,full_album,,156,9462,,,"psilodump - The Nya Albumet (Official Full Album Audio)",,
+14,youtube,kl8mHsEZ6XA,full_album,,159,3209,,,"psilodump - The Snabelnaut with the Green Pants (Official Full Album Audio)",,
+41,youtube,EIZEqu3hEoI,full_album,,181,1773,,,"psilodump - You Sick Little Monkey (Official Full Album Audio)",,
