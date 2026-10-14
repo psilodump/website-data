@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.26.2";
+const JS_VERSION = "1.26.3";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -2505,7 +2505,7 @@ function initPost(){
       <div class="psd-post-body">${postBodyHtml(p) || ""}</div>
       ${cards.length ? `<div class="psd-post-cards">${cards.join("")}</div>` : ""}
       ${tags.length ? `<p class="psd-post-tags">${tags.map(t => `<a href="${NEWS_PATH}#tag=${encodeURIComponent(t)}">${esc(t)}</a>`).join("")}</p>` : ""}
-      ${p["Old URL"] ? `<p class="psd-post-old"><a href="${esc(p["Old URL"])}">This post on the old blog</a></p>` : ""}
+      ${p["Old URL"] ? `<p class="psd-post-old"><a href="${esc(String(p["Old URL"]).replace(/^http:/, "https:"))}"${/476\.digital/.test(p["Old URL"]) ? ' target="_blank" rel="noopener"' : ""}>${/476\.digital/.test(p["Old URL"]) ? "Originally in The X-Dump news archive" : "This post on the old blog"}</a></p>` : ""}
     </div>`;
     if (!document.getElementById("rel-lightbox")) mount.insertAdjacentHTML("beforeend", `<div id="rel-lightbox" class="rel-modal-overlay"><img id="rel-lightbox-img" class="rel-lightbox-img" src="" alt=""></div>`);
     moveModalsToBody();
