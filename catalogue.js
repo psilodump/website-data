@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.25.0";
+const JS_VERSION = "1.26.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -289,6 +289,41 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-today-gig .e { flex: 1 1 auto !important; }
 .psd-today-gig .e small { display: block !important; font-size: 12px !important; opacity: .7 !important; }
 .psd-today-gig .i { display: inline-flex !important; gap: 6px !important; opacity: .7 !important; }
+.psd-news-list { list-style: none !important; margin: 0 !important; padding: 0 !important; }
+.psd-news-item { display: flex !important; gap: 14px !important; padding: 12px 0 !important; border-top: 1px solid rgba(127,127,127,.18) !important; margin: 0 !important; list-style: none !important; }
+.psd-news-item .pic { flex: 0 0 96px !important; height: 96px !important; border-radius: 6px !important; overflow: hidden !important; background: rgba(127,127,127,.12) !important; display: block !important; }
+.psd-news-item .pic img { width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important; }
+.psd-news-item .txt { flex: 1 1 auto !important; min-width: 0 !important; }
+.psd-news-item .meta { font-size: 12px !important; opacity: .7 !important; }
+.psd-news-item h3 { font-size: 16px !important; margin: 2px 0 4px !important; color: inherit !important; line-height: 1.3 !important; }
+.psd-news-item h3 a { color: inherit !important; }
+.psd-news-item p { font-size: 13px !important; margin: 0 !important; opacity: .85 !important; line-height: 1.45 !important; }
+.psd-news-item.auto .pic { flex-basis: 64px !important; height: 64px !important; }
+.psd-news-item.auto h3 { font-size: 14px !important; }
+.psd-news-more button { font: inherit !important; font-size: 14px !important; padding: 8px 18px !important; border-radius: 999px !important; border: 1px solid rgba(127,127,127,.4) !important; background: transparent !important; color: inherit !important; cursor: pointer !important; }
+.psd-news .psd-vpage-bar select { font: inherit !important; font-size: 13px !important; padding: 5px 8px !important; border-radius: 6px !important; border: 1px solid rgba(127,127,127,.35) !important; background: transparent !important; color: inherit !important; }
+.psd-news .psd-vpage-bar select option { color: #111 !important; }
+.psd-ntag { font-size: 13px !important; margin: 4px 0 !important; }
+.psd-post-meta { font-size: 13px !important; opacity: .75 !important; margin-bottom: 4px !important; }
+.psd-post-body { font-size: 15px !important; line-height: 1.6 !important; margin-top: 14px !important; max-width: 760px !important; }
+.psd-post-body p { margin: 0 0 1em !important; }
+.psd-post-body img { max-width: 100% !important; height: auto !important; border-radius: 6px !important; display: block !important; margin: 0 0 1em !important; }
+.psd-post-body .psd-post-zoom, .psd-post-img button { display: block !important; padding: 0 !important; border: 0 !important; background: none !important; cursor: zoom-in !important; max-width: 100% !important; }
+.psd-post-img { margin: 0 0 1em !important; }
+.psd-post-body .psd-yt img { height: 100% !important; margin: 0 !important; border-radius: 0 !important; }
+.psd-news .psd-gig-media { flex-basis: 100% !important; }
+.psd-post-embed { margin: 0 0 1em !important; max-width: 640px !important; }
+.psd-post-cards { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important; gap: 12px !important; margin-top: 20px !important; max-width: 760px !important; }
+.psd-rel a.psd-post-card { display: flex !important; gap: 12px !important; align-items: center !important; padding: 10px !important; border-radius: 10px !important; background: rgba(127,127,127,.12) !important; text-decoration: none !important; color: inherit !important; }
+.psd-post-card img { width: 64px !important; height: 64px !important; object-fit: cover !important; border-radius: 6px !important; flex: 0 0 64px !important; }
+.psd-post-card b { display: block !important; font-size: 15px !important; }
+.psd-post-card small { display: block !important; font-size: 12px !important; opacity: .75 !important; }
+.psd-post-tags { margin-top: 18px !important; display: flex !important; flex-wrap: wrap !important; gap: 6px !important; }
+.psd-rel .psd-post-tags a { font-size: 12px !important; padding: 2px 9px !important; border-radius: 999px !important; border: 1px solid rgba(127,127,127,.35) !important; text-decoration: none !important; }
+.psd-post-old { font-size: 12px !important; opacity: .7 !important; margin-top: 10px !important; }
+.psd-innews ul { list-style: none !important; margin: 0 !important; padding: 0 !important; }
+.psd-innews li { font-size: 14px !important; padding: 3px 0 !important; margin: 0 !important; list-style: none !important; }
+.psd-innews li small { opacity: .65 !important; margin-right: 8px !important; font-variant-numeric: tabular-nums !important; }
 .psd-rel-videos { margin-top: 22px !important; }
 .psd-rel-videos h2 { font-size: 15px !important; margin: 0 0 10px !important; color: inherit !important; opacity: .75 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
 .psd-vgrid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important; gap: 14px !important; }
@@ -1035,6 +1070,11 @@ if (!window._psilodumpModalDelegated) {
       if (p) { if (p.audio.paused) { if (p.cues && p.audio.getAttribute("src")) p.audio.play().catch(() => {}); else playTrack(p.index); } else p.audio.pause(); }
       return;
     }
+    const nk = t.closest('[data-psd-nkind]');
+    if (nk) { const m = document.getElementById("psd-news"); if (m && m._psdNews) { m._psdNews.kind = nk.getAttribute("data-psd-nkind"); m._psdNews.shown = 20; m._psdNewsRender(); } return; }
+    if (t.closest('[data-psd-nmore]')) { const m = document.getElementById("psd-news"); if (m && m._psdNews) { m._psdNews.shown += 30; m._psdNewsRender(); } return; }
+    const ntg = t.closest('[data-psd-ntag]');
+    if (ntg) { e.preventDefault(); const m = document.getElementById("psd-news"); if (m && m._psdNews) { m._psdNews.tag = ntg.getAttribute("data-psd-ntag"); m._psdNewsRender(); } return; }
     const dy = t.closest('[data-psd-day]');
     if (dy) { const m = document.getElementById("psd-today"); if (m && m._psdToday) { const v = dy.getAttribute("data-psd-day"); const d = new Date(); m._psdToday.md = v === "today" ? pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) : v; m._psdTodayRender(); } return; }
     const pk = t.closest('[data-psd-pkind]');
@@ -1525,6 +1565,7 @@ function renderRelease(mount, rows){
   moveModalsToBody();
   document.title = title + " | psilodump";
   renderPlayer(document.getElementById("psd-player"), r, albumId);
+  appendInTheNews(mount.querySelector(".psd-rel"), p => p["Release ID"] === r["ID"]);
 }
 
 // --- Player ---
@@ -2275,8 +2316,202 @@ function renderGig(mount, gigs, data){
   if (!document.getElementById("rel-lightbox")) mount.insertAdjacentHTML("beforeend", `<div id="rel-lightbox" class="rel-modal-overlay"><img id="rel-lightbox-img" class="rel-lightbox-img" src="" alt=""></div>`);
   moveModalsToBody();
   document.title = (g.Event || "Gig") + " · " + String(g.Date).slice(0, 4) + " | psilodump";
+  appendInTheNews(mount.querySelector(".psd-gig"), p => p["Gig ID"] === g.ID);
   if (cues) buildTrackPlayer(document.getElementById("psd-player"), { [TITLE_COL]: g.Event }, setItems, "");
   else if (bz) buildTrackPlayer(document.getElementById("psd-player"), { [TITLE_COL]: g.Event }, [{ title: "Live at " + (g.Event || "the gig"), version: "", artist: "", former: [], duration: "", disc: 1, pos: 1, heading: "", note: "Live recording", src: "/player/tracks/" + bz + ".mp3", trackId: "", ytMusic: "", video: "" }], "");
+}
+
+// --- NEWS: feed (<div id="psd-news">) and one post (<div id="psd-post"> on /post?p=<key>) from posts.csv ---
+// Releases and gigs that no post is about appear in the feed by themselves as short entries.
+const POSTS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/posts.csv";
+const POST_PATH = "/post", NEWS_PATH = "/news-feed";
+const POST_KINDS = { news: "News", release: "Release", gig: "Gig", remix: "Remix", video: "Video", press: "Press", collab: "Collaboration" };
+function loadPosts(){
+  const cat = window._psilodumpCat;
+  if (!cat._postPromise) {
+    cat._postPromise = Promise.all([
+      fetch(POSTS_URL + "?v=" + Date.now()).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); }).then(t => toObjects(parseCSV(t)).rows),
+      loadGigs().catch(() => ({ gigs: [] })),
+    ]).then(([posts, { gigs }]) => {
+      const relById = {}; (cat.rows || []).forEach(r => { relById[r["ID"]] = r; });
+      const gigById = {}; gigs.forEach(g => { gigById[g.ID] = g; });
+      const seen = {};
+      posts.sort((a, b) => String(b.Date).localeCompare(String(a.Date)) || (+b.ID - +a.ID));
+      posts.forEach(p => {
+        const k = (String(p.Date).slice(0, 10) + "-" + slugify(p.Title || "post")).replace(/-+$/, "");
+        p._key = seen[k] ? k + "-" + p.ID : k; seen[k] = 1;
+        p._rel = relById[p["Release ID"]] || null; p._gig = gigById[p["Gig ID"]] || null;
+        const firstImg = (String(p.Body).match(p.Format === "html" ? /<img[^>]+src="([^"]+)"/i : /^(https?:\/\/\S+\.(?:jpe?g|png|gif|webp))\s*$/im) || [])[1] || "";
+        const flyer = p._gig && p._gig._images.find(i => i.Kind === "flyer");
+        const ytId = (String(p.Body).match(/(?:youtube(?:-nocookie)?\.com\/(?:embed\/|watch\?v=)|youtu\.be\/)([A-Za-z0-9_-]{11})/) || [])[1];
+        p._img = p.Image || (firstImg ? firstImg.replace(/^\/\//, "https://") : "") || (p._rel && p._rel._thumbUrl) || (flyer && flyer.Image) || (ytId ? "https://i.ytimg.com/vi/" + ytId + "/hqdefault.jpg" : "");
+        p._text = postPlain(p);
+      });
+      return { posts, gigs, relById, gigById };
+    }).catch(err => { cat._postPromise = null; throw err; });
+  }
+  return cat._postPromise;
+}
+const postHref = p => POST_PATH + "?p=" + encodeURIComponent(p._key);
+function postPlain(p){
+  const s = String(p.Body || "");
+  const t = p.Format === "html" ? s.replace(/<(script|style|iframe)[\s\S]*?<\/\1>/gi, " ").replace(/<br\s*\/?>|<\/p>/gi, " ").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    : s.split(/\n/).filter(l => !/^\s*https?:\/\/\S+\s*$/.test(l)).join(" ").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/\*\*?([^*]+)\*\*?/g, "$1");
+  return t.replace(/\s+/g, " ").trim();
+}
+
+// Embeds from an address: YouTube (click-to-load), Vimeo, Bandcamp, Mixcloud, SoundCloud, Spotify.
+function embedFor(url, label){
+  const yt = (url.match(/(?:youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/) || [])[1];
+  if (yt) return `<div class="psd-post-embed">${liteYouTube(yt, label || "Video")}</div>`;
+  const vimeo = (url.match(/vimeo\.com\/(?:video\/)?(\d+)/) || [])[1];
+  if (vimeo) return `<div class="psd-post-embed psd-ytbox"><iframe class="psd-yt-frame" src="https://player.vimeo.com/video/${vimeo}" loading="lazy" allow="fullscreen; picture-in-picture" allowfullscreen title="${esc(label || "Video")}"></iframe></div>`;
+  if (/^https:\/\/(bandcamp\.com\/EmbeddedPlayer|w\.soundcloud\.com\/player|player-widget\.mixcloud\.com|www\.mixcloud\.com\/widget|open\.spotify\.com\/embed)/.test(url))
+    return `<div class="psd-post-embed"><iframe class="psd-embed" src="${esc(url)}" height="${/bandcamp/.test(url) ? 120 : 166}" loading="lazy" allow="autoplay; encrypted-media" title="${esc(label || "Player")}"></iframe></div>`;
+  return "";
+}
+const isImageUrl = u => /^https?:\/\/\S+\.(?:jpe?g|png|gif|webp)(?:\?\S*)?$/i.test(u);
+
+// Simple text (posts written in the admin) → HTML
+function renderPostText(s){
+  const inline = t => esc(t)
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+|\/[^)\s]*)\)/g, (m, a, u) => `<a href="${u}"${/^https?:/.test(u) ? ' target="_blank" rel="noopener"' : ""}>${a}</a>`)
+    .replace(/(^|[\s(])((?:https?:\/\/)[^\s<]+[^\s<.,;:!?)])/g, (m, pre, u) => `${pre}<a href="${u}" target="_blank" rel="noopener">${u.replace(/^https?:\/\/(www\.)?/, "")}</a>`)
+    .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<i>$2</i>").replace(/\n/g, "<br>");
+  return String(s || "").replace(/\r/g, "").split(/\n\s*\n/).map(b => b.trim()).filter(Boolean).map(b => {
+    if (/^https?:\/\/\S+$/.test(b)) {
+      if (isImageUrl(b)) return `<figure class="psd-post-img"><button type="button" data-lightbox="${esc(b)}" data-thumb="${esc(b.replace("/large_", "/thumb_"))}" aria-label="View larger"><img src="${esc(b.replace("/large_", "/thumb_").replace("/thumb_", "/large_"))}" alt="" loading="lazy"></button></figure>`;
+      const e = embedFor(b, ""); if (e) return e;
+    }
+    return `<p>${inline(b)}</p>`;
+  }).join("");
+}
+
+// Imported HTML (the old Bandzoogle blog) → cleaned HTML: only plain text markup, links, images and known players.
+const POST_TAGS = new Set(["P", "BR", "A", "B", "STRONG", "I", "EM", "U", "S", "UL", "OL", "LI", "H2", "H3", "H4", "BLOCKQUOTE", "HR", "IMG", "SPAN", "DIV", "FIGURE", "FIGCAPTION", "SUB", "SUP", "PRE", "CODE", "TABLE", "TBODY", "TR", "TD", "TH"]);
+function cleanPostHtml(html, label){
+  const doc = new DOMParser().parseFromString("<div>" + String(html || "") + "</div>", "text/html");
+  const walk = el => {
+    [...el.childNodes].forEach(n => {
+      if (n.nodeType === 3) return;
+      if (n.nodeType !== 1) { n.remove(); return; }
+      if (n.tagName === "IFRAME") {
+        const e = embedFor((n.getAttribute("src") || "").replace(/^\/\//, "https://"), label);
+        if (e) { const d = doc.createElement("div"); d.innerHTML = e; n.replaceWith(...d.childNodes); } else n.remove();
+        return;
+      }
+      if (!POST_TAGS.has(n.tagName)) { walk(n); n.replaceWith(...n.childNodes); return; }
+      const keep = {};
+      if (n.tagName === "A") { const h = n.getAttribute("href") || ""; if (/^(https?:|\/|mailto:)/i.test(h)) keep.href = h.replace(/^https?:\/\/psilodu\.mp(?=\/)/i, ""); }
+      if (n.tagName === "IMG") { const src = (n.getAttribute("src") || "").replace(/^\/\//, "https://"); if (/^https:/.test(src)) { keep.src = src; keep.alt = n.getAttribute("alt") || ""; keep.loading = "lazy"; } else { n.remove(); return; } }
+      [...n.attributes].forEach(a => n.removeAttribute(a.name));
+      Object.entries(keep).forEach(([k, v]) => n.setAttribute(k, v));
+      if (n.tagName === "A" && /^https?:/.test(keep.href || "")) { n.setAttribute("target", "_blank"); n.setAttribute("rel", "noopener nofollow"); }
+      walk(n);
+    });
+  };
+  const root = doc.body.firstChild; walk(root);
+  // an image inside a link: the link stays; a bare image opens large
+  root.querySelectorAll("img").forEach(img => { if (!img.closest("a") && !img.closest(".psd-yt")) { const b = doc.createElement("button"); b.type = "button"; b.className = "psd-post-zoom"; b.setAttribute("data-lightbox", img.getAttribute("src")); b.setAttribute("data-thumb", img.getAttribute("src")); b.setAttribute("aria-label", "View larger"); img.replaceWith(b); b.appendChild(img); } });
+  return root.innerHTML;
+}
+function postBodyHtml(p){ return p.Format === "html" ? cleanPostHtml(p.Body, p.Title) : renderPostText(p.Body); }
+
+function feedItems(posts, gigs){
+  const cat = window._psilodumpCat;
+  const relDone = new Set(posts.map(p => p["Release ID"]).filter(Boolean)), gigDone = new Set(posts.map(p => p["Gig ID"]).filter(Boolean));
+  const items = posts.map(p => ({ type: "post", date: String(p.Date), kind: p.Kind || "news", title: p.Title, href: postHref(p), img: p._img, text: p._text, tags: p.Tags || "", p }));
+  (cat.rows || []).forEach(r => { const d = r._released || ""; if (/^\d{4}-\d{2}-\d{2}/.test(d) && !relDone.has(r["ID"]) && r["Hidden"] !== "1")
+    items.push({ type: "release", date: d, kind: "release", title: r[TITLE_COL], href: releaseHref(r), img: r._thumbUrl || "", text: [r[TYPE_COL], r[CAT_COL], r["Label"]].filter(Boolean).join(" · "), tags: "" }); });
+  gigs.forEach(g => { if (/^\d{4}-\d{2}-\d{2}/.test(g.Date) && !gigDone.has(g.ID) && g.Cancelled !== "1") {
+    const fl = g._images.find(i => i.Kind === "flyer") || g._images[0];
+    items.push({ type: "gig", date: g.Date, kind: "gig", title: (g.Role && g.Role !== "Live" ? g.Role : "Live") + " @ " + (g.Event || "gig"), href: gigHref(g), img: fl ? fl.Image : "", text: gigPlace(g), tags: "" }); } });
+  return items.sort((a, b) => b.date.localeCompare(a.date));
+}
+
+function initNews(){
+  const mount = document.getElementById("psd-news");
+  if (!mount || mount._psdShown) return;
+  if (document.documentElement.hasAttribute("aria-busy")) return;
+  mount._psdShown = true;
+  ensureStyles();
+  mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading news…</div>`;
+  loadCatalogue().then(() => loadPosts()).then(({ posts, gigs }) => {
+    const all = feedItems(posts, gigs);
+    const years = [...new Set(all.map(x => x.date.slice(0, 4)))].sort().reverse();
+    const h = new URLSearchParams(location.hash.replace(/^#/, ""));
+    const st = mount._psdNews = { kind: h.get("kind") || "", year: h.get("year") || "", q: h.get("q") || "", tag: h.get("tag") || "", auto: h.get("auto") !== "0", shown: 20 };
+    const kinds = Object.keys(POST_KINDS).filter(k => all.some(x => x.kind === k));
+    mount.innerHTML = `<div class="psd-rel psd-vpage psd-news"><div class="psd-vpage-bar">
+      <button type="button" data-psd-nkind="">All</button>${kinds.map(k => `<button type="button" data-psd-nkind="${k}">${esc(POST_KINDS[k])}${k === "release" || k === "gig" || k === "remix" ? "s" : ""}</button>`).join("")}
+      <select aria-label="Year"><option value="">All years</option>${years.map(y => `<option${y === st.year ? " selected" : ""}>${y}</option>`).join("")}</select>
+      <input type="search" placeholder="Search the news…" aria-label="Search the news" value="${esc(st.q)}">
+      <label class="psd-gig-media"><input type="checkbox"${st.auto ? " checked" : ""}> include releases and gigs without a post</label></div>
+      <p class="psd-ntag"></p><ol class="psd-news-list"></ol><p class="psd-news-more"></p></div>`;
+    const render = () => {
+      const q = st.q.trim().toLowerCase();
+      const list = all.filter(x => (!st.kind || x.kind === st.kind) && (!st.year || x.date.startsWith(st.year)) && (st.auto || x.type === "post")
+        && (!st.tag || x.tags.split(/\s*,\s*/).some(t => t.toLowerCase() === st.tag.toLowerCase()))
+        && (!q || (x.title + " " + x.text + " " + x.tags).toLowerCase().includes(q)));
+      mount.querySelector(".psd-news-list").innerHTML = list.slice(0, st.shown).map(x => `<li class="psd-news-item${x.type !== "post" ? " auto" : ""}">
+        <a class="pic" href="${esc(x.href)}" tabindex="-1" aria-hidden="true">${x.img ? `<img src="${esc(x.img)}" alt="" loading="lazy">` : ""}</a>
+        <div class="txt"><div class="meta">${esc(gigDateText(x.date.slice(0, 10)))} · ${esc(POST_KINDS[x.kind] || "News")}${x.type !== "post" ? " · catalogue" : ""}</div>
+          <h3><a href="${esc(x.href)}">${esc(x.title)}</a></h3>${x.text ? `<p>${esc(x.text.length > 220 ? x.text.slice(0, 210).replace(/\s+\S*$/, "") + " …" : x.text)}</p>` : ""}</div></li>`).join("") || `<li class="psd-vempty">Nothing found.</li>`;
+      mount.querySelector(".psd-news-more").innerHTML = list.length > st.shown ? `<button type="button" data-psd-nmore>Show more <small>(${list.length - st.shown} left)</small></button>` : "";
+      mount.querySelector(".psd-ntag").innerHTML = st.tag ? `Tagged “${esc(st.tag)}” · <a href="#" data-psd-ntag="">show all</a>` : "";
+      mount.querySelectorAll("[data-psd-nkind]").forEach(b => b.setAttribute("aria-pressed", b.getAttribute("data-psd-nkind") === st.kind ? "true" : "false"));
+      const p = new URLSearchParams(); if (st.kind) p.set("kind", st.kind); if (st.year) p.set("year", st.year); if (st.q) p.set("q", st.q); if (st.tag) p.set("tag", st.tag); if (!st.auto) p.set("auto", "0");
+      const hs = p.toString(); if (hs !== location.hash.replace(/^#/, "")) history.replaceState(history.state, "", location.pathname + location.search + (hs ? "#" + hs : ""));
+    };
+    mount._psdNewsRender = render;
+    mount.querySelector("select").addEventListener("change", e => { st.year = e.target.value; st.shown = 20; render(); });
+    mount.querySelector("input[type=search]").addEventListener("input", e => { st.q = e.target.value; st.shown = 20; render(); });
+    mount.querySelector(".psd-gig-media input").addEventListener("change", e => { st.auto = e.target.checked; st.shown = 20; render(); });
+    render();
+  }).catch(err => { console.error("Failed to load news:", err); mount.innerHTML = `<div class="psd-rel">Unable to load the news right now. Please refresh the page.</div>`; });
+}
+
+function initPost(){
+  const mount = document.getElementById("psd-post");
+  if (!mount || mount._psdShown === location.search) return;
+  if (document.documentElement.hasAttribute("aria-busy")) return;
+  if (location.pathname.replace(/\/+$/, "") !== POST_PATH) return;
+  mount._psdShown = location.search;
+  ensureStyles();
+  mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading…</div>`;
+  loadCatalogue().then(() => loadPosts()).then(({ posts }) => {
+    const key = (new URLSearchParams(location.search).get("p") || "").trim().toLowerCase();
+    const i = posts.findIndex(p => p._key.toLowerCase() === key || p.ID === key);
+    if (i < 0) { mount.innerHTML = `<div class="psd-rel"><nav class="psd-rel-nav"><a href="${NEWS_PATH}">← News</a></nav><h1 class="psd-rel-title">Post not found</h1></div>`; document.title = "Post not found | psilodump"; return; }
+    const p = posts[i], newer = posts[i - 1], older = posts[i + 1];
+    const tags = String(p.Tags || "").split(/\s*,\s*/).filter(Boolean);
+    const cards = [];
+    if (p._rel) cards.push(`<a class="psd-post-card" href="${esc(releaseHref(p._rel))}">${p._rel._thumbUrl ? `<img src="${esc(p._rel._thumbUrl)}" alt="">` : ""}<span><small>Release</small><b>${esc(p._rel[TITLE_COL])}</b><small>${esc([p._rel._released.slice(0, 4), p._rel[TYPE_COL], p._rel[CAT_COL]].filter(Boolean).join(" · "))}</small></span></a>`);
+    if (p._gig) { const fl = p._gig._images.find(x => x.Kind === "flyer") || p._gig._images[0];
+      cards.push(`<a class="psd-post-card" href="${esc(gigHref(p._gig))}">${fl ? `<img src="${esc(fl.Image)}" alt="">` : ""}<span><small>Gig</small><b>${esc(p._gig.Event)}</b><small>${esc([gigDateText(p._gig.Date), gigPlace(p._gig)].filter(Boolean).join(" · "))}</small></span></a>`); }
+    mount.innerHTML = `<div class="psd-rel psd-post">
+      <nav class="psd-rel-nav"><a href="${NEWS_PATH}">← News</a><span class="psd-rel-step">${newer ? `<a href="${esc(postHref(newer))}" title="${esc(newer.Title)}">‹ Newer</a>` : ""}${older ? `<a href="${esc(postHref(older))}" title="${esc(older.Title)}">Older ›</a>` : ""}</span></nav>
+      <div class="psd-post-meta">${dayLink(String(p.Date).slice(0, 10))} · <a href="${NEWS_PATH}#kind=${esc(p.Kind || "news")}">${esc(POST_KINDS[p.Kind] || "News")}</a></div>
+      <h1 class="psd-rel-title">${esc(p.Title)}</h1>
+      <div class="psd-post-body">${postBodyHtml(p) || ""}</div>
+      ${cards.length ? `<div class="psd-post-cards">${cards.join("")}</div>` : ""}
+      ${tags.length ? `<p class="psd-post-tags">${tags.map(t => `<a href="${NEWS_PATH}#tag=${encodeURIComponent(t)}">${esc(t)}</a>`).join("")}</p>` : ""}
+      ${p["Old URL"] ? `<p class="psd-post-old"><a href="${esc(p["Old URL"])}">This post on the old blog</a></p>` : ""}
+    </div>`;
+    if (!document.getElementById("rel-lightbox")) mount.insertAdjacentHTML("beforeend", `<div id="rel-lightbox" class="rel-modal-overlay"><img id="rel-lightbox-img" class="rel-lightbox-img" src="" alt=""></div>`);
+    moveModalsToBody();
+    document.title = p.Title + " | psilodump";
+  }).catch(err => { console.error("Failed to load post:", err); mount.innerHTML = `<div class="psd-rel">Unable to load the post right now. Please refresh the page.</div>`; });
+}
+
+// "In the news" under a release or a gig: the posts about it.
+function appendInTheNews(box, test){
+  if (!box) return;
+  loadPosts().then(({ posts }) => {
+    const list = posts.filter(test);
+    if (!list.length || !document.body.contains(box) || box.querySelector(".psd-innews")) return;
+    box.insertAdjacentHTML("beforeend", `<section class="psd-innews"><h2>In the news</h2><ul>${list.map(p => `<li><small>${esc(String(p.Date).slice(0, 10))}</small><a href="${esc(postHref(p))}">${esc(p.Title)}</a></li>`).join("")}</ul></section>`);
+  }).catch(() => {});
 }
 
 // --- REMIXES page: <div id="psd-remixes-page"> — psilodump's remixes, from tracks.csv ---
@@ -2413,6 +2648,8 @@ function applyFixedType(){
 }
 
 function initApp(){
+  initNews();
+  initPost();
   initGigsList();
   initGig();
   initToday();
@@ -2467,6 +2704,10 @@ new MutationObserver(() => {
   if (vp && !vp._psdShown) { initVideosPage(); return; }
   const rp = document.getElementById("psd-remixes-page");
   if (rp && !rp._psdShown) { initRemixesPage(); return; }
+  const nw = document.getElementById("psd-news");
+  if (nw && !nw._psdShown) { initNews(); return; }
+  const po = document.getElementById("psd-post");
+  if (po && po._psdShown !== location.search) { initPost(); return; }
   const gl = document.getElementById("psd-gigs");
   if (gl && !gl._psdShown) { initGigsList(); return; }
   const gp = document.getElementById("psd-gig");
