@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.13.0";
+const JS_VERSION = "1.14.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -193,6 +193,15 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-rel-facts dd { margin: 0 !important; }
 .psd-rel-player { margin-top: 24px !important; }
 .psd-rel-more { margin-top: 18px !important; font-size: 13px !important; opacity: .85 !important; }
+.psd-vpage-bar { display: flex !important; flex-wrap: wrap !important; gap: 6px !important; align-items: center !important; margin: 0 0 16px !important; }
+.psd-vpage-bar button { border: 1px solid rgba(127,127,127,.45) !important; background: transparent !important; color: inherit !important; border-radius: 999px !important; padding: 5px 12px !important; font: inherit !important; font-size: 13px !important; cursor: pointer !important; }
+.psd-vpage-bar button[aria-pressed="true"] { background: var(--rel-deep, #2a2a2a) !important; color: var(--rel-deep-text, #fff) !important; border-color: transparent !important; font-weight: 600 !important; }
+.psd-vpage-bar input { flex: 1 1 180px !important; min-width: 140px !important; padding: 6px 10px !important; border-radius: 999px !important; border: 1px solid rgba(127,127,127,.45) !important; background: transparent !important; color: inherit !important; font: inherit !important; font-size: 13px !important; }
+.psd-vpage section { margin: 0 0 26px !important; }
+.psd-vpage h2 { font-size: 15px !important; margin: 0 0 10px !important; color: inherit !important; opacity: .8 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
+.psd-vpage h2 small { font-weight: normal !important; opacity: .7 !important; text-transform: none !important; letter-spacing: 0 !important; }
+.psd-vpage h3 { font-size: 13px !important; margin: 14px 0 8px !important; color: inherit !important; opacity: .75 !important; font-weight: 600 !important; }
+.psd-vpage .psd-vempty { opacity: .7 !important; font-size: 14px !important; }
 .psd-rel-videos { margin-top: 22px !important; }
 .psd-rel-videos h2 { font-size: 15px !important; margin: 0 0 10px !important; color: inherit !important; opacity: .75 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
 .psd-vgrid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important; gap: 14px !important; }
@@ -208,7 +217,7 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-ytbox { position: relative !important; width: 100% !important; aspect-ratio: 16 / 9 !important; border-radius: 10px !important; overflow: hidden !important; background: #000 !important; }
 .psd-tracks li.psd-row { display: flex !important; align-items: center !important; gap: 4px !important; }
 .psd-tracks li.psd-row > button, .psd-tracks li.psd-row > .psd-off { flex: 1 1 auto !important; min-width: 0 !important; }
-.psd-tlinks { display: flex !important; gap: 2px !important; flex: 0 0 auto !important; }
+.psd-tlinks { display: flex !important; gap: 2px !important; flex: 0 0 auto !important; justify-content: flex-end !important; }
 .psd-tlinks a, .psd-tlinks button { display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 28px !important; height: 28px !important; border-radius: 6px !important; border: 0 !important; background: transparent !important; color: inherit !important; opacity: .65 !important; cursor: pointer !important; padding: 0 !important; text-decoration: none !important; }
 .psd-tlinks a:hover, .psd-tlinks button:hover { opacity: 1 !important; background: rgba(127,127,127,.18) !important; }
 .psd-tlinks svg { width: 16px !important; height: 16px !important; }
@@ -935,6 +944,8 @@ if (!window._psilodumpModalDelegated) {
       if (p) { if (p.audio.paused) playTrack(p.index); else p.audio.pause(); }
       return;
     }
+    const vk = t.closest('[data-psd-vkind]');
+    if (vk) { const m = document.getElementById("psd-videos-page"); if (m && m._psdState) { m._psdState.kind = vk.getAttribute("data-psd-vkind"); m._psdRender(); } return; }
     const yt = t.closest('[data-psd-yt]');
     if (yt) { playLiteYouTube(yt); return; }
     const tv = t.closest('[data-psd-video]');
@@ -1227,8 +1238,8 @@ function loadTrackData(){
         if (v["Track ID"]) (videosByTrack[v["Track ID"]] = videosByTrack[v["Track ID"]] || []).push(v);
         if (v["Release ID"]) (videosByRelease[v["Release ID"]] = videosByRelease[v["Release ID"]] || []).push(v);
       });
-      return { byId, lists, videosByTrack, videosByRelease };
-    }).catch(err => { console.warn("Track lists unavailable:", err.message); cat._trackPromise = null; return { byId: {}, lists: {}, videosByTrack: {}, videosByRelease: {} }; });
+      return { byId, lists, videosByTrack, videosByRelease, videos };
+    }).catch(err => { console.warn("Track lists unavailable:", err.message); cat._trackPromise = null; return { byId: {}, lists: {}, videosByTrack: {}, videosByRelease: {}, videos: [] }; });
   }
   return cat._trackPromise;
 }
@@ -1512,6 +1523,8 @@ function renderBzPlayer(box, r, albumId, items){
 // playable = buttons (data-psd-track = index into the player's items); otherwise plain rows.
 function trackListHtml(items, playable){
   const discs = new Set(items.map(x => x.disc)).size > 1;
+  // Icons sit right of the length; every row reserves the same width so the lengths line up.
+  const iconSlots = Math.max(0, ...items.map(x => (x.video ? 1 : 0) + (x.ytMusic ? 1 : 0)));
   let html = "", lastDisc = 0;
   items.forEach((x, i) => {
     if (discs && x.disc !== lastDisc) html += `<li class="psd-h">Disc ${x.disc}${x.heading ? " · " + esc(x.heading) : ""}</li>`;
@@ -1522,7 +1535,7 @@ function trackListHtml(items, playable){
     const links = (x.video ? `<button type="button" data-psd-video="${esc(x.video)}" title="Video" aria-label="Video: ${esc(x.title)}">${VIDEO_ICON}</button>` : "")
       + (x.ytMusic ? `<a href="https://music.youtube.com/watch?v=${esc(x.ytMusic)}" target="_blank" rel="noopener" title="YouTube Music" aria-label="${esc(x.title)} on YouTube Music">${YTMUSIC_ICON}</a>` : "");
     const body = playable && x.src ? `<button type="button" data-psd-track="${i}">${inner}</button>` : `<div class="psd-off">${inner}</div>`;
-    html += `<li class="psd-row">${body}${links ? `<span class="psd-tlinks">${links}</span>` : ""}</li>`;
+    html += `<li class="psd-row">${body}${iconSlots ? `<span class="psd-tlinks" style="width:${iconSlots * 30}px">${links}</span>` : ""}</li>`;
   });
   return `<ol class="psd-tracks">${html}</ol>`;
 }
@@ -1771,7 +1784,72 @@ function updateJsonLd(){
   if (el.textContent !== cat._jsonLd) el.textContent = cat._jsonLd;
 }
 
+// --- VIDEOS page: <div id="psd-videos-page" data-kind="tracker"> (data-kind optional: preset filter) ---
+function initVideosPage(){
+  const mount = document.getElementById("psd-videos-page");
+  if (!mount || mount._psdShown) return;
+  if (document.documentElement.hasAttribute("aria-busy")) return;
+  mount._psdShown = true;
+  ensureStyles();
+  mount.innerHTML = `<div class="psd-rel psd-vpage psd-rel-loading">Loading videos…</div>`;
+  Promise.all([loadCatalogue(), loadTrackData()])
+    .then(([rows, data]) => buildVideosPage(mount, rows, data))
+    .catch(err => { console.error("Failed to load videos:", err); mount.innerHTML = `<div class="psd-rel">Unable to load the videos right now. Please refresh the page.</div>`; });
+}
+
+function buildVideosPage(mount, rows, data){
+  const relById = {}; rows.forEach(r => { relById[r["ID"]] = r; });
+  const relDate = r => r ? (r._released || r._catalogue || "") : "";
+  // a track's release = the earliest release it is on
+  const trackRel = {};
+  Object.entries(data.lists).forEach(([rid, list]) => { const r = relById[rid]; if (!r) return;
+    list.forEach(({ t }) => { const cur = trackRel[t.ID]; if (!cur || relDate(r) < relDate(cur)) trackRel[t.ID] = r; }); });
+  const items = data.videos.filter(v => /^[A-Za-z0-9_-]{11}$/.test(v["Video ID"] || "")).map(v => {
+    const t = data.byId[v["Track ID"]];
+    const rel = relById[v["Release ID"]] || (t ? trackRel[t.ID] : null);
+    const label = t ? t.Title + (t.Version ? " (" + t.Version + ")" : "") : (relById[v["Release ID"]] ? relById[v["Release ID"]][TITLE_COL] : (v["YouTube Title"] || "Video"));
+    const artist = t && t.Artist && t.Artist.toLowerCase() !== "psilodump" ? t.Artist : "";
+    return { id: v["Video ID"], kind: VIDEO_KINDS[v.Kind] ? v.Kind : "other", label, artist, note: v.Note || "", rel, date: relDate(rel) || v.Published || "",
+      search: [label, artist, v.Note, rel ? rel[TITLE_COL] : "", v["YouTube Title"]].join(" ").toLowerCase() };
+  }).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  const preset = mount.getAttribute("data-kind") || "";
+  const st = mount._psdState = { kind: preset, q: "" };
+  const fromHash = () => { const p = new URLSearchParams(location.hash.replace(/^#/, "")); if (p.has("kind")) st.kind = VIDEO_KINDS[p.get("kind")] ? p.get("kind") : ""; if (p.has("q")) st.q = p.get("q"); };
+  fromHash();
+  const counts = {}; items.forEach(x => { counts[x.kind] = (counts[x.kind] || 0) + 1; });
+  const kinds = Object.keys(VIDEO_KINDS).filter(k => counts[k]);
+  const card = x => `<figure class="psd-vcard" id="psd-v-${esc(x.id)}">${liteYouTube(x.id, x.label)}<figcaption>${esc(x.label)}${x.artist ? " <small style=\"display:inline!important\">by " + esc(x.artist) + "</small>" : ""}<small>${[st.kind ? "" : esc(VIDEO_KINDS[x.kind]), x.note && x.kind !== "tracker" ? esc(x.note) : "", x.rel ? `from <a href="${esc(releaseHref(x.rel))}">${esc(x.rel[TITLE_COL])}</a>${x.date ? " (" + esc(x.date.slice(0, 4)) + ")" : ""}` : ""].filter(Boolean).join(" · ")}</small></figcaption></figure>`;
+  const grid = list => `<div class="psd-vgrid">${list.map(card).join("")}</div>`;
+  const render = () => {
+    const q = st.q.trim().toLowerCase();
+    const shown = items.filter(x => (!st.kind || x.kind === st.kind) && (!q || x.search.includes(q)));
+    const sections = (st.kind ? [st.kind] : kinds).map(k => {
+      const list = shown.filter(x => x.kind === k);
+      if (!list.length) return "";
+      // tracker videos: grouped by the tracker software (the video's note)
+      const body = k === "tracker"
+        ? [...new Set(list.map(x => x.note))].map(n => (n ? `<h3>${esc(n)}</h3>` : "") + grid(list.filter(x => x.note === n))).join("")
+        : grid(list);
+      return `<section><h2>${esc(VIDEO_KINDS[k])} <small>${list.length}</small></h2>${body}</section>`;
+    }).join("");
+    mount.querySelector(".psd-vpage-list").innerHTML = sections || `<p class="psd-vempty">No videos match.</p>`;
+    mount.querySelectorAll("[data-psd-vkind]").forEach(b => b.setAttribute("aria-pressed", b.getAttribute("data-psd-vkind") === st.kind ? "true" : "false"));
+    const p = new URLSearchParams(); if (st.kind && st.kind !== preset) p.set("kind", st.kind); if (st.q.trim()) p.set("q", st.q.trim());
+    const h = p.toString().replace(/\+/g, "%20");
+    if (h !== location.hash.replace(/^#/, "")) history.replaceState(history.state, "", location.pathname + location.search + (h ? "#" + h : ""));
+  };
+  mount._psdRender = render;
+  mount.innerHTML = `<div class="psd-rel psd-vpage">
+    <div class="psd-vpage-bar"><button type="button" data-psd-vkind="">All <small>${items.length}</small></button>${kinds.map(k => `<button type="button" data-psd-vkind="${k}">${esc(VIDEO_KINDS[k])} <small>${counts[k]}</small></button>`).join("")}
+      <input type="search" placeholder="Search videos…" aria-label="Search videos" value="${esc(st.q)}"></div>
+    <div class="psd-vpage-list"></div></div>`;
+  mount.querySelector(".psd-vpage-bar input").addEventListener("input", e => { st.q = e.target.value; render(); });
+  if (!mount._psdHash) { mount._psdHash = true; window.addEventListener("hashchange", () => { const m = document.getElementById("psd-videos-page"); if (m && m._psdState && m._psdRender) { const p = new URLSearchParams(location.hash.replace(/^#/, "")); m._psdState.kind = VIDEO_KINDS[p.get("kind")] ? p.get("kind") : (m.getAttribute("data-kind") || ""); m._psdRender(); } }); }
+  render();
+}
+
 function initApp(){
+  initVideosPage();
   initRelease();
   mountMarkup();
   const grid = document.getElementById("rel-grid");
@@ -1813,6 +1891,8 @@ new MutationObserver(() => {
   if (mount && !mount.firstElementChild) { initApp(); return; }
   const rel = document.getElementById("psd-release");
   if (rel && rel._psdShown !== location.search) { initRelease(); return; }
+  const vp = document.getElementById("psd-videos-page");
+  if (vp && !vp._psdShown) { initVideosPage(); return; }
   const grid = document.getElementById("rel-grid");
   if (grid && grid.querySelector(".sk")) initApp();
 }).observe(document.documentElement, { childList: true, subtree: true });
