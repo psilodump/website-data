@@ -1,0 +1,940 @@
+"Gig ID",Position,Role,"Person ID","Billed As"
+1,1,live,5195,4Dboy
+1,2,live,5196,4ntler
+1,3,live,5182,64mula
+1,4,live,5197,BitLuder
+1,5,live,5198,ChipOtter
+1,6,live,5180,"Cyanide Dansen"
+1,7,live,5199,"Defense Mechanism"
+1,8,live,5200,"Demoscene Time Machine"
+1,9,live,5201,Fastbom
+1,10,live,5202,Freeo
+1,11,live,5203,"Grizzly Cogs"
+1,12,live,4475,gwEm
+1,13,live,5204,havocCc
+1,14,live,5205,HIA
+1,15,live,5206,HyprDrivr
+1,16,live,5207,irq7
+1,17,live,5208,Klirre
+1,18,live,5209,"Laffe the Fox"
+1,19,live,5210,Memero
+1,20,live,5211,"Midi Man"
+1,21,live,5212,"Die moderne Welt"
+1,22,live,5162,nordloef
+1,23,live,5183,oliotronix
+1,24,live,5213,POKEFACE
+1,25,live,1,psilodump
+1,26,live,5214,Sajuuk
+1,27,live,5215,"Sputnik Booster"
+1,28,live,4478,STu
+1,29,live,5216,TRIAC
+1,30,live,5217,"Vault Kid"
+1,31,live,5218,Vikasietotila
+1,32,live,5219,W▲NDER
+1,33,vj,5200,"Demoscene Time Machine"
+1,34,vj,5220,Pixelblender
+1,35,vj,5217,"Vault Kid"
+1,36,vj,5221,"Chip warrior"
+24,1,live,4415,"Veqtor (se)"
+24,2,live,4416,"Food for Animals (us)"
+24,3,live,4417,"Petter o Hanna (no)"
+24,4,live,4418,"Bong-Ra (ne)"
+24,5,live,4521,"The X-Dump Showcase (se)"
+24,6,live,4420,"Paza Rahm"
+24,7,live,1,Psilodump
+24,8,live,4421,Zabutom
+24,9,live,4422,"Dorothy's Magic Bag"
+24,10,live,4423,Matophonia
+24,11,live,4424,Lithis
+24,12,live,4425,Anode
+24,13,live,4426,"Oh Land (dk)"
+24,14,live,4427,"Konrad Korabiewski (dk)"
+24,15,live,4428,"Spejderrobot + 3 (dk)"
+24,16,live,4429,"Carboneids (dk)"
+24,17,live,4430,"Ars Dada (no)"
+26,1,live,1,Psilodump
+26,2,dj,4424,Lithis
+27,1,live,1,psilodump
+28,1,live,4433,"Sagor & Swing"
+28,2,live,4434,"Billie The Vision & The Dancers"
+28,3,live,4435,Almedal
+28,4,live,4436,"Simon G af Las Palmas"
+28,5,live,4437,64Revolt
+28,6,live,4438,"Mitt Imperium!"
+28,7,live,4439,Kusowsky
+28,8,live,4440,"Samtidigt Som"
+28,9,live,4441,"Din Stalker"
+28,10,live,4442,"Television keeps us apart"
+28,11,live,1,Psilodump
+28,12,live,4443,"Svensk pop"
+29,1,live,4444,"Calis (se)"
+29,2,live,5109,Maskinoperatör
+29,3,live,4446,Dubmood
+29,4,live,4447,"Super Multifaros"
+29,5,live,4420,"Paza Rahm"
+29,6,live,4448,Cornbeast
+29,7,live,4449,Ninjaspark
+29,8,live,4437,"64 Revolt"
+29,9,live,1,psilodump
+29,10,live,4450,fsFreak
+29,11,live,4451,Goto80
+29,12,live,4452,Rongfa
+29,13,live,4453,Zentrix
+29,14,vj,4473,Morrsken
+29,15,vj,4456,"The C-Men"
+29,16,live,5222,Sodamnloud
+30,1,live,1,Psilodump
+30,2,live,4420,"Paza Rahm"
+30,3,live,4455,Materia
+30,4,dj,4424,Lithis
+30,5,vj,4456,"The C-Men"
+31,1,live,4451,Goto80
+31,2,live,4457,Covox
+31,3,live,4420,"Paza Rahm"
+31,4,dj,1,Psilodump
+31,5,vj,4456,"The C-Men"
+32,1,live,4458,"Andrea Neumann"
+32,2,live,4459,Enapa
+32,3,live,4460,"Linus Gabrielsson"
+32,4,live,4461,"Sten-Olof Hellström"
+32,5,live,4462,"Mattias Sköld"
+32,6,live,4420,"Paza Rahm (The X-Dump)"
+32,7,live,1,"Psilodump (The X-Dump)"
+32,8,dj,4463,"Funky Tuna"
+33,1,live,1,Psilodump
+33,2,live,4423,Matophonia
+33,3,live,4464,Tigertassar
+33,4,dj,4424,Lithis
+33,5,vj,4465,bzz
+34,1,live,4466,Binärpilot
+34,2,live,1,Psilodump
+34,3,live,4467,"Crazy Q"
+35,1,live,1,Psilodump
+35,2,dj,4468,"Tommy Hill"
+35,3,dj,4469,"Mama Gaia"
+35,4,dj,4470,"Hangover Boy & JdotP B2B"
+36,1,live,1,Psilodump
+36,2,live,4420,"Paza Rahm"
+36,3,live,4423,Matophonia
+36,4,dj,4471,"Micromusic Turku HQ Dj'S"
+36,5,vj,4472,"Turu Sanoma"
+37,1,live,4424,Lithis
+37,2,live,4423,Matophonia
+37,3,live,4420,"Paza Rahm"
+37,4,live,4421,Zabutom
+37,5,live,4422,"Dorothy's Magic Bag"
+37,6,live,1,Psilodump
+37,7,dj,4465,bzz
+37,8,vj,4473,Morrsken
+38,1,live,4451,Goto80
+38,2,live,4474,"Bit Shifter"
+38,3,live,4475,Gwem
+38,4,live,4446,Dubmood
+38,5,live,4476,Sidabitball
+38,6,live,4477,Nullsleep
+38,7,live,4478,STu
+38,8,live,4479,Eat_Rabbit
+38,9,live,4480,Nrvststpilot
+38,10,live,4421,Zabutom
+38,11,live,4467,"Crazy Q"
+38,12,live,4481,Confipop
+38,13,live,4482,Schmx
+38,14,live,4483,Meneo
+38,15,live,1,Psilodump
+38,16,live,4484,Enterr
+38,17,live,4420,"Paza Rahm"
+38,18,dj,4485,Marseille_HQ
+38,19,dj,4486,Stockholm_HQ
+38,20,dj,4487,Paris_HQ
+38,21,dj,4485,Marseille_HQ
+38,22,dj,4488,Lyon_HQ
+38,23,dj,4489,"DJ Rebel"
+38,24,vj,4490,Acet1
+38,25,vj,4491,Mars_Eyes
+38,26,vj,4492,Entter
+38,27,vj,4493,Hollowman
+39,1,live,1,"Psilodump (The X-Dump)"
+39,2,live,4494,Awt
+39,3,live,4495,"Babylon Disco"
+39,4,live,4496,Oerfil
+39,5,live,4415,Veqtor
+39,6,live,4497,nitro2K01
+39,7,live,4467,"Crazy Q"
+39,8,live,4498,nxpnsv
+39,9,live,4448,Cornbeast
+39,10,live,4499,"Loli Ripe"
+39,11,live,4500,Mr.Sidewalk
+39,12,dj,4501,"Peter Ericsson"
+39,13,dj,4415,Veqtor
+39,14,dj,4502,ZKOA
+40,1,live,1,"Psilodump (The X-Dump)"
+40,2,live,4424,"Lithis (The X-Dump)"
+41,1,live,4446,Dubmood
+41,2,live,4478,Stu
+41,3,dj,1,"Psilodump (The X-Dump)"
+41,4,mc,4503,Boltes
+42,1,live,4504,"USK (JP)"
+42,2,live,4505,"Maru (JP)"
+42,3,live,4506,"ONE (SE)"
+42,4,dj,1,"Psilodump (The X-Dump)"
+42,5,vj,4473,Morrsken
+43,1,live,4507,"Helene Rickhard (NO)"
+43,2,live,1,"Psilodump (SE)"
+43,3,live,4448,"Cornbeast (SE)"
+44,1,live,4508,"Shamonk (Skykey Records)"
+44,2,live,1,"Psilodump (Astralwerks)"
+44,3,live,4509,Chaman
+44,4,live,4510,"Amos (Digital Reality)"
+44,5,dj,4511,"Mad Mango"
+44,6,dj,4512,"Nick Psarros"
+44,7,dj,4509,Chaman
+44,8,dj,4510,Amos
+44,9,dj,4513,JimY
+44,10,vj,4514,"Private Crew"
+45,1,live,1,"Psilodump (The X-Dump)"
+45,2,live,4420,"Paza Rahm (The X-Dump)"
+46,1,live,1,Psilodump
+47,1,live,4420,Paza
+47,2,live,1,Psilodump
+48,1,live,4420,"Paza Rahm (The X-Dump)"
+48,2,live,1,"Psilodump (The X-Dump)"
+49,1,live,1,"Psilodump (The X-Dump)"
+49,2,live,4420,"Paza Rahm (The X-Dump)"
+49,3,live,4424,"Lithis (The X-Dump)"
+49,4,live,4423,"Matophonia (The X-Dump)"
+49,5,live,4422,"Dorothy´s Magic Bag (The X-Dump)"
+49,6,live,4425,"Anode (The X-Dump)"
+50,1,live,1,"Psilodump (The X-Dump)"
+50,2,live,4420,"Paza Rahm (The X-Dump)"
+50,3,live,4482,Schmx
+50,4,live,4478,Stu
+50,5,vj,4516,TonyLight
+51,1,live,4457,Covox
+51,2,live,4517,Random
+51,3,live,1,"Psilodump (The X-Dump)"
+51,4,dj,4518,Rum576
+51,5,vj,4519,"Unlucky Monkey"
+51,6,mc,4498,Inexpensive
+52,1,live,4521,"The X-Dump:"
+52,2,live,4424,Lithis
+52,3,live,1,"Psilodump (The X-Dump)"
+52,4,live,4422,"Dorothy's Magic Bag"
+52,5,live,4522,"Sten Ove Toft"
+52,6,live,4523,"Andre Borgen"
+52,7,live,4524,"The Spoofkats"
+52,8,live,4525,"Kusari Gama Kill"
+52,9,live,4526,fibra
+52,10,live,4527,iLLpHABETik
+52,11,live,4528,"Prafix Aztech"
+52,12,dj,4529,"DJ Jesper PG"
+53,1,live,1,"Psilodump (The X-Dump)"
+53,2,dj,4530,"Khimin & Velvet90"
+53,3,dj,4531,"Dimitry Ghost"
+53,4,dj,4532,"Tim Svodnik"
+53,5,dj,4533,Gix
+53,6,vj,4534,"VJ Popov & Mak555"
+54,1,live,1,"Psilodump (The X-Dump)"
+54,2,live,4535,"NTNS 909 & DJ Mitya"
+54,3,dj,4536,"DJ Vladidas"
+55,1,live,1,"Psilodump (The X-Dump)"
+55,2,live,4537,KLUtCh
+55,3,live,4538,Simon^CPU
+55,4,dj,4530,"Khimin & Velvet90"
+55,5,dj,4531,"Dimitry Ghost"
+55,6,vj,4539,"Hallo Pictures"
+56,1,live,4540,"Dirty 1200"
+56,2,live,4422,"Dorothy's Magic Bag"
+56,3,live,4541,"Tero (FI)"
+56,4,dj,1,"Psilodump (The X-Dump)"
+56,5,vj,4542,Kosackerna
+56,6,mc,4498,Inexpensive
+57,1,live,1,"Psilodump (The X-Dump)"
+57,2,live,4543,"The Quiet Man"
+57,3,live,4544,"De Facto: M.A.K.T."
+57,4,dj,4545,Jacob/J-Cop
+57,5,dj,4546,Kay
+57,6,dj,4547,Lumor
+57,7,dj,4548,"Mr Dee"
+57,8,dj,4549,Sharper
+58,1,live,4550,"Skoll (Hypnotica Records)"
+58,2,live,1,"Psilodump (The X-Dump)"
+58,3,dj,4551,"Nad (Mandarin.nu)"
+58,4,dj,4509,"Chaman (Digital Reality)"
+58,5,dj,4552,"Mad Nick (Technostate/Private Crew)"
+58,6,dj,4553,Dean
+58,7,dj,4554,SDL
+58,8,dj,4555,"Giu Mango"
+58,9,vj,4556,"Digital Reality / Saturn Return"
+59,1,live,4424,"Lithis (The X-Dump)"
+59,2,live,1,"Psilodump (The X-Dump)"
+59,3,live,4422,"Dorothy's Magic Bag (The X-Dump)"
+60,1,live,4557,"SysRq5476 (The X-Dump)"
+61,1,live,4558,"A Boy and His SID"
+61,2,live,5089,"Naomi Sample and His Go Go Ghosts"
+61,3,live,4424,"Lithis (The X-Dump)"
+61,4,live,4420,"Paza (The X-Dump)"
+61,5,live,1,"Psilodump (The X-Dump)"
+61,6,dj,4424,"DJ Lithis"
+61,7,dj,1,"DJ Psilodump NinjaBattle"
+62,1,live,1,"Psilodump (The X-Dump)"
+62,2,dj,4562,Pickelhaubt
+62,3,dj,4563,Tectonic/Miklo
+62,4,dj,4564,Janek
+62,5,dj,4565,"Shift Lock"
+63,1,live,1,"Psilodump (The X-Dump)"
+63,2,dj,4566,Sarah
+63,3,dj,4567,Amina
+63,4,dj,4568,Jaxx
+63,5,dj,4569,"Rude Mamma"
+63,6,dj,4570,"DJ Craig"
+63,7,dj,4571,"Rob Savage"
+63,8,dj,4572,Fritz
+63,9,dj,4573,Tim
+63,10,dj,4574,Dave
+63,11,dj,4575,Pete
+64,1,live,4420,"Paza (The X-Dump)"
+64,2,live,1,"Psilodump (The X-Dump)"
+64,3,live,4497,nitro2k01
+65,1,live,4420,"Paza (The X-Dump)"
+65,2,live,4576,Hello
+65,3,live,4577,1000stickups
+65,4,dj,1,"Psilodump (The X-Dump)"
+65,5,vj,4519,"Unlucky Monkey"
+66,1,live,4719,November
+66,2,live,1,"Simon Rahm (The X-Dump)"
+66,3,dj,4509,Chaman
+67,1,live,1,"Simon Rahm (Digital Reality / The X-Dump)"
+67,2,live,4719,November
+67,3,dj,4509,"Chaman (LaVilla Corp.)"
+68,1,live,1,"Simon Rahm (Digital Reality / The X-Dump)"
+68,2,dj,4579,"DJ Quality"
+68,3,dj,4580,"Dj Alex Moreno"
+68,4,dj,4581,"etc etc.."
+69,1,live,1,"Simon Rahm (Digital Reality / The X-Dump)"
+69,2,dj,4509,"Chaman (LaVilla Corp.)"
+69,3,dj,4582,"Hypnoid (Digital Reality)"
+70,1,live,4424,"Lithis (The X-Dump, SWE)"
+70,2,live,1,"Psilodump (The X-Dump, SWE)"
+70,3,dj,4583,Jancek
+70,4,dj,4584,Takeshi
+71,1,live,4424,"Lithis (The X-Dump)"
+71,2,live,1,"Psilodump (The X-Dump)"
+71,3,dj,4585,"Ibsie (NEMCOM)"
+71,4,dj,4586,Airfrog
+71,5,dj,4587,"Void (NEMCOM)"
+71,6,dj,4588,"Thomas Anders?n"
+71,7,dj,4589,"RED604 (TSTA)"
+72,1,live,4590,"Candymind Soundsystem"
+72,2,live,4441,"with Din Stalker (The X-Dump),"
+72,3,live,4422,"Dorothy's Magic Bag (The X-Dump)"
+72,4,live,1,"and Psilodump (The X-Dump)"
+72,5,live,4593,"more info to be added..."
+73,1,live,1,"Psilodump (The X-Dump)"
+73,2,dj,5005,"Tim Track"
+73,3,dj,4595,TFU
+73,4,dj,4513,Jim-y
+73,5,dj,4596,TomK
+74,1,live,1,"Psilodump (The X-Dump)"
+74,2,live,4597,Lo-Bat
+74,3,live,4598,Komatr:ohn
+74,4,live,4474,"Bit Shifter"
+74,5,live,4599,FirestARTer
+74,6,dj,4600,Lektrogirl
+74,7,dj,4601,polar_b
+74,8,vj,4456,"The C-Men"
+75,1,live,1,"Psilodump (The X-Dump)"
+75,2,live,4597,Lo-Bat
+75,3,live,4598,Komatr:ohn
+75,4,live,4474,"Bit Shifter"
+75,5,live,4599,FirestARTer
+75,6,dj,4600,Lektrogirl
+75,7,dj,4601,polar_b
+75,8,vj,4456,"The C-Men"
+76,1,live,1,"Psilodump (The X-Dump)"
+76,2,live,4597,Lo-Bat
+76,3,live,4598,Komatr:ohn
+76,4,live,4474,"Bit Shifter"
+76,5,live,4599,FirestARTer
+76,6,dj,4600,Lektrogirl
+76,7,dj,4601,polar_b
+76,8,vj,4456,"The C-Men"
+77,1,live,4602,"Stryder [Laztvoyage]"
+77,2,live,4423,"Skruvmejsel (The X-Dump)"
+77,3,live,1,"Psilodump (The X-Dump)"
+77,4,live,4420,"Paza (The X-Dump)"
+77,5,dj,4582,Hypnoid
+77,6,dj,4509,Chaman
+77,7,dj,4604,P1457
+78,1,live,4599,"FirestARTer (SIDSyn, micromusic)"
+78,2,live,4420,"Paza (The X-Dump)"
+78,3,live,4424,"Lithis (The X-Dump)"
+78,4,live,1,"Psilodump (The X-Dump)"
+79,1,live,4420,"Paza (The X-Dump) [SW]"
+79,2,live,4605,"Tobi-Wan [Puss, SW]"
+79,3,live,4606,"Ben et Bene [FR]"
+79,4,live,4607,"Manou [Monika, WMF - DE]"
+79,5,live,1,"Psilodump (The X-Dump) [SW]"
+79,6,dj,4608,"Dr Dru and Jellica [UK]"
+79,7,dj,4600,"Lektrogirl [Rephlex, Lektrolab - UK]"
+80,1,live,1,"Psilodump (The X-Dump)"
+81,1,live,4424,"Lithis (The X-Dump)"
+81,2,live,1,"Psilodump (The X-Dump)"
+81,3,dj,4510,Amos
+81,4,dj,4509,Chaman
+81,5,dj,4604,P1457
+82,1,live,1,"Psilodump (The X-Dump)"
+82,2,live,4550,"Skoll (alkaloid prod)"
+82,3,live,4609,Sienis
+82,4,dj,4551,"Nad (Mandarin.nu)"
+82,5,dj,4610,Mikasa
+82,6,dj,4611,"Teasa (Positiva Vibbar)"
+82,7,dj,4582,Hypnoid
+82,8,dj,4612,Vision
+83,1,live,1,"Psilodump (The X-Dump)"
+83,2,dj,4613,"DJ Ponia (Argentina)"
+83,3,dj,4614,"DJ Mind Auxy"
+84,1,live,1,"Psilodump (The X-Dump)"
+84,2,dj,4739,"DJ Plast"
+84,3,dj,4509,"DJ Chaman"
+85,1,live,1,"Psilodumputer (The X-Dump)"
+85,2,live,4467,"Crazy Q (YM Rockerz, Dead Hackers Society)"
+85,3,live,4617,"Logic Bomb (micromusic.net)"
+85,4,live,4474,"Bit Shifter (555 Recordings, 8BitPeoples)"
+85,5,dj,4607,"Manou (Superstar, Monika, WMF)"
+85,6,dj,4475,"gwEm (shitkatapult, preromanbritain)"
+86,1,live,1,"Psilodump (The X-Dump)"
+86,2,live,4441,"Din Stalker (The X-Dump)"
+86,3,dj,4618,"DJ Lego"
+86,4,dj,4619,"DJ Mos & Oliverio"
+86,5,vj,4620,"Area3 Multimedia"
+87,1,live,4422,"Dorothy's Magic Bag (The X-Dump)"
+87,2,live,4621,Tobiah
+87,3,live,4622,"Gameboy Battle:"
+87,4,live,4448,Cornbeast
+87,5,live,4467,Crazy-Q
+87,6,live,4498,Inexpensive
+87,7,live,4497,Nitro2k01
+87,8,live,1,"Psilodump (The X-Dump)"
+87,9,live,4517,Random
+87,10,live,4623,"The Kid"
+87,11,dj,4624,"DJ T.F.U."
+88,1,live,1,"Psilodump (The X-Dump)"
+88,2,live,4420,"Paza (The X-Dump)"
+88,3,live,4424,"Lithis (The X-Dump)"
+88,4,live,4557,"SysRq5476 (The X-Dump)"
+88,5,live,4625,Bobbygunnar
+88,6,dj,4498,Inexpensive-mistakes
+88,7,dj,4467,"Crazy Q"
+89,1,live,1,"Psilodump (The X-Dump)"
+89,2,live,4627,"Casionova (Australia)"
+89,3,live,4420,"Paza (The X-Dump)"
+89,4,live,4441,"Din Stalker (The X-Dump)"
+89,5,live,4628,"Aleksi Eeben"
+89,6,live,4629,"Desert Planet"
+89,7,dj,4630,"Joe Nasty"
+89,8,dj,4631,Myrkky-Antti
+89,9,dj,4632,"MC Huolenkissa"
+89,10,dj,4633,Phinn
+89,11,dj,4634,"Bob Ryyn?nen"
+89,12,dj,4635,Tremontti
+89,13,dj,4636,"Slave To The Beat"
+89,14,dj,4637,+guests?
+89,15,vj,4638,"The SW?G Visual Corps & Support Troops"
+90,1,live,4639,"Odd Music"
+90,2,live,4640,YMCK
+90,3,live,4641,Blasterhead
+90,4,dj,1,"DJ Psilodump (The X-Dump)"
+90,5,dj,4998,"DJ Sbindon (The X-Dump)"
+90,6,dj,4940,"DJ Role Model"
+90,7,dj,4467,"DJ Crazy-Q"
+90,8,dj,4645,"DJ Cyntgirl"
+90,9,dj,4498,"DJ Inexpensive"
+90,10,vj,4647,"Peter Str?m"
+90,11,vj,4648,"Mattias Jakobsson"
+91,1,live,1,"Psilodump (The X-Dump)"
+91,2,live,4510,"Amos [Digital Reality]"
+91,3,dj,4649,"Stefan [Mandarin]"
+91,4,dj,4551,"Nad [Mandarin]"
+91,5,dj,4650,"Ken1 [Tribalism/SH]"
+91,6,dj,4509,"Chaman [Digital Reality]"
+92,1,live,4420,"Paza (The X-Dump)"
+92,2,live,1,"Psilodump (The X-Dump)"
+93,1,live,1,"Psilodumputer (The X-Dump)"
+93,2,dj,4651,"DJ Marieke"
+93,3,dj,4652,"DJ Woo"
+94,1,live,1,"Psilodump (The X-Dump)"
+94,2,dj,4653,"DJ F.Grass"
+94,3,dj,4654,"DJ Mowglie"
+94,4,dj,4655,"DJ Ukiro"
+95,1,live,1,"Psilodump (The X-Dump)"
+95,2,dj,4604,"DJ P1457"
+95,3,dj,4509,"DJ Chaman"
+95,4,dj,4657,"DJ Kalle"
+96,1,live,4477,"Nullsleep (8bitpeoples, USA)"
+96,2,live,1,"Psilodump (The X-Dump)"
+97,1,live,1,"Psilodump (The X-Dump)"
+97,2,dj,4582,"Hypnoid (Recycle)"
+97,3,dj,4658,"Wert (Underground hero)"
+97,4,dj,4659,"Benn (Detunez)"
+97,5,dj,4660,"Renell (Diagnosis)"
+97,6,dj,4661,"3,14 Sami (Diagnosis)"
+98,1,live,1,"Psilodump (The X-Dump)"
+98,2,live,4467,"Crazy Q"
+98,3,live,4457,Covox
+98,4,dj,4662,Puss
+98,5,vj,4663,"Mattias Jakobsson, Peter Str?m"
+99,1,live,4424,"Lithis (The X-Dump)"
+99,2,live,4420,"Paza (The X-Dump)"
+99,3,live,1,"Psilodump (The X-Dump)"
+99,4,dj,4664,Taskman
+99,5,vj,4665,Winamp
+100,1,live,1,"Psilodump (The X-Dump)"
+100,2,dj,4666,"DJ Weirdo Beirdo"
+100,3,dj,4667,"DJ Dean"
+101,1,live,4668,"Adams Äpple"
+101,2,live,4669,"Ane Brun"
+101,3,live,4670,"AntiBarbarus Babajaga"
+101,4,live,4671,Balagan
+101,5,live,4672,Bauri
+101,6,live,4673,"Bj?rn Svin (DK)"
+101,7,live,4674,Chloe
+101,8,live,4675,"Clownen Brinner"
+101,9,live,4676,CK
+101,10,live,4677,"Cocos Palme"
+101,11,live,4678,"Death/Jazz Academy & MC Name"
+101,12,live,4679,"DJ Stefan"
+101,13,live,4680,"Eskju Divine"
+101,14,live,4681,"Henrik Levy"
+101,15,live,4682,"Illusion Kenneth"
+101,16,live,4683,"Jakob Hellman"
+101,17,live,4684,"Karsten Pflum (DK)"
+101,18,live,4685,"Kitty on the Catwalk"
+101,19,live,4686,"Krister Linder"
+101,20,live,4687,"Lele lele"
+101,21,live,4688,"kak sme go oplele!"
+101,22,live,4689,"Marcus Lindeen"
+101,23,live,4690,Menteroja
+101,24,live,4691,"Monster & Maskiner"
+101,25,live,4692,"Ninja Massacre"
+101,26,live,4693,Petrichor
+101,27,live,1,"Psilodump (The X-Dump)"
+101,28,live,4694,"Quit Your Dayjob"
+101,29,live,4695,"Radical Cheerleaders"
+101,30,live,4696,Slagsm?lsklubben
+101,31,live,4697,Snook
+101,32,live,4698,Stigfurpatrullen
+101,33,live,4699,Tape
+101,34,live,4700,"The Jack Brothers"
+101,35,live,4701,"The Janitors"
+101,36,live,4702,"The Manor"
+101,37,live,4703,"The Search"
+101,38,live,4704,"The Tiny"
+101,39,live,4705,"Under 10 Hurtz"
+101,40,live,4706,"Efter Records"
+101,41,live,4707,"Erland Mackworth"
+101,42,live,4708,"Fredrik Trensare"
+101,43,live,4709,"Nihad Tule"
+101,44,live,4710,Tege
+101,45,live,4711,TjockOla
+101,46,dj,4712,"erhm... forgot :/"
+102,1,live,1,"Psilodump (The X-Dump)"
+102,2,live,4713,"Weirdo Beardo (Apoxina / Boom Records)"
+102,3,live,4510,"Amos (Digital Reality)"
+102,4,live,4714,"Filteria (Stockholm)"
+102,5,dj,4582,"Hypnoid (Recycle)"
+102,6,dj,4715,"Elak (Code.org)"
+102,7,dj,4716,"KIDney (klot.net)"
+102,8,dj,4717,"Ac9 (Radio BMU 91.6)"
+102,9,dj,4551,"Nad (Mandarin)"
+102,10,dj,4604,"P1457 (Jan&Jim)"
+102,11,dj,4718,"Digital Reality Crew [Back2Back]"
+103,1,live,4424,"Lithis (The X-Dump)"
+103,2,live,4420,"Paza (The X-Dump)"
+103,3,live,4423,"Skruvmejsel (The X-Dump)"
+103,4,live,1,"Psilodump (The X-Dump)"
+103,5,dj,4625,Bobbygunnar
+103,6,dj,4719,Elithora
+104,1,live,1,"Psilodump (The X-Dump)"
+104,2,dj,4720,"Johan Olofsson (Sound of Habib)"
+104,3,dj,4721,Mac
+104,4,dj,4722,"M?ls & Squt"
+105,1,live,4424,"Lithis (The X-Dump)"
+105,2,live,4420,"Paza (The X-Dump)"
+105,3,live,4423,"Skruvmejsel (The X-Dump)"
+105,4,live,1,"Psilodump (The X-Dump)"
+105,5,dj,4604,"DJ P1457"
+106,1,live,1,"Psilodump (The X-Dump)"
+106,2,live,4723,"technical issues x((( )"
+106,3,dj,5070,"DJ Cari Lekebusch"
+106,4,dj,4725,"DJ Lady Dana"
+106,5,dj,4726,"DJ Gen.6"
+106,6,dj,4790,"DJ Orkidea"
+106,7,dj,4728,"DJ James Talbot"
+106,8,dj,4729,"DJ Benn"
+106,9,dj,4730,"DJ Tuomas Salmela"
+106,10,dj,4731,"DJ Juju"
+106,11,dj,4764,"DJ Lauri Soini"
+106,12,dj,4733,"DJ Indigo"
+106,13,dj,4734,"DJ Sergei Shkuroff"
+106,14,dj,4735,"DJ Anvil"
+107,1,live,1,"Psilodump (The X-Dump)"
+107,2,dj,4716,"DJ KIDney"
+107,3,dj,4737,"DJ Wriggle"
+108,1,live,4696,Slagsmålsklubben
+108,2,live,4420,"Paza (The X-Dump)"
+108,3,live,1,"Psilodump (The X-Dump)"
+108,4,dj,4739,Plast
+108,5,dj,4740,VBRunner
+108,6,dj,4741,"Inter gritty"
+108,7,dj,4742,"DJ Ayahuasca"
+108,8,dj,4587,V_o_i_d
+108,9,dj,4710,Tege
+108,10,dj,4743,Nicos
+109,1,live,4424,"Lithis (The X-Dump)"
+109,2,live,4420,"Paza (The X-Dump)"
+109,3,live,4423,"Skruvmejsel (The X-Dump)"
+109,4,live,1,"Psilodump (The X-Dump)"
+109,5,dj,4716,"DJ KIDney"
+110,1,live,1,"Psilodump (The X-Dump)"
+110,2,dj,4744,Team-musil
+110,3,dj,4745,Tour-1[z]
+111,1,live,1,"Psilodump (The X-Dump)"
+111,2,dj,4582,"Hypnoid [Recycle]"
+111,3,dj,4604,"P1457 [Jan & Jim]"
+111,4,dj,4746,"Fredrik Grass"
+112,1,live,1,"Psilodump (The X-Dump)"
+112,2,dj,4604,"P1457 [Jan & Jim]"
+112,3,dj,4582,"Hypnoid [Recycle]"
+112,4,dj,4747,"Dolphin [Dualrange]"
+113,1,live,4748,Lester
+113,2,live,4749,"Daniel Araya"
+113,3,live,4750,"Aaltonen & Inkinen"
+113,4,live,4751,"Jean-Louis Huhta"
+113,5,live,4752,"Mattias Petersson"
+113,6,live,5069,"Marcus Wrang?"
+113,7,live,4754,"Bobby Madrid"
+113,8,live,1,"Psilodump (The X-Dump)"
+113,9,live,4755,J.Kallback
+113,10,live,4756,Sourcery
+114,1,live,4757,Videohometraining
+114,2,live,4758,"P-Force / Pi-Bois (The X-Dump)"
+114,3,live,1,"Psilodump (The X-Dump)"
+114,4,dj,4759,Jakuza
+114,5,dj,4760,Arvid
+115,1,live,4420,"Paza (The X-Dump)"
+115,2,live,4599,"FirestARTer (SIDSyn)"
+115,3,live,4597,Lo-Bat
+115,4,live,1,"Psilodump (The X-Dump)"
+116,1,live,4597,"Lo-Bat (Micromusic, Belgium)"
+116,2,live,4599,"FirestARTer (SIDSyn, Germany)"
+116,3,live,1,"Psilodumputer (The X-Dump)"
+116,4,dj,4600,"Lektrogirl (RePHLeX, UK)"
+117,1,live,4761,RA
+117,2,live,4762,"Ypsilon 5"
+117,3,live,4763,Ethereal
+117,4,live,4764,"Lauri Soini"
+117,5,live,1,"Psilodump (The X-Dump)"
+117,6,live,4765,"The Miller"
+117,7,live,4766,"Carbon Based"
+117,8,live,4767,Breekbaar
+117,9,live,4768,Akrid
+117,10,dj,4769,Manjunatha
+117,11,dj,4770,"Timmy Tools"
+117,12,dj,4771,"Mikael Bonk"
+117,13,dj,4772,Gauger
+117,14,dj,4773,Majo
+117,15,dj,4774,Proteus
+117,16,dj,4775,Neon
+117,17,dj,4776,Friik
+117,18,dj,4777,"Saimaan S?lli"
+117,19,dj,4778,Orion
+117,20,dj,4779,o_O
+117,21,dj,4780,Cosmo
+117,22,dj,4781,Luka
+117,23,dj,4782,Cosmicman
+117,24,dj,4783,"Actos Dei"
+117,25,dj,4784,Triton
+117,26,dj,4785,"Jay Logic"
+118,1,live,1,"Psilodump (The X-Dump)"
+118,2,live,4786,"Transistor (Jerk Records)"
+118,3,live,4768,"Akrid (Sininen)"
+118,4,dj,4787,"Neil Landstrumm (Tresor, Scandinavia, USA)"
+118,5,dj,4788,"Lena Popova (Tunnel Club, RUS)"
+118,6,dj,4773,"Majo (Fiktio)"
+118,7,dj,4789,"Sarcom01 (Antenniosasto)"
+118,8,dj,4790,"Orkidea (Club Unity)"
+118,9,dj,4791,"Apo (Modular-Audio)"
+120,1,live,1,"Psilodump (The X-Dump)"
+120,2,dj,4792,Wezzler
+120,3,dj,4793,Tectonic
+120,4,mc,4794,"MC Stirlin"
+121,1,live,4795,"22-Pistepirkko (sf)"
+121,2,live,4796,Amulet
+121,3,live,4797,"Andr? Stitt (irl) - Apollo"
+121,4,live,4798,"Anthony Rother (d)"
+121,5,live,4799,"Assemblage 23 (us)"
+121,6,live,4800,"Bad Cash Quartet"
+121,7,live,4801,Beezewax
+121,8,live,4802,"Belacqua Project"
+121,9,live,4803,"Bo Kaspers Orkester"
+121,10,live,4804,"Bombshell Rocks"
+121,11,live,4805,CTB
+121,12,live,4806,"Caesar?s Palace"
+121,13,live,4807,"Cirkus Max"
+121,14,live,4808,Covenant
+121,15,live,4809,D.Rozenhall/M.Lundell
+121,16,live,4810,"Daniel Boyacioglu"
+121,17,live,4811,"Das Ich (d)"
+121,18,live,4812,"David And The Citizens"
+121,19,live,4813,Deathstars
+121,20,live,4814,Debattboxning
+121,21,live,4815,"Det l?ter Laddat"
+121,22,live,4816,"Division of Laura Lee"
+121,23,live,4817,"Doktor Kosmos"
+121,24,live,4818,Dorinelli
+121,25,live,4819,"Down And Away"
+121,26,live,4820,"El Musico"
+121,27,live,4821,Eskobar
+121,28,live,4822,"Etnica (ita)"
+121,29,live,4823,"Eva Maria Larsson - Apollo"
+121,30,live,4824,Fattaru
+121,31,live,4825,"Film i V?rmland - Apollo"
+121,32,live,4826,Firestone
+121,33,live,4827,"Futuredrome feat Freddie Wadling"
+121,34,live,4828,M-Rock
+121,35,live,4829,"Daniel Lemma + live band"
+121,36,live,4830,"Going Magma - Vid entr?n n?r grindarna ?ppnar"
+121,37,live,4831,Granada
+121,38,live,4832,"Grounded Blix"
+121,39,live,4833,"Haujobb (d)"
+121,40,live,4834,"Ich bin Laden"
+121,41,live,4835,"Icon of Coil (n)"
+121,42,live,4836,"Infected Mushroom (isr)"
+121,43,live,4837,"Infinite Mass"
+121,44,live,4838,Institut
+121,45,live,4839,"Johan Wellton"
+121,46,live,4840,"Joseph Arthur (us)"
+121,47,live,4841,"Kingston Air Force"
+121,48,live,4842,"Klubb Super 8"
+121,49,live,4843,"Klubben Sekt"
+121,50,live,4844,LOG
+121,51,live,4845,"Lame Ducks"
+121,52,live,4846,"Lars Demian"
+121,53,live,4847,"Last Days Of April"
+121,54,live,4848,"Liquid Phase"
+121,55,live,4849,"Luke Slater (uk)"
+121,56,live,4850,Lunarfreaks
+121,57,live,4851,"M.Hederos och M.Hellberg"
+121,58,live,4852,"Magnetrixx (d)"
+121,59,live,4853,"Marcus Birro"
+121,60,live,4854,"Melody Club"
+121,61,live,4855,"Miss Kittin & The Hacker (d/f)"
+121,62,live,4856,"Miss Universum"
+121,63,live,4857,Missljud
+121,64,live,4858,"Moder Jords Massiva"
+121,65,live,4859,Mohammed
+121,66,live,4860,"Muse (uk)"
+121,67,live,4861,Mustasch
+121,68,live,4862,Mynta
+121,69,live,4863,Nationalteatern
+121,70,live,4864,"Open Mic Poetry"
+121,71,live,4865,Opeth
+121,72,live,4866,"Orbital (uk)"
+121,73,live,4867,Pain
+121,74,live,4868,"Pain Solution (n)"
+121,75,live,4869,Paris
+121,76,live,4870,"Peace Division (uk)"
+121,77,live,4871,Phrank
+121,78,live,4872,Pluxus
+121,79,live,4873,"Poetry Slam"
+121,80,live,4874,"Primal Scream (uk)"
+121,81,live,4662,Puss
+121,82,live,4875,"P?r Th?rn"
+121,83,live,4876,RAUN
+121,84,live,4877,"RE:Orient Club"
+121,85,live,4878,"Radio Hit Ensemblen"
+121,86,live,4879,"Run Level Zero"
+121,87,live,5056,"SI Futures (uk)"
+121,88,live,4881,"SU-EN Butoh Co."
+121,89,live,4882,"Seabound (d)"
+121,90,live,4883,Skitsystem
+121,91,live,4884,"Soft Cell (uk)"
+121,92,live,4885,"Son of Dave (can)"
+121,93,live,5139,"Sound of Habib Soundsystem (incl. Psilodump (The X-Dump))"
+121,94,live,4887,Sparzanza
+121,95,live,4888,Stabb
+121,96,live,4889,"Surferosa (n)"
+121,97,live,4890,"Svenska Akademien"
+121,98,live,4891,"Swan Lee (dk)"
+121,99,live,4892,"Talamasca (fr)"
+121,100,live,4893,"Teatr Biuro Podrozy (pl)"
+121,101,live,4894,"Tech Noir"
+121,102,live,4895,"The (International) Noise Conspiracy"
+121,103,live,4896,"The 69 Eyes (sf)"
+121,104,live,4897,"The Belacqua Project"
+121,105,live,4898,"The Centre for Transgressive Behaviors (us/s)"
+121,106,live,4899,"The Cure (uk)"
+121,107,live,4900,"The Delta (d)"
+121,108,live,4901,"The Graves"
+121,109,live,4902,"The Mission (uk)"
+121,110,live,4903,"The National Anthems"
+121,111,live,4904,"The Perishers"
+121,112,live,4905,"The Plan"
+121,113,live,4906,"The Wannadies"
+121,114,live,4907,"Thee Ultra Bimboos (sf)"
+121,115,live,4908,Tiamat
+121,116,live,4909,Ticon
+121,117,live,4910,"Timo Maas (d)"
+121,118,live,4911,Tingaling
+121,119,live,4912,Tribeca
+121,120,live,4913,"Twice a Man"
+121,121,live,4914,"Viveka Zoo's Prostituerade Teater"
+121,122,live,4915,"Voice of a Generation"
+121,123,live,4916,"Weeping Willows"
+121,124,live,4917,"Zensor (n)"
+121,125,dj,4918,"DJ Anti"
+121,126,dj,4919,"DJ Axel (d)"
+121,127,dj,4920,"DJ Bakke"
+121,128,dj,4673,"DJ Bj?rn Svin"
+121,129,dj,4922,"DJ H?kan Momenth"
+121,130,dj,4923,"DJ Joti Sidhu (uk)"
+121,131,dj,4924,"DJ Kvasi"
+121,132,dj,4925,"DJ Luke Eargoogle"
+121,133,dj,4926,"DJ MORG"
+121,134,dj,4927,"DJ Mark Allen (uk)"
+121,135,dj,4928,"DJ Nukem (ch)"
+121,136,dj,4929,"DJ SBK (d)"
+121,137,dj,4930,"DJ Sid"
+122,1,live,1,"Psilodump (The X-Dump)"
+123,1,live,4931,Emmon
+123,2,live,1,"Psilodump (The X-Dump)"
+123,3,dj,4932,"Danijel Alpha"
+123,4,dj,4933,Term
+123,5,dj,4934,Nova
+123,6,dj,4935,"Damien Jonzon"
+123,7,dj,4936,"Aleks P"
+124,1,live,4937,DropDaBomb
+124,2,live,4938,micro_hq
+124,3,live,4939,Teamtendo
+124,4,live,4940,Rolemodel
+124,5,live,4941,"Bodenständig 2000"
+124,6,live,4599,firestARTer
+124,7,live,1,"Psilodumputer (The X-Dump)"
+124,8,dj,4600,Lektrogirl
+124,9,mc,4942,"Karl Rottweiler (rgb107,6)"
+125,1,live,1,"Psilodump (The X-Dump)"
+125,2,dj,4582,Hypnoid
+125,3,dj,4943,"DJ Jon"
+125,4,dj,4944,Micro
+125,5,dj,5164,"Miss Dilemma"
+126,1,live,4946,Pippilina
+126,2,live,4947,"The Dead Guys"
+126,3,live,4948,Droidboiler
+126,4,live,4600,Lektrogirl
+126,5,live,4941,"Bodenstandig 2000"
+126,6,live,1,"Psilodumputer (The X-Dump)"
+126,7,dj,4950,Revenge
+127,1,live,4951,LaztVoyage
+127,2,live,1,"Psilodump (The X-Dump)"
+127,3,live,4952,"due to shitty promoters.)"
+127,4,dj,4953,Tuffe
+127,5,dj,4954,St?ffe
+127,6,dj,4582,Hypnoid
+127,7,dj,4955,"C. Garette"
+127,8,dj,4956,"Lo-Fi Sessions"
+128,1,live,4957,"12 Moons"
+128,2,live,4958,Astralle
+128,3,live,4959,Illuminator
+128,4,live,4719,"Tant Edith"
+128,5,live,4961,Psychon
+128,6,live,4962,Nos
+128,7,live,4963,Aries
+128,8,live,1,"Psilodump (The X-Dump)"
+128,9,dj,4582,Hypnoid
+128,10,dj,4739,Plast
+128,11,dj,4964,N-Tech
+128,12,dj,4965,Haze
+128,13,dj,4966,Smurf
+129,1,live,1,"Psilodump (The X-Dump)"
+129,2,live,4967,"Methadump (Whoaaa... The X-Dump ???)"
+129,3,dj,4955,C.Garette
+129,4,dj,4582,Hypnoid
+129,5,dj,4968,Sv?rstajl
+129,6,dj,4943,"DJ Jon"
+129,7,dj,4969,Fredrik
+129,8,dj,4954,St?ffe
+130,1,live,1,"Psilodump (The X-Dump)"
+130,2,dj,4955,C.Garette
+130,3,dj,4970,"Henry Burner"
+130,4,dj,4943,"DJ Jon"
+131,1,live,1,"Psilodump (The X-Dump)"
+131,2,dj,4955,C.Garette
+131,3,dj,4582,Hypnoid
+131,4,dj,4970,"Henry Burner"
+131,5,dj,4739,Plast
+131,6,dj,4971,Gasty
+131,7,dj,4972,Faceless
+132,1,live,4719,Muppjävel
+132,2,live,1,"Psilodump (The X-Dump)"
+132,3,live,4951,Laztvoyage
+132,4,live,4974,"The Herring"
+132,5,dj,4955,C.Garette
+132,6,dj,4975,Pratap
+132,7,dj,4976,Bamse
+132,8,dj,4582,Hypnoid
+132,9,dj,4977,Monobeat
+132,10,dj,4970,"Henry Burner"
+132,11,dj,4978,Jon
+132,12,dj,4979,Martin
+133,1,live,1,"Psilodump (The X-Dump)"
+133,2,live,4974,"The Herring"
+133,3,live,4980,Masada
+133,4,dj,4978,Jon
+133,5,dj,4582,Hypnoid
+133,6,dj,4972,Faceless
+133,7,dj,4981,Snutj?vel
+133,8,dj,4979,Martin
+133,9,dj,4739,Plast
+133,10,dj,4982,Spookeye
+134,1,live,1,"Da R.I.P.C / Psilodump (The X-Dump)"
+134,2,dj,4582,Hypnoid
+134,3,dj,4944,Micro
+134,4,dj,4983,Tamlin
+134,5,dj,4970,"Henry Burner"
+135,1,live,1,"Da R.I.P.C (Psilodump, The X-Dump)"
+135,2,live,4984,"Jolt (Finland)"
+135,3,live,4985,"Phokus (Finland)"
+135,4,dj,4986,"Coma (Rytmi, Finland)"
+135,5,dj,4987,"Maas (Pussy Hki, Finland)"
+135,6,dj,4988,"&#960;Sami (Pety, Finland)"
+135,7,dj,4989,"Tremont (Finland)"
+136,1,live,4990,"The Art of Realistix"
+137,1,live,4990,"The Art of Realistix:"
+137,2,live,4967,Wodan
+137,3,live,1,"Da R.I.P.C (Psilodump, The X-Dump)"
+138,1,live,4990,"The Art of Realistix:"
+138,2,live,4967,Wodan
+138,3,live,1,"Da R.I.P.C (Psilodump, The X-Dump)"
+138,4,live,4992,"+ Special guest: Stealth (Holiday)"
+139,1,live,4990,"The Art of Realistix:"
+139,2,live,4967,Wodan
+139,3,live,1,"Da R.I.P.C (Psilodump, The X-Dump)"
+139,4,dj,4967,Wodan
+139,5,vj,4993,"LA Lighting"
+140,1,live,4990,"The Art of Realistix:"
+140,2,live,4994,Penta
+140,3,live,4420,"Paza (The X-Dump)"
+140,4,live,4967,kAncer
+140,5,live,1,"Da R.I.P.C (Psilodump, The X-Dump)"
+140,6,live,4990,"The Art of Realistix Supergabber Action!!!"
+141,1,live,4990,"The Art of Realistix:"
+141,2,live,4420,"Paza (The X-Dump)"
+141,3,live,4994,Penta
+141,4,live,1,"Da R.I.P.C (Psilodump, The X-Dump)"
+141,5,live,4967,kAncer
+142,1,live,4990,"The Art of Realistix:"
+142,2,live,4994,Penta
+142,3,live,4758,"Pazas (Pi-Bois, The X-Dump)"
+142,4,live,1,"Da R.I.P.C (Psilodump, The X-Dump)"
+142,5,live,4967,kAncer
+142,6,live,4420,"Paza (The X-Dump)"
