@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.20.0";
+const JS_VERSION = "1.21.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -235,6 +235,20 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-phys-card .act a.buy { display: inline-block !important; padding: 6px 14px !important; border-radius: 999px !important; background: var(--rel-deep, #2a2a2a) !important; color: var(--rel-deep-text, #fff) !important; font-weight: 600 !important; font-size: 13px !important; text-decoration: none !important; }
 .psd-phys-card .act .st { font-size: 12px !important; opacity: .7 !important; }
 .psd-phys-card.past .cv img { filter: grayscale(.6) !important; opacity: .75 !important; }
+.psd-today-nav { display: flex !important; align-items: center !important; gap: 10px !important; flex-wrap: wrap !important; margin: 0 0 18px !important; }
+.psd-today-nav h2 { flex: 1 1 auto !important; text-align: center !important; margin: 0 !important; font-size: 20px !important; color: inherit !important; }
+.psd-today-nav button { font: inherit !important; font-size: 13px !important; padding: 5px 12px !important; border-radius: 999px !important; border: 1px solid rgba(127,127,127,.35) !important; background: transparent !important; color: inherit !important; cursor: pointer !important; }
+.psd-today-nav button:hover { background: rgba(127,127,127,.15) !important; }
+.psd-today section { margin: 0 0 26px !important; }
+.psd-today h3 { font-size: 15px !important; margin: 0 0 10px !important; color: inherit !important; opacity: .8 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
+.psd-today h3 small { font-weight: normal !important; opacity: .7 !important; letter-spacing: 0 !important; text-transform: none !important; }
+.psd-today-rels { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important; gap: 12px !important; }
+.psd-today-rel { display: flex !important; gap: 12px !important; align-items: center !important; padding: 10px !important; border-radius: 10px !important; background: var(--rel-bg, rgba(127,127,127,.1)) !important; color: var(--rel-text, inherit) !important; text-decoration: none !important; }
+.psd-today-rel img, .psd-today-rel .ph { width: 72px !important; height: 72px !important; border-radius: 6px !important; object-fit: cover !important; flex: 0 0 72px !important; background: rgba(127,127,127,.2) !important; }
+.psd-today-rel b { display: block !important; font-size: 15px !important; line-height: 1.3 !important; }
+.psd-today-rel small { display: block !important; font-size: 12px !important; opacity: .8 !important; line-height: 1.45 !important; }
+.psd-rel a.psd-today-rel, .psd-today-rel * { text-decoration: none !important; }
+.psd-today-empty { opacity: .75 !important; }
 .psd-rel-videos { margin-top: 22px !important; }
 .psd-rel-videos h2 { font-size: 15px !important; margin: 0 0 10px !important; color: inherit !important; opacity: .75 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
 .psd-vgrid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important; gap: 14px !important; }
@@ -980,6 +994,8 @@ if (!window._psilodumpModalDelegated) {
       if (p) { if (p.audio.paused) playTrack(p.index); else p.audio.pause(); }
       return;
     }
+    const dy = t.closest('[data-psd-day]');
+    if (dy) { const m = document.getElementById("psd-today"); if (m && m._psdToday) { const v = dy.getAttribute("data-psd-day"); const d = new Date(); m._psdToday.md = v === "today" ? pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) : v; m._psdTodayRender(); } return; }
     const pk = t.closest('[data-psd-pkind]');
     if (pk) { const m = document.getElementById("psd-physical"); if (m && m._psdPhys) { m._psdPhys.kind = pk.getAttribute("data-psd-pkind"); m._psdPhysRender(); } return; }
     const th = t.closest('[data-psd-sort]');
@@ -1935,6 +1951,88 @@ function initPhysical(){
   }).catch(err => { console.error("Failed to load editions:", err); mount.innerHTML = `<div class="psd-rel">Unable to load the physical editions right now. Please refresh the page.</div>`; });
 }
 
+// --- ON THIS DAY: <div id="psd-today"> — what happened on this day in earlier years (?date=MM-DD) ---
+// Releases by Released, tracks by Finished (and by their own Released when on no catalogue release),
+// videos by Published. Full YYYY-MM-DD dates only; dates are read from the text, never via Date.
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const mdOf = v => { const m = String(v || "").match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[2] + "-" + m[3] : ""; };
+const pad2 = n => String(n).padStart(2, "0");
+function todayTarget(){
+  const v = new URLSearchParams(location.search).get("date") || "";
+  const m = v.match(/^(?:\d{4}[-/.])?(\d{1,2})[-/.](\d{1,2})$/);
+  if (m && +m[1] >= 1 && +m[1] <= 12 && +m[2] >= 1 && +m[2] <= 31) return pad2(m[1]) + "-" + pad2(m[2]);
+  const d = new Date(); return pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+}
+const shiftDay = (md, n) => { const d = new Date(2024, +md.slice(0, 2) - 1, +md.slice(3) + n); return pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); };   // 2024: has 29 Feb
+function initToday(){
+  const mount = document.getElementById("psd-today");
+  if (!mount || mount._psdShown) return;
+  if (document.documentElement.hasAttribute("aria-busy")) return;
+  mount._psdShown = true;
+  ensureStyles();
+  mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading “On this day”…</div>`;
+  Promise.all([loadCatalogue(), loadTrackData()]).then(([rows, data]) => {
+    const relById = {}; rows.forEach(r => { relById[r["ID"]] = r; });
+    const onRelease = {};
+    Object.entries(data.lists).forEach(([rid, list]) => list.forEach(({ t }) => { if (relById[rid] && !(onRelease[t.ID] || []).includes(relById[rid])) (onRelease[t.ID] = onRelease[t.ID] || []).push(relById[rid]); }));
+    const thisYear = new Date().getFullYear();
+    const ago = date => { const n = thisYear - +date.slice(0, 4); return n > 0 ? ` · ${n} year${n > 1 ? "s" : ""} ago` : (n === 0 ? " · this year" : ""); };
+    const tracks = Object.values(data.byId);
+    const videos = (data.videos || []).filter(v => v["From Others"] !== "1");
+    // Everything per day, so empty days can point to the next day with something.
+    const byDay = {};
+    const add = (md, kind, x) => { if (!md) return; const d = byDay[md] = byDay[md] || { rels: [], tracks: [], vids: [] }; d[kind].push(x); };
+    rows.forEach(r => add(mdOf(r._released), "rels", r));
+    tracks.forEach(t => {
+      add(mdOf(t.Finished), "tracks", { t, date: t.Finished, how: "finished" });
+      if (!onRelease[t.ID] && mdOf(t.Released) && t.Released !== t.Finished) add(mdOf(t.Released), "tracks", { t, date: t.Released, how: "released" });
+    });
+    videos.forEach(v => add(mdOf(v.Published), "vids", v));
+    const st = mount._psdToday = { md: todayTarget() };
+    const render = () => {
+      const md = st.md, day = byDay[md] || { rels: [], tracks: [], vids: [] };
+      const now = new Date(), isToday = md === pad2(now.getMonth() + 1) + "-" + pad2(now.getDate());
+      const label = +md.slice(3) + " " + MONTHS[+md.slice(0, 2) - 1];
+      stopPlayer();
+      const rels = day.rels.slice().sort((a, b) => a._released.localeCompare(b._released) || catOrder(a, b));
+      const relHtml = rels.map(r => {
+        const sf = releaseSurface(r["Bg Color"], 1) || { bg: "rgba(127,127,127,.12)", text: "inherit" };
+        return `<a class="psd-today-rel" href="${esc(releaseHref(r))}" style="--rel-bg:${esc(sf.bg)};--rel-text:${esc(sf.text)}">${r._thumbUrl ? `<img src="${esc(r._thumbUrl)}" alt="" loading="lazy">` : '<span class="ph"></span>'}<span><b>${esc(r[TITLE_COL] || "(untitled)")}</b><small>${esc([r._released.slice(0, 4), r[TYPE_COL], r[CAT_COL]].filter(Boolean).join(" · "))}${esc(ago(r._released))}</small>${releaseArtist(r).toLowerCase() !== "psilodump" ? `<small>by ${esc(releaseArtist(r))}</small>` : ""}</span></a>`;
+      }).join("");
+      let lastYear = null;
+      const items = day.tracks.slice().sort((a, b) => a.date.localeCompare(b.date) || String(a.t.Title).localeCompare(String(b.t.Title))).map(({ t, date, how }) => {
+        const year = date.slice(0, 4), heading = year !== lastYear ? year : ""; lastYear = year;
+        const bz = (String(t.Source || "").match(/track\/(\d+)/) || [])[1];
+        const rels = onRelease[t.ID] || [];
+        return { title: t.Title || "(untitled)", version: t.Version || "", artist: t.Artist || "", former: String(t["Former Titles"] || "").split(" | ").filter(Boolean),
+          duration: secToTime(t.Length), disc: 1, pos: null, heading,
+          note: [how + ago(date).replace(/^ · /, ", "), rels.length ? "on " + rels.map(r => r[TITLE_COL]).join(", ") : (t.Released ? "" : "unreleased")].filter(Boolean).join(" · "),
+          src: bz ? "/player/tracks/" + bz + ".mp3" : "", trackId: t.ID, ytMusic: "", video: ((data.videosByTrack[t.ID] || [])[0] || {})["Video ID"] || "" };
+      });
+      const vids = day.vids.slice().sort((a, b) => String(a.Published).localeCompare(String(b.Published))).map(v => {
+        const t = data.byId[v["Track ID"]], r = relById[v["Release ID"]];
+        const title = t ? t.Title + (t.Version ? " (" + t.Version + ")" : "") : (r ? r[TITLE_COL] : (v["YouTube Title"] || "Video"));
+        return `<figure class="psd-vcard">${liteYouTube(v["Video ID"], title)}<figcaption>${esc(title)}<small>${esc(VIDEO_KINDS[v.Kind] || "Video")} · ${esc(String(v.Published).slice(0, 4))}${esc(ago(String(v.Published)))}</small></figcaption></figure>`;
+      }).join("");
+      let next = "";
+      if (!rels.length && !items.length && !vids.length) { for (let i = 1; i <= 366; i++) { const n = shiftDay(md, i); if (byDay[n]) { next = n; break; } } }
+      mount.innerHTML = `<div class="psd-rel psd-today"><div class="psd-today-nav"><button type="button" data-psd-day="${shiftDay(md, -1)}">← ${esc(+shiftDay(md, -1).slice(3) + " " + MONTHS[+shiftDay(md, -1).slice(0, 2) - 1].slice(0, 3))}</button><h2>${esc(label)}</h2><button type="button" data-psd-day="${shiftDay(md, 1)}">${esc(+shiftDay(md, 1).slice(3) + " " + MONTHS[+shiftDay(md, 1).slice(0, 2) - 1].slice(0, 3))} →</button></div>
+        ${!isToday ? `<p style="text-align:center;margin:-8px 0 18px"><button type="button" data-psd-day="today" style="font:inherit;font-size:13px;background:none;border:0;color:inherit;text-decoration:underline;cursor:pointer">back to today</button></p>` : ""}
+        ${rels.length ? `<section><h3>Released <small>${rels.length}</small></h3><div class="psd-today-rels">${relHtml}</div></section>` : ""}
+        ${items.length ? `<section><h3>Tracks <small>${items.length}</small></h3><div class="psd-rel-player" id="psd-player"></div></section>` : ""}
+        ${vids.length ? `<section><h3>Videos <small>${day.vids.length}</small></h3><div class="psd-vgrid">${vids}</div></section>` : ""}
+        ${next ? `<p class="psd-today-empty">Nothing on ${esc(label)} yet. Next: <button type="button" data-psd-day="${next}" style="font:inherit;background:none;border:0;color:inherit;text-decoration:underline;cursor:pointer;padding:0">${esc(+next.slice(3) + " " + MONTHS[+next.slice(0, 2) - 1])}</button></p>` : ""}</div>`;
+      const box = document.getElementById("psd-player");
+      if (box) { if (items.some(x => x.src)) buildTrackPlayer(box, { [TITLE_COL]: "On " + label }, items, ""); else box.innerHTML = trackListHtml(items, false); }
+      const q = new URLSearchParams(location.search); if (isToday) q.delete("date"); else q.set("date", md);
+      const url = location.pathname + (q.toString() ? "?" + q.toString() : "") + location.hash;
+      if (url !== location.pathname + location.search + location.hash) history.replaceState(history.state, "", url);
+    };
+    mount._psdTodayRender = render;
+    render();
+  }).catch(err => { console.error("Failed to load On this day:", err); mount.innerHTML = `<div class="psd-rel">Unable to load “On this day” right now. Please refresh the page.</div>`; });
+}
+
 // --- REMIXES page: <div id="psd-remixes-page"> — psilodump's remixes, from tracks.csv ---
 // A remix = type Remix and either another artist's track or psilodump named in the version.
 const PSILO_ALIAS = /psilodump|psilo|insekt|r\.?i\.?p\.?c|trmc|jumix/i;      // remix credits that are psilodump himself
@@ -2069,6 +2167,7 @@ function applyFixedType(){
 }
 
 function initApp(){
+  initToday();
   initPhysical();
   initDiscography();
   initCatalogueTable();
@@ -2120,6 +2219,8 @@ new MutationObserver(() => {
   if (vp && !vp._psdShown) { initVideosPage(); return; }
   const rp = document.getElementById("psd-remixes-page");
   if (rp && !rp._psdShown) { initRemixesPage(); return; }
+  const td = document.getElementById("psd-today");
+  if (td && !td._psdShown) { initToday(); return; }
   const ph = document.getElementById("psd-physical");
   if (ph && !ph._psdShown) { initPhysical(); return; }
   const dg = document.getElementById("psd-discography");
