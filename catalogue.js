@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.23.0";
+const JS_VERSION = "1.24.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -280,6 +280,7 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-gig-img { margin: 0 !important; }
 .psd-gig-img button { display: block !important; width: 100% !important; padding: 0 !important; border: 0 !important; background: rgba(127,127,127,.15) !important; border-radius: 6px !important; overflow: hidden !important; cursor: zoom-in !important; aspect-ratio: 1 !important; }
 .psd-gig-img img { width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important; }
+.psd-gig-img.flyer img { object-fit: contain !important; }
 .psd-gig-img figcaption { font-size: 12px !important; margin-top: 4px !important; opacity: .85 !important; line-height: 1.4 !important; }
 .psd-gig-img figcaption small { display: block !important; opacity: .75 !important; }
 .psd-today-gigs { list-style: none !important; margin: 0 !important; padding: 0 !important; }
@@ -2085,6 +2086,7 @@ function initToday(){
 // --- GIGS: list (<div id="psd-gigs">) and one gig (<div id="psd-gig"> on /gig?g=<key>) from gigs.csv ---
 const GIGS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/gigs.csv";
 const GIG_IMAGES_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/gig_images.csv";
+const GIG_SETLISTS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/gig_setlists.csv";
 const GIG_PATH = "/gig", GIGS_PATH = "/gigs";
 const GIG_ROLE_NAMES = { live: "Live", dj: "DJ", vj: "VJ", mc: "MC" };
 const GIG_SELF = /psilodump|r\.?i\.?p\.?c|psilodumputer|pushiro|insekt 476|art of realistix|simon rahm/i;
@@ -2095,14 +2097,16 @@ function loadGigs(){
   const cat = window._psilodumpCat;
   if (!cat._gigPromise) {
     const get = url => fetch(url + "?v=" + Date.now()).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); }).then(t => toObjects(parseCSV(t)).rows);
-    cat._gigPromise = Promise.all([get(GIGS_URL), get(GIG_IMAGES_URL).catch(() => []), loadTrackData()]).then(([gigs, imgs, data]) => {
+    cat._gigPromise = Promise.all([get(GIGS_URL), get(GIG_IMAGES_URL).catch(() => []), loadTrackData(), get(GIG_SETLISTS_URL).catch(() => [])]).then(([gigs, imgs, data, sets]) => {
       gigs.sort((a, b) => String(b.Date).localeCompare(String(a.Date)) || (+b.ID - +a.ID));
-      const images = {}, videos = {};
+      const images = {}, videos = {}, setlists = {};
+      sets.forEach(x => (setlists[x["Gig ID"]] = setlists[x["Gig ID"]] || []).push(x));
+      Object.values(setlists).forEach(l => l.sort((a, b) => +a.Position - +b.Position));
       imgs.forEach(i => { if (i.Image) (images[i["Gig ID"]] = images[i["Gig ID"]] || []).push(i); });
       (data.videos || []).forEach(v => { if (v["Gig ID"]) (videos[v["Gig ID"]] = videos[v["Gig ID"]] || []).push(v); });
       const seen = {};
       gigs.forEach(g => { const k = (g.Date + "-" + slugify(g.Event || "gig")).replace(/-+$/, ""); g._key = seen[k] ? k + "-" + g.ID : k; seen[k] = 1;
-        g._images = images[g.ID] || []; g._videos = videos[g.ID] || []; g._acts = String(g["Line-up"] || "").split(" | ").filter(Boolean); });
+        g._images = images[g.ID] || []; g._videos = videos[g.ID] || []; g._setlist = setlists[g.ID] || []; g._links = String(g.Links || "").split(" | ").filter(u => /^https?:\/\//.test(u)); g._acts = String(g["Line-up"] || "").split(" | ").filter(Boolean); });
       return { gigs, data };
     }).catch(err => { cat._gigPromise = null; throw err; });
   }
@@ -2116,6 +2120,10 @@ function gigDateText(d){
   return [m[3] ? +m[3] : "", m[2] ? MONTHS[+m[2] - 1] : "", m[1]].filter(Boolean).join(" ");
 }
 const gigLarge = i => String(i.Image).replace("/thumb_", "/large_");
+function gigLinkLabel(u){
+  const host = (String(u).match(/^https?:\/\/(?:www\.)?([^/]+)/i) || [])[1] || u;
+  return { "mixcloud.com": "Mixcloud", "youtube.com": "YouTube", "youtu.be": "YouTube", "soundcloud.com": "SoundCloud", "archive.org": "Internet Archive", "bandcamp.com": "Bandcamp" }[host.toLowerCase()] || host;
+}
 function gigIcons(g){
   const f = g._images.some(i => i.Kind === "flyer"), p = g._images.some(i => i.Kind === "photo");
   return [f ? `<span title="Flyer">${FLYER_ICON}</span>` : "", p ? `<span title="Photos">${PHOTO_ICON}</span>` : "", g.Source ? `<span title="Live recording">${AUDIO_ICON}</span>` : "", g._videos.length ? `<span title="Video">${VIDEO_ICON}</span>` : ""].join("");
@@ -2199,6 +2207,7 @@ function renderGig(mount, gigs, data){
   if (g.Organizer) facts.push(["Organiser", esc(g.Organizer)]);
   const links = [];
   if (/^https?:\/\//.test(g.URL || "")) links.push(`<a href="${esc(g.URL)}" target="_blank" rel="noopener nofollow">Event page</a> <small>(may be gone)</small>`);
+  g._links.forEach(u => links.push(`<a href="${esc(u)}" target="_blank" rel="noopener nofollow">${esc(gigLinkLabel(u))}</a>`));
   if (/^[0-9a-f-]{36}$/.test(g.MusicBrainz || "")) links.push(`<a href="https://musicbrainz.org/event/${esc(g.MusicBrainz)}" target="_blank" rel="noopener">MusicBrainz</a>`);
   if (links.length) facts.push(["Links", links.join(" · ")]);
   // Line-up by role, psilodump's own entry highlighted
@@ -2210,8 +2219,14 @@ function renderGig(mount, gigs, data){
     const label = t ? t.Title + (t.Version ? " (" + t.Version + ")" : "") : (v["YouTube Title"] || "Video");
     return `<figure class="psd-vcard">${liteYouTube(v["Video ID"], label)}<figcaption>${esc(label)}<small>${[VIDEO_KINDS[v.Kind] || "Video", v["Made By"] ? (v["From Others"] === "1" ? "by " : "video by ") + esc(v["Made By"]) : (v["From Others"] === "1" ? "from the audience" : "")].filter(Boolean).join(" · ")}</small></figcaption></figure>`;
   }).join("");
-  const imgFig = x => `<figure class="psd-gig-img"><button type="button" data-lightbox="${esc(gigLarge(x))}" data-thumb="${esc(x.Image)}" aria-label="View larger: ${esc(x.Caption || (x.Kind === "flyer" ? "flyer" : "photo"))}"><img src="${esc(x.Image)}" alt="${esc(x.Caption || "")}" loading="lazy"></button>${x.Caption || x.Credit ? `<figcaption>${esc(x.Caption || "")}${x.Credit ? `<small>${x.Kind === "flyer" ? "Design" : "Photo"}: ${esc(x.Credit)}</small>` : ""}</figcaption>` : ""}</figure>`;
+  const imgFig = x => `<figure class="psd-gig-img${x.Kind === "flyer" ? " flyer" : ""}"><button type="button" data-lightbox="${esc(gigLarge(x))}" data-thumb="${esc(x.Image)}" aria-label="View larger: ${esc(x.Caption || (x.Kind === "flyer" ? "flyer" : "photo"))}"><img src="${esc(x.Image)}" alt="${esc(x.Caption || "")}" loading="lazy"></button>${x.Caption || x.Credit ? `<figcaption>${esc(x.Caption || "")}${x.Credit ? `<small>${x.Kind === "flyer" ? "Design" : "Photo"}: ${esc(x.Credit)}</small>` : ""}</figcaption>` : ""}</figure>`;
   const bz = (String(g.Source || "").match(/track\/(\d+)/) || [])[1];
+  const setItems = g._setlist.map(x => {
+    const t = x["Track ID"] ? data.byId[x["Track ID"]] : null;
+    return { title: t ? t.Title || "(untitled)" : x.Title, version: t ? t.Version || "" : "", artist: t ? t.Artist || "" : "",
+      former: t ? String(t["Former Titles"] || "").split(" | ").filter(Boolean) : [], duration: "", disc: 1, pos: +x.Position || 0, heading: "",
+      note: x.Note || "", src: "", trackId: t ? t.ID : "", ytMusic: "", video: t ? ((data.videosByTrack[t.ID] || [])[0] || {})["Video ID"] || "" : "" };
+  });
   mount.innerHTML = `
   <div class="psd-rel psd-gig">
     <nav class="psd-rel-nav"><a href="${GIGS_PATH}">← All gigs</a>
@@ -2226,6 +2241,7 @@ function renderGig(mount, gigs, data){
       </div>
     </div>
     ${bz ? `<section class="psd-rel-player" id="psd-player"></section>` : ""}
+    ${setItems.length ? `<section class="psd-gig-setlist"><h2>Setlist</h2>${trackListHtml(setItems, false)}</section>` : ""}
     ${lineup ? `<section class="psd-gig-lineup"><h2>Line-up</h2><div class="psd-gig-roles">${lineup}</div></section>` : ""}
     ${vids ? `<section class="psd-rel-videos"><h2>Video</h2><div class="psd-vgrid">${vids}</div></section>` : ""}
     ${g._images.length > 1 ? `<section class="psd-gig-photos"><h2>${flyers.length && photos.length ? "Flyers & photos" : photos.length ? "Photos" : "Flyers"}</h2><div class="psd-gig-grid">${[...flyers, ...photos].map(imgFig).join("")}</div></section>` : ""}
