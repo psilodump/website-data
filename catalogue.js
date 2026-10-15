@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.31.1";
+const JS_VERSION = "1.31.2";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -2390,6 +2390,7 @@ function renderGig(mount, gigs, data, pp){
 const POSTS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/posts.csv";
 const POST_PATH = "/post", NEWS_PATH = "/news-feed";
 const POST_KINDS = { news: "News", release: "Release", gig: "Gig", remix: "Remix", video: "Video", press: "Press", collab: "Collaboration" };
+const POST_KIND_PLURALS = { news: "News", release: "Releases", gig: "Gigs", remix: "Remixes", video: "Videos", press: "Press", collab: "Collaborations" };
 function loadPosts(){
   const cat = window._psilodumpCat;
   if (!cat._postPromise) {
@@ -2516,7 +2517,7 @@ function initNews(){
     const st = mount._psdNews = { kind: h.get("kind") || "", year: h.get("year") || "", q: h.get("q") || "", tag: h.get("tag") || "", auto: h.get("auto") !== "0", shown: 20 };
     const kinds = Object.keys(POST_KINDS).filter(k => all.some(x => x.kind === k));
     mount.innerHTML = `<div class="psd-rel psd-vpage psd-news"><div class="psd-vpage-bar">
-      <button type="button" data-psd-nkind="">All</button>${kinds.map(k => `<button type="button" data-psd-nkind="${k}">${esc(POST_KINDS[k])}${k === "release" || k === "gig" || k === "remix" ? "s" : ""}</button>`).join("")}
+      <button type="button" data-psd-nkind="">All</button>${kinds.map(k => `<button type="button" data-psd-nkind="${k}">${esc(POST_KIND_PLURALS[k] || POST_KINDS[k])}</button>`).join("")}
       <select aria-label="Year"><option value="">All years</option>${years.map(y => `<option${y === st.year ? " selected" : ""}>${y}</option>`).join("")}</select>
       <input type="search" placeholder="Search the news…" aria-label="Search the news" value="${esc(st.q)}">
       <label class="psd-gig-media"><input type="checkbox"${st.auto ? " checked" : ""}> include releases and gigs without a post</label></div>
