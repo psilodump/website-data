@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.33.2";
+const JS_VERSION = "1.34.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -170,6 +170,17 @@ a.rel-cover { display: block !important; text-decoration: none !important; }
 .rel-wrap.compact .rel-kind { font-size: 11px !important; padding: 2px 7px !important; left: 6px !important; bottom: 6px !important; }
 .rel-wrap.row-view .rel-card { padding: 8px 0 !important; border-top: 1px solid rgba(127,127,127,.2) !important; }
 .rel-wrap.row-view .rel-kind { display: none !important; }
+.rel-net { position: absolute !important; right: 8px !important; top: 8px !important; z-index: 2 !important; background: rgba(0,0,0,.7) !important; color: #fff !important; border-radius: 999px !important; padding: 2px 8px !important; font-size: 11px !important; line-height: 1.3 !important; letter-spacing: .03em !important; pointer-events: none !important; }
+.rel-wrap.compact .rel-net { font-size: 10px !important; padding: 1px 6px !important; right: 6px !important; top: 6px !important; }
+.rel-wrap.row-view .rel-net { display: none !important; }
+.psd-phys-card .cv .net { position: absolute !important; right: 8px !important; top: 8px !important; background: rgba(0,0,0,.7) !important; color: #fff !important; border-radius: 999px !important; padding: 2px 8px !important; font-size: 11px !important; }
+.psd-phys-card a.cv { text-decoration: none !important; color: inherit !important; }
+.psd-net-tag { display: inline-block !important; border: 1px solid currentColor !important; border-radius: 999px !important; padding: 0 7px !important; font-size: .8em !important; opacity: .85 !important; margin-left: 4px !important; white-space: nowrap !important; }
+.psd-related li b { font-weight: 600 !important; }
+.psd-label-text { max-width: 760px !important; line-height: 1.55 !important; }
+.psd-label-text p { margin: 0 0 .8em !important; }
+.psd-label-idx { columns: 2 260px !important; padding: 0 !important; list-style: none !important; }
+.psd-label-idx li { break-inside: avoid !important; padding: 3px 0 !important; }
 .rel-wrap.row-view .rel-meta .rel-mtype { display: inline !important; }
 .rel-wrap.row-view .rel-card:hover .rel-cover img { transform: none !important; }
 .rel-card.sk { border: 0 !important; }
@@ -528,6 +539,8 @@ const EDITIONS_URL = "https://raw.githubusercontent.com/psilodump/website-data/r
 const TRACKS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/tracks.csv";
 const TRACKLISTS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/tracklists.csv";
 const VIDEOS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/videos.csv";
+const LABELS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/labels.csv";
+const RELATIONS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/release_relations.csv";
 // Order and names of video kinds (admin: VIDEO_KINDS in videos_lib.php).
 const VIDEO_KINDS = { music_video: "Music video", tracker: "Tracker video", visualiser: "Visualiser", vinyl: "Vinyl playback", live: "Live",
   teaser: "Teaser / trailer", full_album: "Full album audio", audio: "Audio", scrapbook: "Scrapbook", dj_set: "DJ set / mix", tribute: "Cover / tribute", other: "Video" };
@@ -804,7 +817,8 @@ function card(r, idx){
   // of keyboard/screen-reader navigation so each card has one link, not two the same.
   // Without release pages: data-* attributes + the shared click listener open the lightbox.
   const coverClick = r._largeUrl ? `data-lightbox="${esc(r._largeUrl)}" data-thumb="${esc(r._thumbUrl)}" role="button" tabindex="0" aria-label="View larger artwork: ${esc(r[TITLE_COL] || "")}"` : '';
-  const kind = r[TYPE_COL] ? `<span class="rel-kind">${esc(r[TYPE_COL] === "MiniAlbum" ? "Mini-album" : r[TYPE_COL])}</span>` : "";
+  const kind = (r[TYPE_COL] ? `<span class="rel-kind">${esc(r[TYPE_COL] === "MiniAlbum" ? "Mini-album" : r[TYPE_COL])}</span>` : "")
+    + (r["Netlabel"] === "1" ? `<span class="rel-net" title="Netlabel release">netlabel</span>` : "");
   const cover = RELEASE_LINKS
     ? `<a class="rel-cover" href="${esc(releaseHref(r))}" tabindex="-1" aria-hidden="true">${coverHtml}${kind}</a>`
     : `<div class="rel-cover" ${coverClick}>${coverHtml}${kind}</div>`;
@@ -814,7 +828,7 @@ function card(r, idx){
   const activeDate = window._psilodumpCat.dateMode === "catalogue" ? r._catalogue : r._released;
   // the type is on the cover badge; in the row view (no badge) it shows in the line
   const metaBits = [ activeDate, r[CAT_COL], r["Label"] ].filter(Boolean).map(esc);
-  if (r[TYPE_COL]) metaBits[0] = (metaBits[0] || "") + `<span class="rel-mtype">${metaBits.length ? " · " : ""}${esc(r[TYPE_COL])}</span>`;
+  if (r[TYPE_COL]) metaBits[0] = (metaBits[0] || "") + `<span class="rel-mtype">${metaBits.length ? " · " : ""}${esc(r[TYPE_COL])}${r["Netlabel"] === "1" ? " · netlabel" : ""}</span>`;
   if (r._hiddenParts) metaBits.push(`<a class="rel-parts" href="${esc(workHref(r))}">${r._hiddenParts} part${r._hiddenParts === 1 ? "" : "s"}</a>`);
   const meta = metaBits.join(" · ");
   
@@ -862,7 +876,7 @@ function renderFilterPills(){
   if (cat.activeYear) pills.push({ label: `Year: ${cat.activeYear}`, clear: () => { cat.activeYear = ""; const el = document.getElementById("rel-sel-year"); if(el) el.value = ""; const w = document.getElementById("rel-sel-when"); if(w) w.value = ""; } });
   if (cat.activeType) pills.push({ label: `Type: ${cat.activeType}`, clear: () => { cat.activeType = ""; const el = document.getElementById("rel-sel-type"); if(el) el.value = ""; } });
   if (cat.activeSeries) pills.push({ label: `Series: ${cat.activeSeries}`, clear: () => { cat.activeSeries = ""; const el = document.getElementById("rel-sel-series"); if(el) el.value = ""; } });
-  if (cat.activeLabel) pills.push({ label: `Label: ${cat.activeLabel}`, clear: () => { cat.activeLabel = ""; const el = document.getElementById("rel-sel-label"); if(el) el.value = ""; } });
+  if (cat.activeLabel) pills.push({ label: cat.activeLabel === "@netlabel" ? "Netlabel releases" : `Label: ${cat.activeLabel}`, clear: () => { cat.activeLabel = ""; const el = document.getElementById("rel-sel-label"); if(el) el.value = ""; } });
   if (cat.activeWork) { const w = workParent(cat.rows, cat.activeWork); pills.push({ label: `Part of: ${w ? w[TITLE_COL] : cat.activeWork}`, clear: () => { cat.activeWork = ""; } }); }
 
   if (!pills.length) {
@@ -986,7 +1000,8 @@ function populateSelectOptions(){
   }
   const elY = document.getElementById("rel-sel-year"); if(elY) elY.innerHTML = `<option value="">All Years</option>` + years.map(y => `<option value="${esc(y)}" ${y===cat.activeYear?'selected':''}>${esc(y)}</option>`).join("");
   const elT = document.getElementById("rel-sel-type"); if(elT) elT.innerHTML = `<option value="">All Types</option>` + types.map(t => `<option value="${esc(t)}" ${t===cat.activeType?'selected':''}>${esc(t)}</option>`).join("");
-  const elL = document.getElementById("rel-sel-label"); if(elL) elL.innerHTML = `<option value="">All Labels</option>` + labels.map(s => `<option value="${esc(s)}" ${s.toLowerCase()===cat.activeLabel.toLowerCase()?'selected':''}>${esc(s)}</option>`).join("");
+  const netOpt = pool.some(r => r["Netlabel"] === "1") ? `<option value="@netlabel" ${cat.activeLabel === "@netlabel" ? "selected" : ""}>Netlabel releases</option>` : "";
+  const elL = document.getElementById("rel-sel-label"); if(elL) elL.innerHTML = `<option value="">All Labels</option>` + netOpt + labels.map(s => `<option value="${esc(s)}" ${s.toLowerCase()===cat.activeLabel.toLowerCase()?'selected':''}>${esc(s)}</option>`).join("");
   const elS = document.getElementById("rel-sel-series"); if(elS) elS.innerHTML = `<option value="">All Series</option>` + series.map(s => `<option value="${esc(s)}" ${s===cat.activeSeries?'selected':''}>${esc(s)}</option>`).join("");
 }
 
@@ -1015,7 +1030,8 @@ function applyFilters(){
     if (cat.activeType && !r._types.some(t => t.toLowerCase() === cat.activeType.toLowerCase())) return false;
     if (!inFixed(r)) return false;
     if (cat.activeSeries && !r._series.some(s => s.toLowerCase() === cat.activeSeries.toLowerCase())) return false;
-    if (cat.activeLabel && !r._labels.some(s => s.toLowerCase() === cat.activeLabel.toLowerCase())) return false;
+    if (cat.activeLabel === "@netlabel") { if (r["Netlabel"] !== "1") return false; }
+    else if (cat.activeLabel && !r._labels.some(s => s.toLowerCase() === cat.activeLabel.toLowerCase())) return false;
     if (cat.activeWork && !(work && (r === work || (r["Part Of"] && r["Part Of"] === work["MusicBrainz"])))) return false;
     if (q && !r._searchStr.includes(q)) return false;
     return true;
@@ -1483,9 +1499,19 @@ function loadCatalogue(){
     // editions.csv is optional: if it can't be loaded the catalogue works without it.
     const editions = fetch(EDITIONS_URL + "?v=" + Date.now())
       .then(r => r.ok ? r.text() : "").then(t => t ? toObjects(parseCSV(t)).rows : []).catch(() => []);
+    // labels.csv (label pages, own / netlabel) and release_relations.csv (uncut version, remixes …): optional too
+    const optional = url => fetch(url + "?v=" + Date.now()).then(r => r.ok ? r.text() : "").then(t => t ? toObjects(parseCSV(t)).rows : []).catch(() => []);
+    const extras = Promise.all([optional(LABELS_URL), optional(RELATIONS_URL)]).then(([labels, relations]) => {
+      cat.labels = labels; cat.labelByName = {}; cat.relations = relations;
+      labels.forEach(l => {
+        l._names = [l.Name, ...String(l.Aliases || "").split(" | ")].map(x => normLabel(x)).filter(Boolean);
+        l._key = slugify(l.Name);
+        l._names.forEach(n => { cat.labelByName[n.toLowerCase()] = l; });
+      });
+    });
     cat._promise = fetch(CSV_URL + "?v=" + Date.now())
       .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
-      .then(text => editions.then(eds => [text, eds]))
+      .then(text => Promise.all([editions, extras]).then(([eds]) => [text, eds]))
       .then(([text, eds]) => {
         const { rows: raw } = toObjects(parseCSV(text));
         cat.rows = withDerived(raw);
@@ -1495,6 +1521,7 @@ function loadCatalogue(){
         cat.rows.forEach(r => {
           r._editions = (byRelease[r["ID"]] || []).sort(editionOrder);
           if (r._editions.length) r._searchStr += " " + r._editions.map(e => [e["Cat#"], e.Format, e.Title].join(" ")).join(" ").toLowerCase();
+          if (r["Netlabel"] === "1") r._searchStr += " netlabel";
         });
         cat.viewRows = [...cat.rows];
         cat.loaded = true;
@@ -1554,7 +1581,9 @@ function renderRelease(mount, rows){
   if (r._catalogue && r._catalogue !== r._released) facts.push(["Catalogue date", dayLink(r._catalogue)]);
   if (r[TYPE_COL]) facts.push(["Type", esc(r[TYPE_COL])]);
   if (r[CAT_COL]) facts.push(["Cat#", esc(r[CAT_COL])]);
-  if (r._labels.length) facts.push(["Label", r._labels.map(l => `<a href="${CATALOGUE_PATH}#label=${encodeURIComponent(l)}">${esc(l)}</a>`).join(", ")]);
+  if (r._labels.length) facts.push(["Label", r._labels.map(l => { const L = labelFor(l);
+      return `<a href="${esc(L ? labelHref(L) : CATALOGUE_PATH + "#label=" + encodeURIComponent(l))}">${esc(l)}</a>`; }).join(", ")
+    + (r["Netlabel"] === "1" ? ` <a class="psd-net-tag" href="${CATALOGUE_PATH}#label=@netlabel" title="Released for free download on a netlabel">netlabel release</a>` : "")]);
   if (r["Formats"]) facts.push(["Format", esc(r["Formats"])]);
   if (r["Barcode"]) facts.push(["Barcode", esc(r["Barcode"])]);
   if (r._series.length) facts.push(["Series", r._series.map(s => `<a href="${CATALOGUE_PATH}#series=${encodeURIComponent(s)}">${esc(s)}</a>`).join(", ")]);
@@ -1634,6 +1663,7 @@ function renderRelease(mount, rows){
   document.title = title + " | psilodump";
   renderPlayer(document.getElementById("psd-player"), r, albumId);
   appendReleasePictures(mount.querySelector(".psd-rel"), r);
+  appendRelated(mount.querySelector(".psd-rel"), r, rows);
   appendAlsoOn(mount.querySelector(".psd-rel"), r);
   appendInTheNews(mount.querySelector(".psd-rel"), p => p["Release ID"] === r["ID"]);
 }
@@ -2794,6 +2824,131 @@ function initAppearances(){
     render();
   }).catch(err => { console.error("Failed to load appearances:", err); mount.innerHTML = `<div class="psd-rel">Unable to load this right now. Please refresh the page.</div>`; });
 }
+// --- Related releases: hand-made (release_relations.csv: uncut version, remixes, reissue …) and found from
+// shared tracks — "Also on" (all this release's tracks are on a bigger one) and "Collects" (smaller releases
+// whose tracks are all on this one). Parts (Part Of) and other editions (same title) are shown above already.
+const RELATION_NAMES = {
+  uncut: ["Uncut version of", "Uncut version"], remixes: ["Remixes of", "Remixes"], reissue: ["Reissue of", "Reissued as"],
+  remaster: ["Remaster of", "Remastered as"], expanded: ["Expanded edition of", "Expanded edition"], single: ["Single from", "Singles"],
+  version: ["Another version of", "Other versions"],
+};
+function appendRelated(box, r, rows){
+  if (!box) return;
+  const cat = window._psilodumpCat;
+  const relById = {}; rows.forEach(x => { relById[x["ID"]] = x; });
+  const yr = x => String(x._catalogue || x._released || "").slice(0, 4);
+  const link = x => `<a href="${esc(releaseHref(x))}">${esc(x[TITLE_COL] || "(untitled)")}</a>`;
+  const shown = new Set([r["ID"]]);
+  // already in the facts: parent, parts, other editions (same title)
+  rows.forEach(x => { if ((r["Part Of"] && x["MusicBrainz"] === r["Part Of"]) || (r["MusicBrainz"] && x["Part Of"] === r["MusicBrainz"]) || slugify(x[TITLE_COL]) === slugify(r[TITLE_COL])) shown.add(x["ID"]); });
+  const lines = [];      // [label, [releases], note]
+  const group = {};
+  (cat.relations || []).forEach(rel => {
+    const names = RELATION_NAMES[rel.Kind]; if (!names) return;
+    let other, label;
+    if (rel["Release ID"] === r["ID"]) { other = relById[rel["Related ID"]]; label = names[0]; }
+    else if (rel["Related ID"] === r["ID"]) { other = relById[rel["Release ID"]]; label = names[1]; }
+    if (!other) return;
+    shown.add(other["ID"]);
+    (group[label] = group[label] || []).push({ x: other, note: rel.Note || "" });
+  });
+  const render = extra => {
+    if (!document.body.contains(box)) return;
+    const all = Object.entries(group).map(([label, xs]) => [label, xs]).concat(extra);
+    const old = box.querySelector(".psd-related"); if (old) old.remove();
+    if (!all.length) return;
+    const html = `<section class="psd-innews psd-related"><h2>Related releases</h2><ul>${all.map(([label, xs]) =>
+      `<li><b>${esc(label)}</b> ${xs.map(({ x, note }) => `${link(x)} <span class="by">${esc(yr(x))}${note ? " · " + esc(note) : ""}</span>`).join(", ")}</li>`).join("")}</ul></section>`;
+    const anchor = box.querySelector(".psd-rel-editions, .psd-rel-credits, .psd-alsoon, .psd-rel-more");
+    if (anchor) anchor.insertAdjacentHTML("beforebegin", html); else box.insertAdjacentHTML("beforeend", html);
+  };
+  render([]);
+  loadTrackData().then(data => {
+    const mine = new Set((data.lists[r["ID"]] || []).map(({ t }) => t.ID));
+    if (!mine.size) return;
+    const alsoOn = [], collects = [];
+    Object.entries(data.lists).forEach(([id, list]) => {
+      const x = relById[id]; if (!x || shown.has(id)) return;
+      const theirs = new Set(list.map(({ t }) => t.ID));
+      const shared = [...mine].filter(t => theirs.has(t)).length;
+      if (!shared) return;
+      if (shared === mine.size && theirs.size > mine.size) alsoOn.push({ x });
+      else if (shared === theirs.size && mine.size > theirs.size) collects.push({ x });
+      else if (shared === mine.size && shared === theirs.size) alsoOn.push({ x, note: "same tracks" });
+    });
+    const byDate = (a, b) => String(a.x._catalogue || a.x._released || "").localeCompare(String(b.x._catalogue || b.x._released || ""));
+    const extra = [];
+    if (alsoOn.length) extra.push(["Also on", alsoOn.sort(byDate)]);
+    if (collects.length) extra.push(["Collects", collects.sort(byDate)]);
+    if (extra.length) render(extra);
+  }).catch(() => {});
+}
+
+// --- LABELS: labels.csv → /label?l=<key> (one label: text, links, releases, editions, appearances), /label = all labels
+const LABEL_PATH = "/label";
+const labelHref = l => SITE_BASE + LABEL_PATH + "?l=" + encodeURIComponent(l._key);
+function labelFor(name){ const c = window._psilodumpCat; return (c.labelByName || {})[normLabel(name).toLowerCase()] || null; }
+function labelKindText(l){
+  // "netlabel" once: the years can say when ("netlabel 2005")
+  return [l.Own === "1" ? "psilodump's own label" : "", l.Netlabel === "1" && !/netlabel/i.test(l.Years || "") ? "netlabel" : "", l.Years || ""].filter(Boolean).join(" · ");
+}
+function initLabel(){
+  const mount = document.getElementById("psd-label");
+  if (!mount || mount._psdShown === location.search) return;
+  if (document.documentElement.hasAttribute("aria-busy")) return;
+  if (location.pathname.replace(/\/+$/, "") !== LABEL_PATH) return;
+  mount._psdShown = location.search;
+  ensureStyles();
+  mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading…</div>`;
+  loadCatalogue().then(rows => loadAppearances().catch(() => ({ apps: [] })).then(({ apps }) => {
+    const cat = window._psilodumpCat;
+    const labels = (cat.labels || []).filter(l => l.Name);
+    const onLabel = l => rows.filter(r => r._labels.some(x => l._names.includes(normLabel(x))));
+    const key = (new URLSearchParams(location.search).get("l") || "").trim().toLowerCase();
+    if (!key) {          // all labels
+      const sec = (title, list) => list.length ? `<section class="psd-innews"><h2>${title} <small>${list.length}</small></h2><ul class="psd-label-idx">${list.map(l => {
+        const on = list => list.filter(x => String(x.Label || "").split(/\s*,\s*/).some(y => l._names.includes(normLabel(y)))).length;
+        const cnt = (n, w) => n ? n + " " + w + (n === 1 ? "" : "s") : "";
+        return `<li><a href="${esc(labelHref(l))}">${esc(l.Name)}</a> <span class="by">${[cnt(onLabel(l).length, "release"), cnt(on(cat.editions || []), "edition"), cnt(on(apps), "appearance"), l.Years].filter(Boolean).map(esc).join(" · ")}</span></li>`; }).join("")}</ul></section>` : "";
+      const by = (a, b) => a.Name.localeCompare(b.Name, undefined, { sensitivity: "base" });
+      mount.innerHTML = `<div class="psd-rel"><nav class="psd-rel-nav"><a href="${SITE_BASE}${CATALOGUE_PATH}">← Catalogue</a></nav><h1 class="psd-rel-title">Labels</h1>
+        ${sec("Own labels", labels.filter(l => l.Own === "1").sort(by))}${sec("Netlabels", labels.filter(l => l.Own !== "1" && l.Netlabel === "1").sort(by))}${sec("Other labels", labels.filter(l => l.Own !== "1" && l.Netlabel !== "1").sort(by))}</div>`;
+      document.title = "Labels | psilodump";
+      return;
+    }
+    const l = labels.find(x => x._key.toLowerCase() === key || x.ID === key) || labelFor(key);
+    if (!l) { mount.innerHTML = `<div class="psd-rel"><nav class="psd-rel-nav"><a href="${SITE_BASE}${LABEL_PATH}">← Labels</a></nav><h1 class="psd-rel-title">Label not found</h1></div>`; document.title = "Not found | psilodump"; return; }
+    // newest first by the date the label released it (476LEG reissues come after their originals' catalogue date)
+    const rels = onLabel(l).sort((a, b) => String(b._released || b._catalogue || "").localeCompare(String(a._released || a._catalogue || "")) || catOrder(a, b));
+    const eds = (cat.editions || []).filter(e => String(e.Label || "").split(/\s*,\s*/).some(x => l._names.includes(normLabel(x))));
+    const appsOn = apps.filter(a => String(a.Label || "").split(/\s*,\s*/).some(x => l._names.includes(normLabel(x))));
+    const relById = {}; rows.forEach(r => { relById[r["ID"]] = r; });
+    const relCard = r => `<figure class="psd-phys-card"><a class="cv" href="${esc(releaseHref(r))}" tabindex="-1" aria-hidden="true">${r._thumbUrl ? `<img src="${esc(r._thumbUrl)}" alt="" loading="lazy">` : `<div class="psd-app-plain"><b>${esc(r[TITLE_COL])}</b></div>`}<span class="kind">${esc(r[TYPE_COL] === "MiniAlbum" ? "Mini-album" : r[TYPE_COL] || "")}</span>${r["Netlabel"] === "1" ? `<span class="net">netlabel</span>` : ""}</a>
+      <h3><a href="${esc(releaseHref(r))}">${esc(r[TITLE_COL] || "(untitled)")}</a>${releaseArtist(r).toLowerCase() !== "psilodump" ? ` <small>by ${esc(releaseArtist(r))}</small>` : ""}</h3>
+      <div class="meta">${esc([String(r._released || r._catalogue || "").slice(0, 4), r[CAT_COL], r["Formats"]].filter(Boolean).join(" · "))}</div></figure>`;
+    const edCard = e => { const r0 = splitList(e.Releases).map(id => relById[id]).find(r => r && r._thumbUrl); const k = editionKind(e.Format);
+      return `<figure class="psd-phys-card${editionPast(e) ? " past" : ""}"><div class="cv">${r0 ? `<img src="${esc(r0._thumbUrl)}" alt="" loading="lazy">` : (PHYS_ICONS[k] || "")}<span class="kind">${PHYS_ICONS[k] || ""}${esc(e.Format || k || "")}</span></div>
+        <h3>${esc(e.Title || "(untitled)")}</h3><div class="meta">${esc([e["Cat#"], e.Year, EDITION_STATUS_LABELS[e.Status] || ""].filter(Boolean).join(" · "))}</div>
+        ${e.Status === "available" && e.URL ? `<div class="act"><a class="buy" href="${esc(e.URL)}" target="_blank" rel="noopener">Buy</a></div>` : ""}</figure>`; };
+    const links = [l.URL, ...String(l.Links || "").split(" | ")].filter(u => /^https?:\/\//.test(u || ""))
+      .map(u => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, ""))}</a>`);
+    const nNet = rels.filter(r => r["Netlabel"] === "1").length;
+    mount.innerHTML = `<div class="psd-rel psd-label">
+      <nav class="psd-rel-nav"><a href="${SITE_BASE}${LABEL_PATH}">← Labels</a><a href="${SITE_BASE}${CATALOGUE_PATH}#label=${encodeURIComponent(l.Name)}">Show in catalogue</a></nav>
+      <h1 class="psd-rel-title">${esc(l.Name)}</h1>
+      ${labelKindText(l) ? `<div class="psd-rel-sub">${esc(labelKindText(l))}</div>` : ""}
+      ${l._names.length > 1 ? `<div class="psd-rel-sub">also ${l._names.slice(1).map(esc).join(", ")}</div>` : ""}
+      ${String(l.Text || "").trim() ? `<div class="psd-label-text">${renderPostText(l.Text)}</div>` : ""}
+      ${links.length ? `<p class="by">${links.join(" · ")}</p>` : ""}
+      ${rels.length ? `<section class="psd-person-sec"><h2>Releases <small>${rels.length}${nNet && nNet < rels.length ? " · " + nNet + " netlabel" : ""}</small></h2><div class="psd-phys-grid">${rels.map(relCard).join("")}</div></section>` : ""}
+      ${eds.length ? `<section class="psd-person-sec"><h2>Physical editions <small>${eds.length}</small></h2><div class="psd-phys-grid">${eds.map(edCard).join("")}</div></section>` : ""}
+      ${appsOn.length ? `<section class="psd-person-sec"><h2>Compilations &amp; appearances <small>${appsOn.length}</small></h2><div class="psd-phys-grid">${appsOn.map(a => appCard(a)).join("")}</div></section>` : ""}
+      ${!rels.length && !eds.length && !appsOn.length ? "<p>Nothing on this label yet.</p>" : ""}
+    </div>`;
+    document.title = l.Name + " | psilodump";
+  })).catch(err => { console.error("Failed to load label:", err); mount.innerHTML = `<div class="psd-rel">Unable to load this page right now. Please refresh the page.</div>`; });
+}
+
 // "Also on": compilations / others' releases with one of this release's tracks
 function appendAlsoOn(box, r){
   if (!box) return;
@@ -2953,6 +3108,7 @@ function inFixed(r){
 }
 
 function initApp(){
+  initLabel();
   initAppearances();
   initPerson();
   initNews();
@@ -3013,6 +3169,8 @@ new MutationObserver(() => {
   if (rp && !rp._psdShown) { initRemixesPage(); return; }
   const ap = document.getElementById("psd-appearances");
   if (ap && !ap._psdShown) { initAppearances(); return; }
+  const lb = document.getElementById("psd-label");
+  if (lb && lb._psdShown !== location.search) { initLabel(); return; }
   const pe = document.getElementById("psd-person");
   if (pe && pe._psdShown !== location.search) { initPerson(); return; }
   const nw = document.getElementById("psd-news");
