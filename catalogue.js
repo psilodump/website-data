@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.35.1";
+const JS_VERSION = "1.35.2";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -177,6 +177,7 @@ a.rel-cover { display: block !important; text-decoration: none !important; }
 .psd-phys-card a.cv { text-decoration: none !important; color: inherit !important; }
 .psd-net-tag { display: inline-block !important; border: 1px solid currentColor !important; border-radius: 999px !important; padding: 0 7px !important; font-size: .8em !important; opacity: .85 !important; margin-left: 4px !important; white-space: nowrap !important; }
 .psd-related li b { font-weight: 600 !important; }
+.psd-label-scope { max-width: 760px !important; margin: 10px 0 16px !important; padding: 8px 12px !important; border-left: 3px solid currentColor !important; background: rgba(127,127,127,.12) !important; border-radius: 0 6px 6px 0 !important; font-size: 14px !important; line-height: 1.5 !important; }
 .psd-label-text { max-width: 760px !important; line-height: 1.55 !important; }
 .psd-label-text p { margin: 0 0 .8em !important; }
 .psd-label-idx { columns: 2 260px !important; padding: 0 !important; list-style: none !important; }
@@ -2974,6 +2975,7 @@ function initLabel(){
       <h1 class="psd-rel-title">${esc(l.Name)}</h1>
       ${labelKindText(l) ? `<div class="psd-rel-sub">${esc(labelKindText(l))}</div>` : ""}
       ${l._names.length > 1 ? `<div class="psd-rel-sub">also ${l._names.slice(1).map(esc).join(", ")}</div>` : ""}
+      ${l.Own !== "1" ? `<p class="psd-label-scope">This page only lists psilodump's music on ${esc(l.Name)}, not the label's whole catalogue.${/^https?:\/\//.test(l.URL || "") ? ` For everything else ${esc(l.Name)} released, visit <a href="${esc(l.URL)}" target="_blank" rel="noopener">${esc(l.URL.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, ""))}</a>.` : ""}</p>` : ""}
       ${String(l.Text || "").trim() ? `<div class="psd-label-text">${renderPostText(l.Text)}</div>` : ""}
       ${links.length ? `<p class="by">${links.join(" · ")}</p>` : ""}
       ${rels.length ? `<section class="psd-person-sec"><h2>Releases <small>${rels.length}${nNet && nNet < rels.length ? " · " + nNet + " netlabel" : ""}</small></h2><div class="psd-phys-grid">${rels.map(relCard).join("")}</div></section>` : ""}
