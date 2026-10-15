@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.33.1";
+const JS_VERSION = "1.33.2";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -970,11 +970,11 @@ function populateSelectOptions(){
   const cat = window._psilodumpCat;
   const decades = Array.from(new Set(cat.rows.filter(inFixed).map(currentDecade))).filter(d => d !== "Unknown").sort((a,b) => Number(b.replace("s","")) - Number(a.replace("s","")));
   const years = Array.from(new Set(cat.rows.filter(inFixed).map(currentYear))).sort((a,b) => (a === "Unknown") - (b === "Unknown") || Number(b) - Number(a));
-  const types = Array.from(new Set(cat.rows.flatMap(r => r._types))).sort((a,b) => a.localeCompare(b));
-  const fixed = cat.fixedTypes || [];
-  const pool = fixed.length ? cat.rows.filter(r => r._types.some(t => fixed.includes(t.toLowerCase()))) : cat.rows;
-  const series = Array.from(new Set(cat.rows.flatMap(r => r._series))).sort((a,b) => a.localeCompare(b));
-  const labels = Array.from(new Set(cat.rows.flatMap(r => r._labels))).sort((a,b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+  // on a preset page (data-type / data-series / data-label) the menus only offer what that page shows
+  const pool = cat.rows.filter(inFixed);
+  const types = Array.from(new Set(pool.flatMap(r => r._types))).sort((a,b) => a.localeCompare(b));
+  const series = Array.from(new Set(pool.flatMap(r => r._series))).sort((a,b) => a.localeCompare(b));
+  const labels = Array.from(new Set(pool.flatMap(r => r._labels))).sort((a,b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
 
   const elD = document.getElementById("rel-sel-decade"); if(elD) elD.innerHTML = `<option value="">All Decades</option>` + decades.map(d => `<option value="${esc(d)}" ${d===cat.activeDecade?'selected':''}>${esc(d)}</option>`).join("");
   const elW = document.getElementById("rel-sel-when");
