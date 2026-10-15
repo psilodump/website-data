@@ -394,7 +394,7 @@
 83,2,dj,4613,"DJ Ponia (Argentina)"
 83,3,dj,4614,"DJ Mind Auxy"
 84,1,live,1,"Psilodump (The X-Dump)"
-84,2,dj,4739,"DJ Plast"
+84,2,dj,4604,"DJ Plast"
 84,3,dj,4509,"DJ Chaman"
 85,1,live,1,"Psilodumputer (The X-Dump)"
 85,2,live,4467,"Crazy Q (YM Rockerz, Dead Hackers Society)"
@@ -583,7 +583,7 @@
 108,1,live,4696,Slagsmålsklubben
 108,2,live,4420,"Paza (The X-Dump)"
 108,3,live,1,"Psilodump (The X-Dump)"
-108,4,dj,4739,Plast
+108,4,dj,4604,Plast
 108,5,dj,4740,VBRunner
 108,6,dj,4741,"Inter gritty"
 108,7,dj,4742,"DJ Ayahuasca"
@@ -608,7 +608,7 @@
 112,4,dj,4747,"Dolphin [Dualrange]"
 113,1,live,4748,Lester
 113,2,live,4749,"Daniel Araya"
-113,3,live,4750,"Aaltonen & Inkinen"
+113,3,live,5223,Aaltonen
 113,4,live,4751,"Jean-Louis Huhta"
 113,5,live,4752,"Mattias Petersson"
 113,6,live,5069,"Marcus Wrang?"
@@ -616,6 +616,7 @@
 113,8,live,1,"Psilodump (The X-Dump)"
 113,9,live,4755,J.Kallback
 113,10,live,4756,Sourcery
+113,11,live,5224,Inkinen
 114,1,live,4757,Videohometraining
 114,2,live,4758,"P-Force / Pi-Bois (The X-Dump)"
 114,3,live,1,"Psilodump (The X-Dump)"
@@ -851,7 +852,7 @@
 128,7,live,4963,Aries
 128,8,live,1,"Psilodump (The X-Dump)"
 128,9,dj,4582,Hypnoid
-128,10,dj,4739,Plast
+128,10,dj,4604,Plast
 128,11,dj,4964,N-Tech
 128,12,dj,4965,Haze
 128,13,dj,4966,Smurf
@@ -871,7 +872,7 @@
 131,2,dj,4955,C.Garette
 131,3,dj,4582,Hypnoid
 131,4,dj,4970,"Henry Burner"
-131,5,dj,4739,Plast
+131,5,dj,4604,Plast
 131,6,dj,4971,Gasty
 131,7,dj,4972,Faceless
 132,1,live,4719,Muppjävel
@@ -894,7 +895,7 @@
 133,6,dj,4972,Faceless
 133,7,dj,4981,Snutj?vel
 133,8,dj,4979,Martin
-133,9,dj,4739,Plast
+133,9,dj,4604,Plast
 133,10,dj,4982,Spookeye
 134,1,live,1,"Da R.I.P.C / Psilodump (The X-Dump)"
 134,2,dj,4582,Hypnoid
@@ -906,7 +907,7 @@
 135,3,live,4985,"Phokus (Finland)"
 135,4,dj,4986,"Coma (Rytmi, Finland)"
 135,5,dj,4987,"Maas (Pussy Hki, Finland)"
-135,6,dj,4988,"&#960;Sami (Pety, Finland)"
+135,6,dj,4661,"&#960;Sami (Pety, Finland)"
 135,7,dj,4989,"Tremont (Finland)"
 136,1,live,4990,"The Art of Realistix"
 137,1,live,4990,"The Art of Realistix:"
