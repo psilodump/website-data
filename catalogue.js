@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.32.1";
+const JS_VERSION = "1.33.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -968,8 +968,8 @@ function copyViewLink(btn){
 
 function populateSelectOptions(){
   const cat = window._psilodumpCat;
-  const decades = Array.from(new Set((cat.fixedTypes && cat.fixedTypes.length ? cat.rows.filter(r => r._types.some(t => cat.fixedTypes.includes(t.toLowerCase()))) : cat.rows).map(currentDecade))).filter(d => d !== "Unknown").sort((a,b) => Number(b.replace("s","")) - Number(a.replace("s","")));
-  const years = Array.from(new Set((cat.fixedTypes && cat.fixedTypes.length ? cat.rows.filter(r => r._types.some(t => cat.fixedTypes.includes(t.toLowerCase()))) : cat.rows).map(currentYear))).sort((a,b) => (a === "Unknown") - (b === "Unknown") || Number(b) - Number(a));
+  const decades = Array.from(new Set(cat.rows.filter(inFixed).map(currentDecade))).filter(d => d !== "Unknown").sort((a,b) => Number(b.replace("s","")) - Number(a.replace("s","")));
+  const years = Array.from(new Set(cat.rows.filter(inFixed).map(currentYear))).sort((a,b) => (a === "Unknown") - (b === "Unknown") || Number(b) - Number(a));
   const types = Array.from(new Set(cat.rows.flatMap(r => r._types))).sort((a,b) => a.localeCompare(b));
   const fixed = cat.fixedTypes || [];
   const pool = fixed.length ? cat.rows.filter(r => r._types.some(t => fixed.includes(t.toLowerCase()))) : cat.rows;
@@ -996,7 +996,7 @@ function workParent(rows, key){
   const k = String(key || "").toLowerCase();
   return rows.find(x => x["MusicBrainz"] && slugify(x[TITLE_COL]) === k && rows.some(y => y["Part Of"] === x["MusicBrainz"])) || null;
 }
-function workHref(parent){ return `${CATALOGUE_PATH}#work=${encodeURIComponent(slugify(parent[TITLE_COL]))}`; }
+function workHref(parent){ return `${SITE_BASE}${CATALOGUE_PATH}#work=${encodeURIComponent(slugify(parent[TITLE_COL]))}`; }
 
 function applyFilters(){
   const cat = window._psilodumpCat;
@@ -1013,7 +1013,7 @@ function applyFilters(){
     if (cat.activeDecade && currentDecade(r) !== cat.activeDecade) return false;
     if (cat.activeYear && currentYear(r) !== cat.activeYear) return false;
     if (cat.activeType && !r._types.some(t => t.toLowerCase() === cat.activeType.toLowerCase())) return false;
-    if (cat.fixedTypes && cat.fixedTypes.length && !r._types.some(t => cat.fixedTypes.includes(t.toLowerCase()))) return false;
+    if (!inFixed(r)) return false;
     if (cat.activeSeries && !r._series.some(s => s.toLowerCase() === cat.activeSeries.toLowerCase())) return false;
     if (cat.activeLabel && !r._labels.some(s => s.toLowerCase() === cat.activeLabel.toLowerCase())) return false;
     if (cat.activeWork && !(work && (r === work || (r["Part Of"] && r["Part Of"] === work["MusicBrainz"])))) return false;
@@ -1396,7 +1396,7 @@ const TODAY_PATH = "/today";
 // A full YYYY-MM-DD date as a link to "On this day" for that day; other dates (YYYY, empty) as plain text.
 function dayLink(date){
   const m = String(date || "").match(/^\d{4}-(\d{2})-(\d{2})$/);
-  return m ? `<a class="psd-day" href="${TODAY_PATH}?date=${m[1]}-${m[2]}" title="On this day">${esc(date)}</a>` : esc(date || "");
+  return m ? `<a class="psd-day" href="${SITE_BASE}${TODAY_PATH}?date=${m[1]}-${m[2]}" title="On this day">${esc(date)}</a>` : esc(date || "");
 }
 // Catalogue titles link to the release page (the Bandzoogle page /release exists since 2026-10-09).
 const RELEASE_LINKS = true;
@@ -1411,7 +1411,9 @@ function releaseKey(r){
   const y = r._yearRel !== "Unknown" ? r._yearRel : (r._yearCat !== "Unknown" ? r._yearCat : "");
   return [slugify(r[TITLE_COL]), y].filter(Boolean).join("-");
 }
-const releaseHref = r => RELEASE_PATH + "?r=" + encodeURIComponent(releaseKey(r));
+// On another site (476.digital) every page link goes to psilodu.mp, where the release pages, players and gigs are.
+const SITE_BASE = /(^|\.)psilodu\.mp$/i.test(location.hostname) ? "" : "https://psilodu.mp";
+const releaseHref = r => SITE_BASE + RELEASE_PATH + "?r=" + encodeURIComponent(releaseKey(r));
 
 // The Bandzoogle album number in Source ("3319229" or a psilodu.mp/album/... address), or "".
 function bzAlbumId(r){
@@ -2061,7 +2063,10 @@ function initCatalogueTable(){
       <div class="psd-ctab-wrap"><table class="psd-ctab"><thead><tr>${CTAB_COLS.map(([k, l]) => `<th data-psd-sort="${k}" scope="col">${l}</th>`).join("")}</tr></thead><tbody></tbody></table></div></div>`;
     const render = () => {
       const col = CTAB_COLS.find(c => c[0] === st.sort), q = st.q.trim().toLowerCase();
-      const list = rows.filter(r => !q || CTAB_COLS.some(c => String(c[2](r)).toLowerCase().includes(q)))
+      const preSeries = (mount.getAttribute("data-series") || "").split(",").map(x => normLabel(x).toLowerCase()).filter(Boolean);
+      const preLabel = (mount.getAttribute("data-label") || "").split(",").map(x => normLabel(x).toLowerCase()).filter(Boolean);
+      const list = rows.filter(r => (!preSeries.length || r._series.some(x => preSeries.includes(normLabel(x).toLowerCase()))) && (!preLabel.length || r._labels.some(x => preLabel.includes(normLabel(x).toLowerCase()))))
+        .filter(r => !q || CTAB_COLS.some(c => String(c[2](r)).toLowerCase().includes(q)))
         .sort((a, b) => { const x = String(col[2](a)), y = String(col[2](b));
           if (!x !== !y) return !x ? 1 : -1;                     // empty values last, in both directions
           return (x.localeCompare(y, undefined, { numeric: true, sensitivity: "base" }) || catOrder(a, b)) * st.dir; });
@@ -2091,7 +2096,8 @@ function initPhysical(){
   loadCatalogue().then(rows => {
     const cat = window._psilodumpCat, relById = {};
     rows.forEach(r => { relById[r["ID"]] = r; });
-    const eds = (cat.editions || []).map(e => {
+    const preLabel = (mount.getAttribute("data-label") || "").split(",").map(x => normLabel(x).toLowerCase()).filter(Boolean);
+    const eds = (cat.editions || []).filter(e => !preLabel.length || String(e.Label || "").split(/\s*,\s*/).some(l => preLabel.includes(normLabel(l).toLowerCase()))).map(e => {
       const rels = splitList(e["Releases"]).map(id => relById[id]).filter(Boolean);
       return { e, kind: editionKind(e.Format) || "Other", rels, cover: (rels.find(r => r._thumbUrl) || {})._thumbUrl || "" };
     });
@@ -2240,7 +2246,7 @@ function loadGigs(){
   }
   return cat._gigPromise;
 }
-const gigHref = g => GIG_PATH + "?g=" + encodeURIComponent(g._key);
+const gigHref = g => SITE_BASE + GIG_PATH + "?g=" + encodeURIComponent(g._key);
 const gigPlace = g => [g.Venue, g.City, g.Country].filter(Boolean).join(", ");
 function gigDateText(d){
   const m = String(d || "").match(/^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?/);
@@ -2430,7 +2436,7 @@ function loadPosts(){
   }
   return cat._postPromise;
 }
-const postHref = p => POST_PATH + "?p=" + encodeURIComponent(p._key);
+const postHref = p => SITE_BASE + POST_PATH + "?p=" + encodeURIComponent(p._key);
 function postPlain(p){
   const s = String(p.Body || "");
   const t = p.Format === "html" ? s.replace(/<(script|style|iframe)[\s\S]*?<\/\1>/gi, " ").replace(/<br\s*\/?>|<\/p>/gi, " ").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
@@ -2654,7 +2660,7 @@ function loadPeople(){
   }
   return cat._peoplePromise;
 }
-const personHref = p => PERSON_PATH + "?p=" + encodeURIComponent(p._key);
+const personHref = p => SITE_BASE + PERSON_PATH + "?p=" + encodeURIComponent(p._key);
 // Does a credit text name this person? Whole words only ("Goto80 remix", "Methadump, psilodump").
 function namesPerson(text, p){
   const t = " " + String(text || "").toLowerCase().normalize("NFKC") + " ";
@@ -2926,11 +2932,22 @@ function buildVideosPage(mount, rows, data){
 function applyFixedType(){
   const cat = window._psilodumpCat;
   const mount = document.getElementById("psd-catalogue");
-  const raw = mount ? (mount.getAttribute("data-type") || "") : "";
-  cat.fixedTypes = raw.split(",").map(x => x.trim().toLowerCase()).filter(Boolean);
-  const sel = document.getElementById("rel-sel-type");
-  if (sel) sel.style.display = cat.fixedTypes.length ? "none" : "";
-  if (cat.fixedTypes.length) cat.activeType = "";
+  const list = name => (mount ? (mount.getAttribute(name) || "") : "").split(",").map(x => normLabel(x).toLowerCase()).filter(Boolean);
+  cat.fixedTypes = list("data-type"); cat.fixedSeries = list("data-series"); cat.fixedLabels = list("data-label");
+  [["rel-sel-type", cat.fixedTypes, "activeType"], ["rel-sel-series", cat.fixedSeries, "activeSeries"], ["rel-sel-label", cat.fixedLabels, "activeLabel"]].forEach(([id, fixed, key]) => {
+    const sel = document.getElementById(id); if (sel) sel.style.display = fixed.length ? "none" : "";
+    if (fixed.length) cat[key] = "";
+  });
+}
+// labels written with typographic hyphens (The X‐Dump) count as the plain spelling
+function normLabel(s){ return String(s || "").replace(/[\u2010-\u2015\u2212]/g, "-").trim(); }
+// the releases a preset page shows at all (type / series / label of the embed)
+function inFixed(r){
+  const cat = window._psilodumpCat;
+  if (cat.fixedTypes && cat.fixedTypes.length && !r._types.some(t => cat.fixedTypes.includes(t.toLowerCase()))) return false;
+  if (cat.fixedSeries && cat.fixedSeries.length && !r._series.some(x => cat.fixedSeries.includes(normLabel(x).toLowerCase()))) return false;
+  if (cat.fixedLabels && cat.fixedLabels.length && !r._labels.some(x => cat.fixedLabels.includes(normLabel(x).toLowerCase()))) return false;
+  return true;
 }
 
 function initApp(){
