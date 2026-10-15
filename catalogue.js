@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.31.2";
+const JS_VERSION = "1.32.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -367,6 +367,10 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-gig-role li small { opacity: .6 !important; font-size: 11px !important; margin-left: 4px !important; }
 .psd-rel .psd-post-tags a.person { border-style: solid !important; font-weight: 600 !important; }
 .psd-app-card .app-tracks { font-style: italic !important; }
+.psd-app-listen { display: inline-flex !important; align-items: center !important; gap: 6px !important; font: inherit !important; font-size: 13px !important; font-weight: 600 !important; padding: 6px 14px !important; border-radius: 999px !important; border: 0 !important; background: #2a2a2a !important; color: #fff !important; cursor: pointer !important; }
+.psd-app-listen svg { width: 14px !important; height: 14px !important; }
+.psd-app-now { margin: 6px 0 22px !important; }
+.psd-app-now h2 { font-size: 16px !important; margin: 0 0 8px !important; color: inherit !important; }
 .psd-app-card .cv .kind { padding: 3px 9px !important; }
 .psd-alsoon { margin-top: 24px !important; }
 .psd-post-tracks { margin-top: 20px !important; max-width: 760px !important; }
@@ -1119,6 +1123,11 @@ if (!window._psilodumpModalDelegated) {
       if (p) { if (p.audio.paused) { if (p.cues && p.audio.getAttribute("src")) p.audio.play().catch(() => {}); else playTrack(p.index); } else p.audio.pause(); }
       return;
     }
+    const apb = t.closest('[data-psd-appplay]');
+    if (apb) { const m = document.getElementById("psd-appearances"); const a = m && (m._psdApps || []).find(x => x.ID === apb.getAttribute("data-psd-appplay"));
+      if (a) { const now = m.querySelector(".psd-app-now"); now.hidden = false; now.querySelector("h2").textContent = a.Title + (a.Artist && !/^various artists$/i.test(a.Artist) ? " — " + a.Artist : "");
+        stopPlayer(); renderBzPlayer(document.getElementById("psd-player"), { [TITLE_COL]: a.Title, _thumbUrl: a.Cover }, a.Album, null); now.scrollIntoView({ behavior: "smooth", block: "start" }); }
+      return; }
     const ak = t.closest('[data-psd-akind]');
     if (ak) { const m = document.getElementById("psd-appearances"); if (m && m._psdApp) { m._psdApp.type = ak.getAttribute("data-psd-akind"); m._psdAppRender(); } return; }
     const nk = t.closest('[data-psd-nkind]');
@@ -2740,6 +2749,7 @@ function appCard(a, extra){
     <h3>${esc(a.Title)}${a.Artist && !/^various artists$/i.test(a.Artist) ? ` <small>by ${esc(a.Artist)}</small>` : ""}</h3>
     <div class="meta">${esc([String(a.Date).slice(0, 4), a.Label, a["Cat#"], a.Formats].filter(Boolean).join(" · "))}</div>
     ${tracks ? `<div class="meta app-tracks">with ${tracks}</div>` : ""}${a.Note ? `<div class="meta">${linkify(a.Note)}</div>` : ""}${extra || ""}
+    ${/^\d+$/.test(a.Album || "") ? `<div class="act"><button type="button" class="psd-app-listen" data-psd-appplay="${esc(a.ID)}">${PLAY_ICON}<span>Listen to the whole release</span></button></div>` : ""}
     ${links.length ? `<div class="meta">${links.join(" · ")}</div>` : ""}</figure>`;
 }
 function initAppearances(){
@@ -2754,7 +2764,9 @@ function initAppearances(){
     const h = new URLSearchParams(location.hash.replace(/^#/, ""));
     const st = mount._psdApp = { type: h.get("type") || "", q: h.get("q") || "" };
     mount.innerHTML = `<div class="psd-rel psd-vpage"><div class="psd-vpage-bar"><button type="button" data-psd-akind="">All <small>${apps.length}</small></button>${types.map(t => `<button type="button" data-psd-akind="${esc(t)}">${esc(t)} <small>${apps.filter(a => a.Type === t).length}</small></button>`).join("")}
-      <input type="search" placeholder="Search compilations, labels, tracks…" aria-label="Search" value="${esc(st.q)}"></div><div class="psd-app-list"></div></div>`;
+      <input type="search" placeholder="Search compilations, labels, tracks…" aria-label="Search" value="${esc(st.q)}"></div>
+      <section class="psd-app-now" hidden><h2></h2><div class="psd-rel-player" id="psd-player"></div></section><div class="psd-app-list"></div></div>`;
+    mount._psdApps = apps;
     const render = () => {
       const q = st.q.trim().toLowerCase();
       const list = apps.filter(a => (!st.type || a.Type === st.type) && (!q || [a.Title, a.Artist, a.Label, a["Cat#"], a.Date, ...a._tracks.map(({ r, t }) => t ? t.Title + " " + t.Version : r.Title)].join(" ").toLowerCase().includes(q)));
