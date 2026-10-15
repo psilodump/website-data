@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.31.0";
+const JS_VERSION = "1.31.1";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -115,6 +115,8 @@ a.rel-cover { display: block !important; text-decoration: none !important; }
 /* Modals with Elevated Z-Index above Site Footer Layer */
 .rel-modal-overlay { position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; background: rgba(0, 0, 0, 0.85) !important; backdrop-filter: blur(5px) !important; display: flex !important; align-items: center !important; justify-content: center !important; z-index: 999999 !important; opacity: 0 !important; pointer-events: none !important; transition: opacity 0.2s ease !important; padding: 15px !important; box-sizing: border-box !important; }
 .rel-modal-overlay.active { opacity: 1 !important; pointer-events: auto !important; }
+/* the pop-ups are moved to <body> (outside .rel-wrap), so they need the catalogue font themselves */
+.rel-modal-overlay, .rel-modal-overlay button, .rel-modal-overlay a { font-family: system-ui, -apple-system, sans-serif !important; }
 
 .rel-lightbox-img { max-width: 90vw !important; max-height: 85vh !important; border-radius: 8px !important; box-shadow: 0 8px 30px rgba(0,0,0,0.5) !important; object-fit: contain !important; }
 
