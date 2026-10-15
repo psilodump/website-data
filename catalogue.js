@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.32.0";
+const JS_VERSION = "1.32.1";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -367,6 +367,10 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-gig-role li small { opacity: .6 !important; font-size: 11px !important; margin-left: 4px !important; }
 .psd-rel .psd-post-tags a.person { border-style: solid !important; font-weight: 600 !important; }
 .psd-app-card .app-tracks { font-style: italic !important; }
+.psd-app-plain { position: absolute !important; inset: 0 !important; display: flex !important; flex-direction: column !important; justify-content: center !important; align-items: center !important; gap: 6px !important; padding: 18px !important; text-align: center !important; background: radial-gradient(circle at 50% 45%, #3a3a3a, #1c1c1c 70%) !important; color: #e8e8e8 !important; }
+.psd-app-plain b { font-size: 17px !important; line-height: 1.25 !important; letter-spacing: .02em !important; }
+.psd-app-plain span { font-size: 13px !important; opacity: .8 !important; }
+.psd-app-plain small { position: absolute !important; top: 10px !important; right: 12px !important; font-size: 10px !important; opacity: .45 !important; text-transform: uppercase !important; letter-spacing: .08em !important; }
 .psd-app-listen { display: inline-flex !important; align-items: center !important; gap: 6px !important; font: inherit !important; font-size: 13px !important; font-weight: 600 !important; padding: 6px 14px !important; border-radius: 999px !important; border: 0 !important; background: #2a2a2a !important; color: #fff !important; cursor: pointer !important; }
 .psd-app-listen svg { width: 14px !important; height: 14px !important; }
 .psd-app-now { margin: 6px 0 22px !important; }
@@ -2745,7 +2749,9 @@ function appCard(a, extra){
   const tracks = a._tracks.map(({ r, t }) => esc(t ? t.Title + (t.Version ? " (" + t.Version + ")" : "") : r.Title)).join(", ");
   const links = [...(/^[0-9a-f-]{36}$/.test(a.MusicBrainz || "") ? [`<a href="https://musicbrainz.org/release-group/${esc(a.MusicBrainz)}" target="_blank" rel="noopener">MusicBrainz</a>`] : []),
                  ...a._links.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener nofollow">${esc(appLinkLabel(u))}</a>`)];
-  return `<figure class="psd-phys-card psd-app-card"><div class="cv">${a.Cover ? `<img src="${esc(a.Cover)}" alt="" loading="lazy">` : ""}<span class="kind">${esc(a.Type || "")}</span></div>
+  // no artwork (e.g. a plain CD-R): the title set as text instead of an empty square
+  const plain = `<div class="psd-app-plain"><b>${esc(a.Title)}</b>${a.Artist && !/^various artists$/i.test(a.Artist) ? `<span>${esc(a.Artist)}</span>` : ""}<small>no artwork</small></div>`;
+  return `<figure class="psd-phys-card psd-app-card"><div class="cv">${a.Cover ? `<img src="${esc(a.Cover)}" alt="" loading="lazy">` : plain}<span class="kind">${esc(a.Type || "")}</span></div>
     <h3>${esc(a.Title)}${a.Artist && !/^various artists$/i.test(a.Artist) ? ` <small>by ${esc(a.Artist)}</small>` : ""}</h3>
     <div class="meta">${esc([String(a.Date).slice(0, 4), a.Label, a["Cat#"], a.Formats].filter(Boolean).join(" · "))}</div>
     ${tracks ? `<div class="meta app-tracks">with ${tracks}</div>` : ""}${a.Note ? `<div class="meta">${linkify(a.Note)}</div>` : ""}${extra || ""}
