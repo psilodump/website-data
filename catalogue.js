@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.33.0";
+const JS_VERSION = "1.33.1";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -1462,12 +1462,14 @@ const secToTime = s => { s = parseInt(s, 10); return s > 0 ? Math.floor(s / 60) 
 function releaseTrackItems(list){
   return list.map(({ row, t }) => {
     // A release can print its own title for the track (a remaster renamed) and have its own upload.
-    const bz = (String(row.Source || t.Source || "").match(/track\/(\d+)/) || [])[1];
+    // the upload can be on psilodu.mp ("/player/…", same site) or on 476.digital (its audio plays from here too)
+    const srcUrl = String(row.Source || t.Source || ""), bz = (srcUrl.match(/track\/(\d+)/) || [])[1];
+    const site = (srcUrl.match(/^https?:\/\/(?:www\.)?(476\.digital)\//i) || [])[1];
     return {
       title: row.Title || t.Title || "(untitled)", version: row.Title ? "" : (t.Version || ""), artist: t.Artist || "",
       former: String(t["Former Titles"] || "").split(" | ").filter(Boolean),
       duration: secToTime(row.Length) || secToTime(t.Length), disc: +row.Disc || 1, pos: +row.Position || 0,
-      heading: row.Heading || "", note: row.Note || "", src: bz ? "/player/tracks/" + bz + ".mp3" : "",
+      heading: row.Heading || "", note: row.Note || "", src: bz ? (site ? "https://" + site : "") + "/player/tracks/" + bz + ".mp3" : "",
       trackId: t.ID, ytMusic: row["YouTube Music"] || "",
     };
   });
