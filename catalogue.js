@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.35.0";
+const JS_VERSION = "1.35.1";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -1429,10 +1429,22 @@ function slugify(s){
     .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 function releaseKey(r){
+  if (r._key) return r._key;           // set by assignReleaseKeys() once the catalogue is loaded
   const cat = String(r[CAT_COL] || "").trim().replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   if (cat) return cat;
   const y = r._yearRel !== "Unknown" ? r._yearRel : (r._yearCat !== "Unknown" ? r._yearCat : "");
   return [slugify(r[TITLE_COL]), y].filter(Boolean).join("-");
+}
+// Keys must be unique: when two releases share one (the same cat# on two versions, like 8BP114 on 8bitpeoples
+// and 476 Digital), the earliest keeps the plain key and the others get their release date added (8BP114-2011-04-08),
+// so existing links keep working.
+function assignReleaseKeys(rows){
+  const groups = {};
+  rows.forEach(r => { r._key = ""; const k = releaseKey(r); (groups[k.toLowerCase()] = groups[k.toLowerCase()] || []).push([k, r]); });
+  Object.values(groups).forEach(g => {
+    g.sort((a, b) => String(a[1]._released || a[1]._catalogue || "9").localeCompare(String(b[1]._released || b[1]._catalogue || "9")) || (+a[1]["ID"] - +b[1]["ID"]));
+    g.forEach(([k, r], i) => { r._key = i === 0 ? k : k + "-" + (String(r._released || r._catalogue || "").replace(/[^0-9]+/g, "-") || r["ID"]); });
+  });
 }
 // On another site (476.digital) every page link goes to psilodu.mp, where the release pages, players and gigs are.
 const SITE_BASE = /(^|\.)psilodu\.mp$/i.test(location.hostname) ? "" : "https://psilodu.mp";
@@ -1522,6 +1534,7 @@ function loadCatalogue(){
       .then(([text, eds]) => {
         const { rows: raw } = toObjects(parseCSV(text));
         cat.rows = withDerived(raw);
+        assignReleaseKeys(cat.rows);
         cat.editions = eds;
         const byRelease = {};
         eds.forEach(e => splitList(e["Releases"]).forEach(id => (byRelease[id] = byRelease[id] || []).push(e)));
@@ -1603,7 +1616,9 @@ function renderRelease(mount, rows){
   // (2000, 2023) are editions of each other, not of the 2006 album with the same name.
   const editions = rows.filter(x => x !== r && norm(x[TITLE_COL]) === norm(title)
     && !(x["MusicBrainz"] && r["MusicBrainz"] && x["MusicBrainz"] !== r["MusicBrainz"]));
-  if (editions.length) facts.push(["Other editions", editions.map(x => link(x, `${x[TITLE_COL]} (${x._yearRel !== "Unknown" ? x._yearRel : x._yearCat})`)).join(", ")]);
+  // the year, plus the label when it's the same year (8BP114: 8bitpeoples in January 2011, 476 Digital in April)
+  const edYear = x => x._yearRel !== "Unknown" ? x._yearRel : x._yearCat;
+  if (editions.length) facts.push(["Other editions", editions.map(x => link(x, `${x[TITLE_COL]} (${edYear(x)}${edYear(x) === edYear(r) && x["Label"] ? ", " + x._labels.join(", ") : ""})`)).join(", ")]);
 
   const listen = r._svc.map(s => `<a class="psd-rel-svc" href="${esc(s.href)}" target="_blank" rel="noopener nofollow">${icon(s.key)}<span>${esc(s.label)}</span></a>`).join("");
 
