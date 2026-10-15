@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.34.0";
+const JS_VERSION = "1.35.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -209,6 +209,13 @@ a.rel-cover { display: block !important; text-decoration: none !important; }
 .psd-rel-by { font-size: 17px !important; margin: 0 0 4px !important; }
 .psd-rel-orig { font-size: 13px !important; opacity: .7 !important; font-style: italic !important; margin-bottom: 8px !important; }
 .psd-rel-sub { font-size: 14px !important; opacity: .8 !important; margin-bottom: 18px !important; }
+.psd-rel-about { margin-top: 22px !important; font-size: 15px !important; line-height: 1.6 !important; max-width: 760px !important; }
+.psd-rel-about h2 { font-size: 15px !important; margin: 0 0 6px !important; color: inherit !important; opacity: .75 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
+.psd-rel-about p { margin: 0 0 .8em !important; }
+.psd-rel-about details > summary { cursor: pointer !important; display: inline-block !important; list-style: none !important; border: 1px solid currentColor !important; border-radius: 999px !important; padding: 3px 12px !important; font-size: 13px !important; opacity: .85 !important; margin: 0 0 .8em !important; }
+.psd-rel-about details > summary::-webkit-details-marker { display: none !important; }
+.psd-rel-about details[open] > summary .o, .psd-rel-about details:not([open]) > summary .c { display: none !important; }
+.psd-rel-about .by { font-size: 13px !important; opacity: .7 !important; }
 .psd-rel-credits { margin-top: 22px !important; font-size: 14px !important; line-height: 1.6 !important; }
 .psd-rel-credits h2 { font-size: 15px !important; margin: 0 0 6px !important; color: inherit !important; opacity: .75 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
 .psd-rel-credits p { margin: 0 !important; }
@@ -1646,6 +1653,7 @@ function renderRelease(mount, rows){
       </div>
     </div>
     <section class="psd-rel-player" id="psd-player"></section>
+    ${releaseAboutHtml(r)}
     <section class="psd-rel-videos" id="psd-videos"></section>
     ${r._editions.length ? `<section class="psd-rel-editions"><h2>Physical editions</h2><ul>${r._editions.map(e => {
         const k = editionKind(e.Format);
@@ -1666,6 +1674,19 @@ function renderRelease(mount, rows){
   appendRelated(mount.querySelector(".psd-rel"), r, rows);
   appendAlsoOn(mount.querySelector(".psd-rel"), r);
   appendInTheNews(mount.querySelector(".psd-rel"), p => p["Release ID"] === r["ID"]);
+}
+
+// "About": the release's description. Long texts (the netlabels' stories) show their opening paragraphs
+// (up to ~500 characters, stopping before the first **heading** paragraph) and fold the rest into "Read more".
+function releaseAboutHtml(r){
+  const text = String(r["Description"] || "").replace(/\r/g, "").trim();
+  if (!text) return "";
+  const paras = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  const head = []; let n = 0;
+  for (const p of paras) { if (head.length && (n + p.length > 500 || /^\*\*/.test(p))) break; head.push(p); n += p.length; }
+  const rest = paras.slice(head.length);
+  const by = String(r["Description By"] || "").trim();
+  return `<section class="psd-rel-about"><h2>About</h2>${renderPostText(head.join("\n\n"))}${rest.length ? `<details><summary><span class="o">Read more</span><span class="c">Show less</span></summary>${renderPostText(rest.join("\n\n"))}</details>` : ""}${by ? `<p class="by">Text: ${esc(by)}</p>` : ""}</section>`;
 }
 
 // --- Player ---
