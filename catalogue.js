@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.44.1";
+const JS_VERSION = "1.44.2";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -3658,8 +3658,8 @@ function buildTracksPage(mount, rows, data){
   Object.entries(data.lists).forEach(([rid, list]) => list.forEach(({ t }) => { const r = relById[rid]; if (r && !(onRelease[t.ID] || []).includes(r)) (onRelease[t.ID] = onRelease[t.ID] || []).push(r); }));
   const relDate = r => [r._released, r._catalogue].filter(Boolean).sort()[0] || "";
   Object.values(onRelease).forEach(l => l.sort((a, b) => relDate(a).localeCompare(relDate(b))));
-  // the date a track sorts by: released, else (unreleased) finished
-  const tdate = t => t.Released || t.Finished || "";
+  // the tracks page lists and sorts by when a track was finished (the user's choice); no finished date = "Undated", last
+  const tdate = t => t.Finished || "";
   const all = Object.values(data.byId).map(t => {
     const rels = onRelease[t.ID] || [];
     const search = [t.Title, t.Version, t.Artist, t["Former Titles"], t.ISRC, t.Description, ...rels.map(r => r[TITLE_COL] + " " + (r[CAT_COL] || ""))].join(" ").toLowerCase();
@@ -3708,13 +3708,13 @@ function buildTracksPage(mount, rows, data){
     mount.querySelectorAll("[data-psd-ttog]").forEach(b => b.setAttribute("aria-pressed", st[b.getAttribute("data-psd-ttog")] ? "true" : "false"));
     let last = null;
     const items = list.map(({ t, rels, released }) => {
-      const head = st.sort === "title" ? (t.Title.charAt(0).toUpperCase().match(/[A-ZÅÄÖ]/) ? t.Title.charAt(0).toUpperCase() : "#") : ((released ? t.Released : t.Finished) || "").slice(0, 4) || "Undated";
+      const head = st.sort === "title" ? (t.Title.charAt(0).toUpperCase().match(/[A-ZÅÄÖ]/) ? t.Title.charAt(0).toUpperCase() : "#") : (t.Finished || "").slice(0, 4) || "Undated";
       const heading = head !== last ? head : ""; last = head;
       const bz = (String(t.Source || "").match(/track\/(\d+)/) || [])[1];
       const ytm = (String(t.YouTube || "").match(/music\.youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/) || [])[1] || "";
       return { title: t.Title || "(untitled)", version: t.Version || "", artist: t.Artist || "",
         former: String(t["Former Titles"] || "").split(" | ").filter(Boolean), duration: secToTime(t.Length), disc: 1, pos: null, heading,
-        note: [released ? t.Released : "unreleased" + (t.Finished ? ", finished " + t.Finished : ""), t.Description, rels.length ? "on " + rels.map(r => r[TITLE_COL]).join(", ") : ""].filter(Boolean).join(" · "),
+        note: [t.Finished, released ? "" : "unreleased", t.Description, rels.length ? "on " + rels.map(r => r[TITLE_COL]).join(", ") : ""].filter(Boolean).join(" · "),
         src: bz ? "/player/tracks/" + bz + ".mp3" : "", trackId: t.ID, ytMusic: ytm, video: ((data.videosByTrack[t.ID] || [])[0] || {})["Video ID"] || "",
         post: (data._postByTrack || {})[t.ID] || "", cover: (rels.find(r => r._thumbUrl) || {})._thumbUrl || "" };
     });
