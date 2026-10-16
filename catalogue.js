@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.39.2";
+const JS_VERSION = "1.40.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -447,6 +447,24 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-tlinks svg { width: 16px !important; height: 16px !important; }
 .psd-embed { width: 100% !important; border: 0 !important; border-radius: 12px !important; display: block !important; }
 .psd-player { background: var(--rel-soft, #222) !important; color: var(--rel-soft-text, #fff) !important; border-radius: 10px !important; padding: 12px !important; }
+/* Mini player (v1.40.0) */
+.psd-dock { position: fixed !important; left: 50% !important; transform: translateX(-50%) !important; bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important; z-index: 2147483000 !important; width: min(680px, calc(100% - 20px)) !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; gap: 6px !important; padding: 8px 10px 12px !important; background: #1d1d22 !important; color: #fff !important; border-radius: 14px !important; box-shadow: 0 8px 28px rgba(0,0,0,.5) !important; font-family: inherit !important; overflow: hidden !important; }
+.psd-dock[hidden] { display: none !important; }
+.psd-dock-cv { flex: 0 0 42px !important; width: 42px !important; height: 42px !important; border-radius: 6px !important; overflow: hidden !important; background: rgba(255,255,255,.1) !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; }
+.psd-dock-cv img { width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important; }
+.psd-dock-cv svg { width: 18px !important; height: 18px !important; opacity: .6 !important; }
+.psd-dock-main { flex: 1 1 auto !important; min-width: 0 !important; display: flex !important; flex-direction: column !important; line-height: 1.25 !important; margin-left: 4px !important; }
+.psd-dock-t { color: #fff !important; font-weight: 600 !important; font-size: 14px !important; text-decoration: none !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+.psd-dock-s { font-size: 12px !important; opacity: .7 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+.psd-dock button { flex: 0 0 auto !important; width: 36px !important; height: 36px !important; padding: 0 !important; border: none !important; border-radius: 50% !important; background: transparent !important; color: #fff !important; cursor: pointer !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; }
+.psd-dock button svg { width: 20px !important; height: 20px !important; }
+.psd-dock button.psd-dock-pp { width: 42px !important; height: 42px !important; background: #fff !important; color: #111 !important; }
+.psd-dock button.psd-dock-x { opacity: .6 !important; width: 30px !important; }
+.psd-dock button.psd-dock-x svg { width: 16px !important; height: 16px !important; }
+.psd-dock-prog { position: absolute !important; left: 0 !important; right: 0 !important; bottom: 0 !important; height: 5px !important; background: rgba(255,255,255,.15) !important; cursor: pointer !important; }
+.psd-dock-fill { height: 100% !important; width: 0 !important; background: #fff !important; }
+html.psd-dock-on body { padding-bottom: 84px !important; }
+@media (max-width: 480px) { .psd-dock button[data-psd-dock="prev"] { display: none !important; } }
 .psd-player-note { opacity: .75 !important; font-size: 13px !important; padding: 8px 0 !important; }
 .psd-player-bar { display: flex !important; align-items: center !important; gap: 12px !important; }
 .psd-pp svg { width: 20px !important; height: 20px !important; display: block !important; margin: auto !important; }
@@ -1276,16 +1294,33 @@ if (!window._psilodumpModalDelegated) {
     // Release page player
     const track = t.closest('[data-psd-track]');
     if (track) {
-      const i = Number(track.getAttribute('data-psd-track')), p = window._psdPlayer;
-      if (p && p.cues) playTrack(i);              // a setlist row always jumps to its start
-      else if (p && p.index === i && !p.audio.paused) p.audio.pause(); else playTrack(i);
+      const i = Number(track.getAttribute('data-psd-track')), p = listOf(track);
+      if (p && p.cues) playTrack(i, p);           // a setlist row always jumps to its start
+      else if (p && p === window._psdPlayer && p.index === i && !p.audio.paused) p.audio.pause(); else playTrack(i, p);
       return;
     }
     if (t.closest('[data-psd-play]')) {
-      const p = window._psdPlayer;
-      if (p) { if (p.audio.paused) { if (p.cues && p.audio.getAttribute("src")) p.audio.play().catch(() => {}); else playTrack(p.index); } else p.audio.pause(); }
+      const p = listOf(t.closest('[data-psd-play]'));
+      if (p) {
+        if (p !== window._psdPlayer) playTrack(p.index, p);
+        else if (p.audio.paused) { if (p.cues && p.audio.getAttribute("src")) p.audio.play().catch(() => {}); else playTrack(p.index, p); }
+        else p.audio.pause();
+      }
       return;
     }
+    // Mini player
+    const dk = t.closest('[data-psd-dock]');
+    if (dk) {
+      const p = window._psdPlayer, a = window._psdAudio, act = dk.getAttribute('data-psd-dock');
+      if (!p || !a) return;
+      if (act === "play") { if (a.paused) a.play().catch(() => {}); else a.pause(); }
+      else if (act === "next") { if (p.cues) { const k = p.tracks.findIndex((x, j) => j > p.index && x.start != null); if (k >= 0) playTrack(k); } else { const n = p.next(p.index + 1); if (n >= 0) playTrack(n); } }
+      else if (act === "prev") { if (a.currentTime > 3 && !p.cues) a.currentTime = 0; else { for (let k = p.index - 1; k >= 0; k--) if (p.tracks[k].src && !p.tracks[k].broken) { playTrack(k); break; } } }
+      else if (act === "close") stopPlayer();
+      return;
+    }
+    const dseek = t.closest('[data-psd-dockseek]');
+    if (dseek) { const a = window._psdAudio; if (a && isFinite(a.duration)) { const b = dseek.getBoundingClientRect(); a.currentTime = Math.max(0, Math.min(1, (e.clientX - b.left) / b.width)) * a.duration; } return; }
     const apb = t.closest('[data-psd-appplay]');
     if (apb) { const m = document.getElementById("psd-appearances"); const a = m && (m._psdApps || []).find(x => x.ID === apb.getAttribute("data-psd-appplay"));
       if (a) { const now = m.querySelector(".psd-app-now"); now.hidden = false; now.querySelector("h2").textContent = a.Title + (a.Artist && !/^various artists$/i.test(a.Artist) ? " — " + a.Artist : "");
@@ -1320,8 +1355,8 @@ if (!window._psilodumpModalDelegated) {
     }
     const seek = t.closest('[data-psd-seek]');
     if (seek) {
-      const p = window._psdPlayer;
-      if (p && isFinite(p.audio.duration)) {
+      const p = listOf(seek);
+      if (p && p === window._psdPlayer && isFinite(p.audio.duration)) {
         const box = seek.getBoundingClientRect();
         p.audio.currentTime = Math.max(0, Math.min(1, (e.clientX - box.left) / box.width)) * p.audio.duration;
       }
@@ -1355,8 +1390,8 @@ if (!window._psilodumpModalDelegated) {
       return;
     }
     if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && e.target instanceof Element && e.target.matches('[data-psd-seek]')) {
-      const p = window._psdPlayer;
-      if (p && isFinite(p.audio.duration)) { e.preventDefault(); p.audio.currentTime = Math.max(0, Math.min(p.audio.duration, p.audio.currentTime + (e.key === 'ArrowLeft' ? -5 : 5))); }
+      const p = listOf(e.target);
+      if (p && p === window._psdPlayer && isFinite(p.audio.duration)) { e.preventDefault(); p.audio.currentTime = Math.max(0, Math.min(p.audio.duration, p.audio.currentTime + (e.key === 'ArrowLeft' ? -5 : 5))); }
       return;
     }
     if ((e.key === 'Enter' || e.key === ' ') && e.target instanceof Element && e.target.matches('[data-lightbox], [data-pill]')) {
@@ -1992,36 +2027,56 @@ function buildTrackPlayer(box, r, tracks, albumId){
       <div class="psd-progress" data-psd-seek role="slider" tabindex="0" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="psd-progress-fill"></div></div>
       ${trackListHtml(tracks, true)}
     </div>`;
-  const audio = new Audio();
+  // One <audio> for the whole site (sharedAudio()); each list is an object on its .psd-player element. The list that
+  // is playing is window._psdPlayer — it keeps playing when the visitor scrolls away or opens another page (the
+  // mini player at the bottom takes over). A list with the same tracks as the playing one (back on its page) adopts it.
+  const p = { audio: sharedAudio(), tracks, index: first, box, title: r[TITLE_COL] || "", cover: r._largeUrl || r._thumbUrl || "",
+    href: location.pathname + location.search + location.hash, cues: tracks.some(t => t.start != null) };
+  p.key = p.title + "|" + tracks.map(t => t.src + "@" + (t.start == null ? "" : t.start)).join("|");
+  p.next = from => { for (let k = from; k < p.tracks.length; k++) if (p.tracks[k].src && !p.tracks[k].broken) return k; return -1; };
+  const el = box.querySelector(".psd-player");
+  const cur = window._psdPlayer;
+  if (cur && cur.key === p.key) { cur.box = box; cur.href = p.href; el._psdList = cur; cur.tracks.forEach((t, j) => { if (t.broken) { const b = box.querySelector(`[data-psd-track="${j}"]`); if (b) { b.classList.add("is-broken"); b.disabled = true; } } }); }
+  else el._psdList = p;
+  watchInlinePlayer();
+  updatePlayerUI();
+}
+// The list a clicked control belongs to (its .psd-player), else the one playing.
+function listOf(el){ const pl = el && el.closest(".psd-player"); return (pl && pl._psdList) || window._psdPlayer; }
+function sharedAudio(){
+  if (window._psdAudio) return window._psdAudio;
+  const audio = window._psdAudio = new Audio();
   audio.preload = "none";
-  const p = window._psdPlayer = { audio, tracks, index: first, box, title: r[TITLE_COL] || "", cover: r._largeUrl || r._thumbUrl || "" };
-  // Cue mode: every row is a start position in the same recording (a gig's setlist over its live set).
-  p.cues = tracks.some(t => t.start != null);
+  const P = () => window._psdPlayer;
   audio.addEventListener("timeupdate", () => {
+    const p = P(); if (!p) return;
     if (p.cues && !audio.seeking) {           // the row under the playhead becomes the current one
       let k = -1; p.tracks.forEach((t, j) => { if (t.start != null && t.start <= audio.currentTime + 0.5) k = j; });
       if (k >= 0) p.index = k;
     }
     updatePlayerUI();
   });
-  audio.addEventListener("loadedmetadata", () => updatePlayerUI());
-  audio.addEventListener("play", () => updatePlayerUI());
-  audio.addEventListener("pause", () => updatePlayerUI());
-  const nextPlayable = from => { for (let k = from; k < p.tracks.length; k++) if (p.tracks[k].src && !p.tracks[k].broken) return k; return -1; };
-  p.next = nextPlayable;
-  audio.addEventListener("ended", () => { if (p.cues) { updatePlayerUI(); return; } const n = nextPlayable(p.index + 1); if (n >= 0) playTrack(n); else updatePlayerUI(); });
+  ["loadedmetadata", "play", "pause"].forEach(ev => audio.addEventListener(ev, () => updatePlayerUI()));
+  audio.addEventListener("ended", () => { const p = P(); if (!p) return; if (p.cues) { updatePlayerUI(); return; } const n = p.next(p.index + 1); if (n >= 0) playTrack(n); else updatePlayerUI(); });
   // A track page that no longer exists: mark it and go on with the next one.
   audio.addEventListener("error", () => {
-    const t = p.tracks[p.index]; if (!t || !audio.getAttribute("src")) return;
+    const p = P(); const t = p && p.tracks[p.index]; if (!t || !audio.getAttribute("src")) return;
     t.broken = true;
     const b = p.box.querySelector(`[data-psd-track="${p.index}"]`); if (b) { b.classList.add("is-broken"); b.disabled = true; b.title = "Not available"; }
-    const n = nextPlayable(p.index + 1); if (n >= 0) playTrack(n); else updatePlayerUI();
+    const n = p.next(p.index + 1); if (n >= 0) playTrack(n); else updatePlayerUI();
   });
+  return audio;
 }
 
-function playTrack(i){
-  const p = window._psdPlayer;
+function playTrack(i, list){
+  const p = list || window._psdPlayer;
   if (!p || !p.tracks[i] || !p.tracks[i].src || p.tracks[i].broken) return;
+  if (window._psdPlayer !== p) {               // another list takes over the one audio
+    const prev = window._psdPlayer;
+    window._psdPlayer = p;
+    p.audio.removeAttribute("src");
+    if (prev) resetListUI(prev);
+  }
   if (p.cues) {                                // jump to the row's position in the recording
     const tr = p.tracks[i];
     if (p.audio.getAttribute("src") !== tr.src) p.audio.src = tr.src;
@@ -2039,7 +2094,8 @@ function playTrack(i){
   p.audio.play().catch(() => {});
   if ("mediaSession" in navigator && window.MediaMetadata) {
     const tr = p.tracks[i];
-    navigator.mediaSession.metadata = new MediaMetadata({ title: tr.title + (tr.version ? " (" + tr.version + ")" : ""), artist: tr.artist || "psilodump", album: p.title, artwork: p.cover ? [{ src: p.cover }] : [] });
+    const art = tr.cover || p.cover;
+    navigator.mediaSession.metadata = new MediaMetadata({ title: tr.title + (tr.version ? " (" + tr.version + ")" : ""), artist: tr.artist || "psilodump", album: p.title, artwork: art ? [{ src: art }] : [] });
     navigator.mediaSession.setActionHandler("nexttrack", () => { const n = p.next ? p.next(p.index + 1) : p.index + 1; if (n >= 0) playTrack(n); });
     navigator.mediaSession.setActionHandler("previoustrack", () => playTrack(Math.max(0, p.index - 1)));
   }
@@ -2048,6 +2104,7 @@ function playTrack(i){
 
 function updatePlayerUI(){
   const p = window._psdPlayer;
+  updateDock();
   if (!p || !document.body.contains(p.box)) return;
   const a = p.audio, t = p.tracks[p.index];
   const playing = !a.paused && !a.ended;
@@ -2065,10 +2122,77 @@ function updatePlayerUI(){
   });
 }
 
-// Removing the page doesn't stop an <audio> element by itself, so stop it on page changes.
+// A list that is no longer the playing one: back to its resting look.
+function resetListUI(p){
+  if (!p || !p.box || !document.body.contains(p.box)) return;
+  const pp = p.box.querySelector(".psd-pp"); if (pp) { pp.innerHTML = PLAY_ICON; pp.setAttribute("aria-label", "Play"); }
+  const fill = p.box.querySelector(".psd-progress-fill"); if (fill) fill.style.width = "0%";
+  const time = p.box.querySelector(".psd-time"); if (time) time.textContent = "0:00 / " + (p.tracks[p.index] ? p.tracks[p.index].duration : "");
+  p.box.querySelectorAll("[data-psd-track]").forEach(b => { b.classList.remove("is-current"); b.setAttribute("aria-current", "false"); });
+}
+// Stop everything (the mini player's ✕, a whole-release player on the V/A page taking over).
 function stopPlayer(){
   const p = window._psdPlayer;
-  if (p) { p.audio.pause(); p.audio.removeAttribute("src"); p.audio.load(); window._psdPlayer = null; }
+  if (p) { p.audio.pause(); p.audio.removeAttribute("src"); p.audio.load(); window._psdPlayer = null; resetListUI(p); }
+  updateDock();
+}
+
+// --- Mini player (the "dock"): fixed at the bottom while something plays (or is paused mid-track) and the page's own
+// player is out of view or on another page. Lives in <body>; on a Turbo page change it is moved into the new body,
+// and the shared audio (not in the page) keeps playing.
+const PREV_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 6h2v12H7zM20 6v12L10 12z" fill="currentColor"/></svg>';
+const NEXT_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6h2v12h-2zM4 6v12l10-6z" fill="currentColor"/></svg>';
+const CLOSE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" fill="none"/></svg>';
+function dockEl(){
+  let d = document.getElementById("psd-dock");
+  if (!d && document.body) {
+    document.body.insertAdjacentHTML("beforeend", `<div id="psd-dock" class="psd-dock" hidden role="region" aria-label="Now playing">
+      <span class="psd-dock-cv"></span>
+      <div class="psd-dock-main"><a class="psd-dock-t" href="#"></a><span class="psd-dock-s"></span></div>
+      <button type="button" data-psd-dock="prev" aria-label="Previous">${PREV_ICON}</button>
+      <button type="button" data-psd-dock="play" class="psd-dock-pp" aria-label="Play">${PLAY_ICON}</button>
+      <button type="button" data-psd-dock="next" aria-label="Next">${NEXT_ICON}</button>
+      <button type="button" data-psd-dock="close" class="psd-dock-x" aria-label="Close the player">${CLOSE_ICON}</button>
+      <div class="psd-dock-prog" data-psd-dockseek><div class="psd-dock-fill"></div></div>
+    </div>`);
+    d = document.getElementById("psd-dock");
+  }
+  return d;
+}
+function inlineVisible(p){
+  if (!p || !p.box || !document.body.contains(p.box)) return false;
+  const bar = p.box.querySelector(".psd-player-bar") || p.box;
+  const r = bar.getBoundingClientRect();
+  return r.bottom > 0 && r.top < (window.innerHeight || document.documentElement.clientHeight);
+}
+function updateDock(){
+  const p = window._psdPlayer, a = window._psdAudio;
+  const active = !!(p && a && a.getAttribute("src") && (!a.paused || a.currentTime > 0));
+  const show = active && !inlineVisible(p);
+  const d = show ? dockEl() : document.getElementById("psd-dock");
+  document.documentElement.classList.toggle("psd-dock-on", show);
+  if (!d) return;
+  d.hidden = !show;
+  if (!show) return;
+  const t = p.tracks[p.index] || {}, playing = !a.paused && !a.ended;
+  const cover = t.cover || p.cover;
+  const cv = d.querySelector(".psd-dock-cv");
+  if (cv.getAttribute("data-src") !== (cover || "")) { cv.setAttribute("data-src", cover || ""); cv.innerHTML = cover ? `<img src="${esc(cover)}" alt="">` : PLAY_ICON; }
+  const ttl = d.querySelector(".psd-dock-t");
+  ttl.textContent = (t.title || "") + (t.version ? " (" + t.version + ")" : "");
+  ttl.setAttribute("href", p.href || "#"); ttl.title = "Back to " + (p.title || "the list");
+  d.querySelector(".psd-dock-s").textContent = [t.artist && t.artist.toLowerCase() !== "psilodump" ? t.artist : "", p.title, fmtTime(a.currentTime) + (isFinite(a.duration) ? " / " + fmtTime(a.duration) : "")].filter(Boolean).join(" · ");
+  const pp = d.querySelector(".psd-dock-pp"); pp.innerHTML = playing ? PAUSE_ICON : PLAY_ICON; pp.setAttribute("aria-label", playing ? "Pause" : "Play");
+  d.querySelector(".psd-dock-fill").style.width = (isFinite(a.duration) && a.duration > 0 ? a.currentTime / a.duration * 100 : 0) + "%";
+}
+// Show / hide the dock as the page's player scrolls in and out of view.
+let dockScrollTick = false;
+function watchInlinePlayer(){
+  if (window._psdDockScroll) return;
+  window._psdDockScroll = true;
+  const onScroll = () => { if (dockScrollTick) return; dockScrollTick = true; requestAnimationFrame(() => { dockScrollTick = false; if (window._psdPlayer) updateDock(); }); };
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll, { passive: true });
 }
 
 // --- Structured data (JSON-LD) for search engines ---
@@ -3383,7 +3507,13 @@ new MutationObserver(() => {
 document.addEventListener("turbo:load", initApp);
 document.addEventListener("turbo:render", initApp);
 // Leaving a release page: stop its music (a removed <audio> element keeps playing).
-document.addEventListener("turbo:before-render", stopPlayer);
+// Page changes no longer stop the music: the mini player moves into the new page's body.
+document.addEventListener("turbo:before-render", e => {
+  const d = document.getElementById("psd-dock"), nb = e.detail && e.detail.newBody;
+  if (nb) nb.querySelectorAll("#psd-dock").forEach(x => { if (x !== d) x.remove(); });   // a stale copy in Turbo's cached page
+  if (d && nb) nb.appendChild(d);
+});
+document.addEventListener("turbo:load", () => updateDock());
 
 initApp();
 })();
