@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.41.1";
+const JS_VERSION = "1.42.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -192,6 +192,12 @@ a.rel-cover { display: block !important; text-decoration: none !important; }
 .rel-meta .rel-mtype { display: none !important; }
 .rel-phys { color: inherit !important; }
 .btn-listen { width: auto !important; align-self: flex-start !important; border-radius: 999px !important; padding: 6px 14px !important; font-size: 13px !important; }
+/* Play now + Links (v1.42.0) */
+.rel-acts { display: flex !important; flex-wrap: wrap !important; gap: 6px !important; margin-top: auto !important; align-items: center !important; }
+.rel-acts .btn-listen { margin-top: 0 !important; }
+.btn-listen.btn-play svg { width: 13px !important; height: 13px !important; margin-left: -3px !important; }
+.rel-wrap.row-view .rel-acts { flex-wrap: nowrap !important; margin: 0 !important; }
+.rel-more-link { font-size: 13px !important; opacity: .92 !important; }
 .rel-wrap.compact .rel-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important; }
 .rel-wrap.compact .rel-kind { font-size: 11px !important; padding: 2px 7px !important; left: 6px !important; bottom: 6px !important; }
 .rel-wrap.row-view .rel-card { padding: 8px 0 !important; border-top: 1px solid rgba(127,127,127,.2) !important; }
@@ -901,9 +907,12 @@ function card(r, idx){
     ? `style="background-color: ${btn.bg} !important; color: ${btn.text} !important;"`
     : '';
 
-  const listenBtn = r._svc.length 
-    ? `<button class="btn-listen" ${btnStyle} data-listen="${idx}">Listen / Download</button>` 
-    : ``;
+  // "Links" on every card (the pop-up always has at least the release page); "Play now" when we can play it here
+  // (our track list has audio, or it has a Bandzoogle album) — known once the track data has loaded
+  const cat = window._psilodumpCat;
+  const playing = window._psdPlayer && window._psdPlayer._relId === r["ID"] && window._psdAudio && !window._psdAudio.paused;
+  const listenBtn = `<div class="rel-acts">${cat._playable && cat._playable.has(r["ID"])
+      ? `<button class="btn-listen btn-play" ${btnStyle} data-psd-relplay="${esc(r["ID"])}" aria-pressed="${playing ? "true" : "false"}">${playing ? PAUSE_ICON + "Pause" : PLAY_ICON + "Play now"}</button>` : ""}<button class="btn-listen" ${btnStyle} data-listen="${idx}">Links</button></div>`;
 
   return `<article class="rel-card">
     ${cover}
@@ -950,6 +959,13 @@ function render(){
   const grid = document.getElementById("rel-grid");
   if (!grid) return;
   const cat = window._psilodumpCat;
+  if (!cat._playable && !cat._playableLoading) {
+    cat._playableLoading = true;
+    loadTrackData().then(data => {
+      cat._playable = new Set(cat.rows.filter(r => (data.lists[r["ID"]] || []).some(({ row, t }) => /track\/\d+/.test(String(row.Source || t.Source || ""))) || bzAlbumId(r)).map(r => r["ID"]));
+      if (document.getElementById("rel-grid")) render();
+    }).catch(() => {});
+  }
   const mode = GROUP_MODES[cat.groupMode] && cat.groupMode ? cat.groupMode : "";
   if (!mode) grid.innerHTML = cat.viewRows.map((r, idx) => card(r, idx)).join("");
   else {
@@ -1276,7 +1292,9 @@ window.openListenModal = function(idx){
         <span class="rel-svc-left"><span class="${s.class}">${icon(s.key)}</span> ${esc(s.label)}</span>
         <span>&#10140;</span>
       </a>`
-    ).join("") + (storeNote(r) && r._svc.length ? `<p class="rel-m-note" style="color: ${panel.text} !important;">${storeNote(r)}</p>` : "");
+    ).join("") + (storeNote(r) && r._svc.length ? `<p class="rel-m-note" style="color: ${panel.text} !important;">${storeNote(r)}</p>` : "")
+    + moreLinks(r).map(m => `<a class="rel-svc-link rel-more-link" ${linkBtnStyle} href="${esc(m.href)}"${m.ext ? ' target="_blank" rel="noopener nofollow"' : ""}>
+        <span class="rel-svc-left">${esc(m.label)}</span><span>&#10140;</span></a>`).join("");
   }
 
   const modal = document.getElementById("rel-listen-modal");
@@ -1350,6 +1368,8 @@ if (!window._psilodumpModalDelegated) {
       if (tt.hasAttribute("data-psd-ttog")) { const k = tt.getAttribute("data-psd-ttog"); st[k] = !st[k]; }
       else { const k = tt.getAttribute("data-psd-ttype"); st.types = !k ? [] : (st.types.includes(k) ? st.types.filter(x => x !== k) : [...st.types, k]); }
       m._psdTracksRender(); } return; }
+    const rp = t.closest('[data-psd-relplay]');
+    if (rp) { playRelease(rp.getAttribute('data-psd-relplay')); return; }
     const rt = t.closest('[data-psd-rtype]');
     if (rt) { toggleType(rt.getAttribute("data-psd-rtype")); return; }
     const vk = t.closest('[data-psd-vkind]');
@@ -1633,6 +1653,15 @@ const SITE_BASE = /(^|\.)psilodu\.mp$/i.test(location.hostname) ? "" : "https://
 const releaseHref = r => SITE_BASE + RELEASE_PATH + "?r=" + encodeURIComponent(releaseKey(r));
 
 // The Bandzoogle album number in Source ("3319229" or a psilodu.mp/album/... address), or "".
+// Links beyond the stores, for the Links pop-up: the release page here, other sources, Discogs, MusicBrainz.
+function moreLinks(r){
+  const out = [{ label: "Release page on psilodu.mp", href: releaseHref(r) }];
+  const host = u => u.replace(/^https?:\/\/(www\.)?/, "").split("/")[0];
+  String(r["Sources"] || "").split(MULTI_LINK_SEP).map(x => x.trim()).filter(Boolean).forEach(u => { const h = normHref(u); out.push({ label: host(h), href: h, ext: true }); });
+  if (/^https:\/\/www\.discogs\.com\//.test(r["Discogs"] || "")) out.push({ label: "Discogs", href: r["Discogs"], ext: true });
+  if (MBID_RE.test(r["MusicBrainz"] || "")) out.push({ label: "MusicBrainz", href: MB_RG_URL + r["MusicBrainz"], ext: true });
+  return out;
+}
 function bzAlbumId(r){
   const s = String(r["Source"] || "").trim();
   if (/^\d+$/.test(s)) return s;
@@ -1954,6 +1983,47 @@ function renderPlayer(box, r, albumId){
 }
 
 // Bandzoogle's own album track list (releases without our list, or without track pages in it).
+// A Bandzoogle album's tracks: /go/albums/<n>/tracks (all of them), else the album page (first 20).
+function bzAlbumTracks(albumId){
+  const readTracks = html => [...new DOMParser().parseFromString(html, "text/html")
+    .querySelectorAll("li.track-list-item a[data-dest]")].map(a => ({ id: a.getAttribute("data-id"), title: a.getAttribute("data-title") || "", duration: a.getAttribute("data-duration") || "", src: a.getAttribute("data-dest") })).filter(t => t.src);
+  const getTracks = url => fetch(url).then(res => { if (!res.ok) throw new Error("HTTP " + res.status); return res.text(); })
+    .then(html => { const t = readTracks(html); if (!t.length) throw new Error("no tracks"); return t; });
+  return getTracks(`/go/albums/${albumId}/tracks?offset=0&amount=1000`).catch(() => getTracks(`/album/${albumId}`));
+}
+// "Play now" on a grid card: the release's tracks into the mini player (a list without a box on the page);
+// the same release again = pause / resume. Its release page, when opened, adopts the playing list.
+function playRelease(id){
+  const cat = window._psilodumpCat;
+  const r = (cat.rows || []).find(x => x["ID"] === id);
+  if (!r) return;
+  const cur = window._psdPlayer, a = window._psdAudio;
+  if (cur && cur._relId === id && a && a.getAttribute("src")) { if (a.paused) a.play().catch(() => {}); else a.pause(); return; }
+  const start = (items, albumId) => {
+    if (!items.some(x => x.src)) return;
+    const div = document.createElement("div");
+    buildTrackPlayer(div, r, items, albumId);
+    const L = div.querySelector(".psd-player")._psdList;
+    L._relId = id; L.href = releaseHref(r);
+    playTrack(L.next(0), L);
+  };
+  loadTrackData().then(data => {
+    const items = releaseTrackItems(data.lists[id] || []);
+    if (items.some(x => x.src)) return start(items, "");
+    const album = bzAlbumId(r);
+    if (album) return bzAlbumTracks(album).then(t => start(t, album));
+  }).catch(err => console.warn("Can't play this release:", err && err.message));
+}
+function updateRelPlayButtons(){
+  const cur = window._psdPlayer, a = window._psdAudio;
+  const on = cur && cur._relId && a && !a.paused && !a.ended ? cur._relId : "";
+  document.querySelectorAll("[data-psd-relplay]").forEach(b => {
+    const mine = b.getAttribute("data-psd-relplay") === on;
+    if ((b.getAttribute("aria-pressed") === "true") === mine) return;
+    b.setAttribute("aria-pressed", mine ? "true" : "false");
+    b.innerHTML = mine ? PAUSE_ICON + "Pause" : PLAY_ICON + "Play now";
+  });
+}
 function renderBzPlayer(box, r, albumId, items){
   if (albumId) {
     box.innerHTML = `<div class="psd-player-note">Loading tracks…</div>`;
@@ -1970,8 +2040,7 @@ function renderBzPlayer(box, r, albumId, items){
     const getTracks = url => fetch(url)
       .then(res => { if (!res.ok) throw new Error("HTTP " + res.status); return res.text(); })
       .then(html => { const t = readTracks(html); if (!t.length) throw new Error("no tracks"); return t; });
-    getTracks(`/go/albums/${albumId}/tracks?offset=0&amount=1000`)
-      .catch(() => getTracks(`/album/${albumId}`))
+    bzAlbumTracks(albumId)
       .then(tracks => {
         if (!document.body.contains(box)) return;          // the visitor has moved on
         buildTrackPlayer(box, r, tracks, albumId);
@@ -2175,6 +2244,7 @@ function inlineVisible(p){
   return r.bottom > 0 && r.top < (window.innerHeight || document.documentElement.clientHeight);
 }
 function updateDock(){
+  updateRelPlayButtons();
   const p = window._psdPlayer, a = window._psdAudio;
   const active = !!(p && a && a.getAttribute("src") && (!a.paused || a.currentTime > 0));
   const show = active && !inlineVisible(p);
