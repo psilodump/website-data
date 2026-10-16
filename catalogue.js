@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.42.2";
+const JS_VERSION = "1.43.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -457,6 +457,25 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-trackspage .psd-vpage-bar select { font: inherit !important; font-size: 13px !important; padding: 5px 10px !important; border-radius: 999px !important; border: 1px solid rgba(127,127,127,.45) !important; background: transparent !important; color: inherit !important; }
 .psd-trackspage .psd-vpage-bar select option { color: #111 !important; background: #fff !important; }
 .psd-trackspage .psd-vpage-bar button.none:not([aria-pressed="true"]) { opacity: .45 !important; }
+/* Folding + shuffle (v1.43.0) */
+.psd-foldable ol.psd-tracks li.psd-h { cursor: pointer !important; user-select: none !important; display: flex !important; align-items: center !important; gap: 6px !important; }
+.psd-foldable ol.psd-tracks li.psd-h::before { content: "" !important; width: 0 !important; height: 0 !important; border-left: 5px solid transparent !important; border-right: 5px solid transparent !important; border-top: 6px solid currentColor !important; transition: transform .15s !important; }
+.psd-foldable ol.psd-tracks li.psd-h[aria-expanded="false"]::before { transform: rotate(-90deg) !important; }
+.psd-foldable ol.psd-tracks li.psd-h::after { content: attr(data-n) !important; font-weight: 400 !important; opacity: .6 !important; letter-spacing: 0 !important; }
+.psd-foldable ol.psd-tracks li[hidden] { display: none !important; }
+.rel-group-h { cursor: pointer !important; user-select: none !important; }
+.rel-group-h::before { content: "" !important; align-self: center !important; width: 0 !important; height: 0 !important; border-left: 6px solid transparent !important; border-right: 6px solid transparent !important; border-top: 7px solid currentColor !important; opacity: .7 !important; transition: transform .15s !important; }
+.rel-group.folded .rel-group-h::before { transform: rotate(-90deg) !important; }
+.rel-group.folded > .rel-grid { display: none !important; }
+.rel-group.folded { padding-bottom: 10px !important; }
+.rel-group.folded .rel-group-h { border-bottom-color: transparent !important; }
+[data-psd-shuffle] svg { width: 14px !important; height: 14px !important; vertical-align: -2px !important; }
+.rel-sort [data-psd-shuffle], .rel-sort #rel-foldall { display: inline-flex !important; align-items: center !important; gap: 5px !important; }
+.rel-sort #rel-foldall[hidden] { display: none !important; }
+.rel-sort [data-psd-shuffle][aria-pressed="true"], .psd-vpage-bar [data-psd-shuffle][aria-pressed="true"] { background: rgba(255,255,255,.14) !important; border-color: transparent !important; font-weight: 600 !important; }
+.psd-dock button.psd-dock-sh { width: 32px !important; opacity: .55 !important; }
+.psd-dock button.psd-dock-sh svg { width: 18px !important; height: 18px !important; }
+.psd-dock button.psd-dock-sh[aria-pressed="true"] { opacity: 1 !important; color: #8fd !important; }
 /* Mini player (v1.40.0) */
 .psd-dock { position: fixed !important; left: 50% !important; transform: translateX(-50%) !important; bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important; z-index: 2147483000 !important; width: min(680px, calc(100% - 20px)) !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; gap: 6px !important; padding: 8px 10px 12px !important; background: #1d1d22 !important; color: #fff !important; border-radius: 14px !important; box-shadow: 0 8px 28px rgba(0,0,0,.5) !important; font-family: system-ui, -apple-system, sans-serif !important; overflow: hidden !important; }
 .psd-dock a, .psd-dock span, .psd-dock button { font-family: system-ui, -apple-system, sans-serif !important; }
@@ -531,6 +550,8 @@ const CATALOGUE_HTML = `
     <button type="button" id="rel-view-compact" aria-pressed="false" title="Toggle compact grid">Compact grid</button>
     <button type="button" id="rel-view-rows" aria-pressed="false" title="Toggle list view">Row view</button>
     <select id="rel-sel-group" class="rel-select" aria-label="Group by"></select>
+    <button type="button" id="rel-foldall" hidden>Fold all</button>
+    <button type="button" data-psd-shuffle aria-pressed="false" title="Play every track on the site in a random order">Shuffle all</button>
   </div>
 
   <div id="rel-grid" class="rel-grid" aria-live="polite">
@@ -943,15 +964,30 @@ function groupOrder(mode, keys){
   if (mode === "type") return keys.sort((a, b) => ((TYPE_ORDER.indexOf(a) + 1) || 99) - ((TYPE_ORDER.indexOf(b) + 1) || 99));
   return keys.sort((a, b) => last(a) - last(b) || a.localeCompare(b, undefined, { sensitivity: "base" }));
 }
+function toggleGroupFold(h){
+  const cat = window._psilodumpCat; cat._foldedGroups = cat._foldedGroups || new Set();
+  const k = h.getAttribute("data-gkey"), sec = h.closest(".rel-group");
+  if (cat._foldedGroups.has(k)) cat._foldedGroups.delete(k); else cat._foldedGroups.add(k);
+  sec.classList.toggle("folded", cat._foldedGroups.has(k)); h.setAttribute("aria-expanded", cat._foldedGroups.has(k) ? "false" : "true");
+  const fa = document.getElementById("rel-foldall"); const secs = [...document.querySelectorAll("#rel-grid .rel-group")];
+  if (fa) fa.textContent = secs.every(x => x.classList.contains("folded")) ? "Unfold all" : "Fold all";
+}
+function foldAllGroups(){
+  const cat = window._psilodumpCat; cat._foldedGroups = cat._foldedGroups || new Set();
+  const heads = [...document.querySelectorAll("#rel-grid .rel-group-h")], keys = heads.map(h => h.getAttribute("data-gkey"));
+  if (keys.every(k => cat._foldedGroups.has(k))) keys.forEach(k => cat._foldedGroups.delete(k)); else keys.forEach(k => cat._foldedGroups.add(k));
+  render();
+}
 function renderGroupSelect(){
   const cat = window._psilodumpCat;
   let sel = document.getElementById("rel-sel-group");
   if (!sel) {           // the old embed has no menu for it
     const bar = document.querySelector(".rel-sort"); if (!bar) return;
-    bar.insertAdjacentHTML("beforeend", '<select id="rel-sel-group" class="rel-select" aria-label="Group by"></select>');
+    bar.insertAdjacentHTML("beforeend", '<select id="rel-sel-group" class="rel-select" aria-label="Group by"></select><button type="button" id="rel-foldall" hidden>Fold all</button><button type="button" data-psd-shuffle aria-pressed="false">Shuffle all</button>');
     sel = document.getElementById("rel-sel-group");
   }
   // on a page fixed to one type, grouping by type means nothing
+  document.querySelectorAll(".rel-sort [data-psd-shuffle]:not([data-ic])").forEach(b => { b.setAttribute("data-ic", "1"); b.insertAdjacentHTML("afterbegin", SHUFFLE_ICON + " "); });
   const modes = Object.keys(GROUP_MODES).filter(m => !(m === "type" && cat.fixedTypes && cat.fixedTypes.length));
   sel.innerHTML = modes.map(m => `<option value="${m}"${m === (cat.groupMode || "") ? " selected" : ""}>${GROUP_MODES[m]}</option>`).join("");
   if (!sel._bound) { sel._bound = true; sel.addEventListener("change", e => { cat.groupMode = e.target.value; render(); }); }
@@ -975,11 +1011,14 @@ function render(){
     grid.innerHTML = groupOrder(mode, Object.keys(groups)).map(k => {
       const L = mode === "label" ? labelFor(k) : null;
       const title = mode === "type" ? typePlural(k) : k;
-      return `<section class="rel-group"><h3 class="rel-group-h">${esc(title)} <small>${groups[k].length}</small>${L ? `<a href="${esc(labelHref(L))}">about the label</a>` : ""}</h3>`
+      const gk = mode + ":" + k, shut = (cat._foldedGroups || new Set()).has(gk);
+      return `<section class="rel-group${shut ? " folded" : ""}"><h3 class="rel-group-h" data-gkey="${esc(gk)}" role="button" tabindex="0" aria-expanded="${shut ? "false" : "true"}">${esc(title)} <small>${groups[k].length}</small>${L ? `<a href="${esc(labelHref(L))}">about the label</a>` : ""}</h3>`
         + `<div class="rel-grid">${groups[k].map(([r, idx]) => card(r, idx)).join("")}</div></section>`;
     }).join("");
   }
   grid.classList.toggle("grouped", !!mode);
+  const fa = document.getElementById("rel-foldall");
+  if (fa) { fa.hidden = !mode; const secs = [...grid.querySelectorAll(".rel-group")]; fa.textContent = secs.length && secs.every(x => x.classList.contains("folded")) ? "Unfold all" : "Fold all"; }
   const stats = document.getElementById("rel-stats");
   if (stats) stats.innerHTML = `Showing <strong>${cat.viewRows.length}</strong> release${cat.viewRows.length === 1 ? "" : "s"}`;
   renderFilterPills();
@@ -1337,6 +1376,7 @@ if (!window._psilodumpModalDelegated) {
       const p = window._psdPlayer, a = window._psdAudio, act = dk.getAttribute('data-psd-dock');
       if (!p || !a) return;
       if (act === "play") { if (a.paused) a.play().catch(() => {}); else a.pause(); }
+      else if (act === "next" && window._psdShuffleOn && !p._shuffle) startShuffle();
       else if (act === "next") { if (p.cues) { const k = p.tracks.findIndex((x, j) => j > p.index && x.start != null); if (k >= 0) playTrack(k); } else { const n = p.next(p.index + 1); if (n >= 0) playTrack(n); } }
       else if (act === "prev") { if (a.currentTime > 3 && !p.cues) a.currentTime = 0; else { for (let k = p.index - 1; k >= 0; k--) if (p.tracks[k].src && !p.tracks[k].broken) { playTrack(k); break; } } }
       else if (act === "close") stopPlayer();
@@ -1369,6 +1409,15 @@ if (!window._psilodumpModalDelegated) {
       if (tt.hasAttribute("data-psd-ttog")) { const k = tt.getAttribute("data-psd-ttog"); st[k] = !st[k]; }
       else { const k = tt.getAttribute("data-psd-ttype"); st.types = !k ? [] : (st.types.includes(k) ? st.types.filter(x => x !== k) : [...st.types, k]); }
       m._psdTracksRender(); } return; }
+    const shb = t.closest('[data-psd-shuffle]');
+    if (shb) { toggleShuffle(!shb.closest('#psd-dock')); return; }
+    const fh = t.closest('.psd-foldable li.psd-h');
+    if (fh) { toggleFold(fh); return; }
+    const fal = t.closest('[data-psd-foldall]');
+    if (fal) { const m = fal.closest('.psd-foldable'); if (m) foldAll(m); return; }
+    const gh = t.closest('.rel-group-h');
+    if (gh && !t.closest('a')) { toggleGroupFold(gh); return; }
+    if (t.closest('#rel-foldall')) { foldAllGroups(); return; }
     const rp = t.closest('[data-psd-relplay]');
     if (rp) { playRelease(rp.getAttribute('data-psd-relplay')); return; }
     const rt = t.closest('[data-psd-rtype]');
@@ -1424,7 +1473,7 @@ if (!window._psilodumpModalDelegated) {
       if (p && p === window._psdPlayer && isFinite(p.audio.duration)) { e.preventDefault(); p.audio.currentTime = Math.max(0, Math.min(p.audio.duration, p.audio.currentTime + (e.key === 'ArrowLeft' ? -5 : 5))); }
       return;
     }
-    if ((e.key === 'Enter' || e.key === ' ') && e.target instanceof Element && e.target.matches('[data-lightbox], [data-pill]')) {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target instanceof Element && e.target.matches('[data-lightbox], [data-pill], .psd-foldable li.psd-h, .rel-group-h')) {
       e.preventDefault();
       e.target.click();
     }
@@ -2015,6 +2064,48 @@ function playRelease(id){
     if (album) return bzAlbumTracks(album).then(t => start(t, album));
   }).catch(err => console.warn("Can't play this release:", err && err.message));
 }
+// --- Shuffle: every playable track on the site (one per audio file) in a random order — Fisher–Yates with the browser's
+// cryptographic random numbers, so every order is equally likely; each track plays once before anything repeats,
+// then a new order. A list without a box (like "Play now"), title "Shuffle", its page link /tracks.
+function randomInt(n){ const a = new Uint32Array(1); (window.crypto || window.msCrypto).getRandomValues(a); return a[0] % n; }
+function shuffleItems(){
+  return Promise.all([loadCatalogue(), loadTrackData()]).then(([rows, data]) => {
+    const relById = {}; rows.forEach(r => { relById[r["ID"]] = r; });
+    const firstRel = {};
+    Object.entries(data.lists).forEach(([rid, list]) => list.forEach(({ t }) => { const r = relById[rid]; if (r && (!firstRel[t.ID] || ((r._released || "9") < (firstRel[t.ID]._released || "9")))) firstRel[t.ID] = r; }));
+    const seen = new Set(), items = [];
+    Object.values(data.byId).forEach(t => {
+      const bz = (String(t.Source || "").match(/track\/(\d+)/) || [])[1];
+      if (!bz || seen.has(bz)) return; seen.add(bz);
+      const r = firstRel[t.ID];
+      items.push({ title: t.Title || "(untitled)", version: t.Version || "", artist: t.Artist || "", former: [], duration: secToTime(t.Length), disc: 1, pos: null, heading: "",
+        note: r ? "on " + r[TITLE_COL] : "", src: "/player/tracks/" + bz + ".mp3", trackId: t.ID, ytMusic: "", video: "", cover: r ? (r._thumbUrl || "") : "" });
+    });
+    for (let i = items.length - 1; i > 0; i--) { const j = randomInt(i + 1); [items[i], items[j]] = [items[j], items[i]]; }
+    return items;
+  });
+}
+function startShuffle(){
+  window._psdShuffleOn = true;
+  updateShuffleButtons();
+  return shuffleItems().then(items => {
+    if (!items.length) return;
+    const div = document.createElement("div");
+    buildTrackPlayer(div, { [TITLE_COL]: "Shuffle · all tracks" }, items, "");
+    const L = div.querySelector(".psd-player")._psdList;
+    L._shuffle = true; L.href = "/tracks"; L.key += "|" + Date.now();       // a new order is a new list
+    playTrack(0, L);
+  }).catch(err => console.warn("Shuffle unavailable:", err && err.message));
+}
+function toggleShuffle(startNow){
+  const p = window._psdPlayer, a = window._psdAudio;
+  if (window._psdShuffleOn) { window._psdShuffleOn = false; updateShuffleButtons(); return; }
+  if (startNow || !p || !a || a.paused) startShuffle();            // nothing playing: start shuffling at once
+  else { window._psdShuffleOn = true; updateShuffleButtons(); }      // something playing: shuffle takes over after it
+}
+function updateShuffleButtons(){
+  document.querySelectorAll("[data-psd-shuffle]").forEach(b => b.setAttribute("aria-pressed", window._psdShuffleOn ? "true" : "false"));
+}
 function updateRelPlayButtons(){
   const cur = window._psdPlayer, a = window._psdAudio;
   const on = cur && cur._relId && a && !a.paused && !a.ended ? cur._relId : "";
@@ -2136,7 +2227,14 @@ function sharedAudio(){
     updatePlayerUI();
   });
   ["loadedmetadata", "play", "pause"].forEach(ev => audio.addEventListener(ev, () => updatePlayerUI()));
-  audio.addEventListener("ended", () => { const p = P(); if (!p) return; if (p.cues) { updatePlayerUI(); return; } const n = p.next(p.index + 1); if (n >= 0) playTrack(n); else updatePlayerUI(); });
+  audio.addEventListener("ended", () => {
+    const p = P(); if (!p) return;
+    if (window._psdShuffleOn && !p._shuffle) { startShuffle(); return; }      // shuffle switched on while another list played
+    if (p._shuffle && !window._psdShuffleOn) { updatePlayerUI(); return; }   // switched off: stop after this track
+    if (p.cues) { updatePlayerUI(); return; }
+    const n = p.next(p.index + 1);
+    if (n >= 0) playTrack(n); else if (p._shuffle) startShuffle(); else updatePlayerUI();   // the queue ran out: a new order
+  });
   // A track page that no longer exists: mark it and go on with the next one.
   audio.addEventListener("error", () => {
     const p = P(); const t = p && p.tracks[p.index]; if (!t || !audio.getAttribute("src")) return;
@@ -2213,6 +2311,7 @@ function resetListUI(p){
 function stopPlayer(){
   const p = window._psdPlayer;
   if (p) { p.audio.pause(); p.audio.removeAttribute("src"); p.audio.load(); window._psdPlayer = null; resetListUI(p); }
+  window._psdShuffleOn = false; updateShuffleButtons();
   updateDock();
 }
 
@@ -2221,6 +2320,7 @@ function stopPlayer(){
 // and the shared audio (not in the page) keeps playing.
 const PREV_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 6h2v12H7zM20 6v12L10 12z" fill="currentColor"/></svg>';
 const NEXT_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6h2v12h-2zM4 6v12l10-6z" fill="currentColor"/></svg>';
+const SHUFFLE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h3.5c2.5 0 3.8 1.2 5.2 3.4l1.6 2.6c1.4 2.2 2.7 3.4 5.2 3.4H21M3 17h3.5c1.3 0 2.2-.3 3-.9M14.3 7.9c.8-.6 1.7-.9 3-.9H21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18 4l3 3-3 3M18 14l3 3-3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const CLOSE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" fill="none"/></svg>';
 function dockEl(){
   let d = document.getElementById("psd-dock");
@@ -2231,6 +2331,7 @@ function dockEl(){
       <button type="button" data-psd-dock="prev" aria-label="Previous">${PREV_ICON}</button>
       <button type="button" data-psd-dock="play" class="psd-dock-pp" aria-label="Play">${PLAY_ICON}</button>
       <button type="button" data-psd-dock="next" aria-label="Next">${NEXT_ICON}</button>
+      <button type="button" data-psd-shuffle class="psd-dock-sh" aria-label="Shuffle all tracks" title="Shuffle all tracks" aria-pressed="false">${SHUFFLE_ICON}</button>
       <button type="button" data-psd-dock="close" class="psd-dock-x" aria-label="Close the player">${CLOSE_ICON}</button>
       <div class="psd-dock-prog" data-psd-dockseek><div class="psd-dock-fill"></div></div>
     </div>`);
@@ -2262,6 +2363,7 @@ function updateDock(){
   ttl.textContent = (t.title || "") + (t.version ? " (" + t.version + ")" : "");
   ttl.setAttribute("href", p.href || "#"); ttl.title = "Back to " + (p.title || "the list");
   d.querySelector(".psd-dock-s").textContent = [t.artist && t.artist.toLowerCase() !== "psilodump" ? t.artist : "", p.title, fmtTime(a.currentTime) + (isFinite(a.duration) ? " / " + fmtTime(a.duration) : "")].filter(Boolean).join(" · ");
+  updateShuffleButtons();
   const pp = d.querySelector(".psd-dock-pp"); pp.innerHTML = playing ? PAUSE_ICON : PLAY_ICON; pp.setAttribute("aria-label", playing ? "Pause" : "Play");
   d.querySelector(".psd-dock-fill").style.width = (isFinite(a.duration) && a.duration > 0 ? a.currentTime / a.duration * 100 : 0) + "%";
 }
@@ -3381,7 +3483,8 @@ function buildRemixesPage(mount, rows, data){
     }); };
   const views = { mine: { label: "psilodump remixes", items: listFor(isPsilodumpRemix) }, others: { label: "Remixes of psilodump", items: listFor(isRemixOfPsilodump) } };
   const st = mount._psdRemix = { by: /(^|[#&])by=others(&|$)/.test(location.hash) ? "others" : "mine" };
-  mount.innerHTML = `<div class="psd-rel psd-vpage"><div class="psd-vpage-bar">${Object.entries(views).map(([k, v]) => `<button type="button" data-psd-rby="${k}">${esc(v.label)} <small>${v.items.length}</small></button>`).join("")}</div>
+  mount.classList.add("psd-foldable");
+  mount.innerHTML = `<div class="psd-rel psd-vpage"><div class="psd-vpage-bar">${Object.entries(views).map(([k, v]) => `<button type="button" data-psd-rby="${k}">${esc(v.label)} <small>${v.items.length}</small></button>`).join("")}<button type="button" data-psd-foldall>Fold all years</button></div>
     <p class="psd-rel-sub psd-rcount"></p><section class="psd-rel-player" id="psd-player"></section><section class="psd-rel-videos" id="psd-videos"></section></div>`;
   const render = () => {
     const v = views[st.by], items = v.items;
@@ -3390,6 +3493,7 @@ function buildRemixesPage(mount, rows, data){
     const box = document.getElementById("psd-player");
     if (items.some(x => x.src)) buildTrackPlayer(box, { [TITLE_COL]: v.label }, items, "");
     else box.innerHTML = trackListHtml(items, false);
+    applyFolds(mount);
     renderVideos({ ID: "" }, data, items);
     const h = st.by === "others" ? "by=others" : "";
     if (h !== location.hash.replace(/^#/, "")) history.replaceState(history.state, "", location.pathname + location.search + (h ? "#" + h : ""));
@@ -3432,6 +3536,7 @@ function buildTracksPage(mount, rows, data){
   const st = mount._psdTracks = { types: (h.get("type") || "").split(",").filter(Boolean), q: h.get("q") || "", decade: h.get("decade") || "",
     unreleased: h.get("unreleased") === "1", playable: h.get("playable") === "1", sort: ["old", "title"].includes(h.get("sort")) ? h.get("sort") : "new" };
   const typesPresent = TRACK_TYPE_ORDER.filter(k => all.some(x => x.types.includes(k))).concat([...new Set(all.flatMap(x => x.types))].filter(k => !TRACK_TYPE_ORDER.includes(k)).sort());
+  mount.classList.add("psd-foldable");
   mount.innerHTML = `<div class="psd-rel psd-vpage psd-trackspage">
     <div class="psd-vpage-bar psd-ttypes"><button type="button" data-psd-ttype="">All <small></small></button>${typesPresent.map(k => `<button type="button" data-psd-ttype="${esc(k)}">${esc(k)} <small></small></button>`).join("")}</div>
     <div class="psd-vpage-bar">
@@ -3440,6 +3545,8 @@ function buildTracksPage(mount, rows, data){
       <select data-psd-tsel="sort" aria-label="Sort"><option value="new">Newest first</option><option value="old">Oldest first</option><option value="title">Title A–Z</option></select>
       <button type="button" data-psd-ttog="unreleased">Unreleased too</button>
       <button type="button" data-psd-ttog="playable">Playable only</button>
+      <button type="button" data-psd-shuffle aria-pressed="false" title="Play every track on the site in a random order">${SHUFFLE_ICON} Shuffle all</button>
+      <button type="button" data-psd-foldall>Fold all years</button>
     </div>
     <p class="psd-rel-sub psd-rcount"></p><section class="psd-rel-player" id="psd-player"></section></div>`;
   mount.querySelector('[data-psd-tsel="decade"]').value = st.decade;
@@ -3482,6 +3589,7 @@ function buildTracksPage(mount, rows, data){
     if (!items.length) box.innerHTML = `<p>No tracks match.</p>`;
     else if (items.some(x => x.src)) buildTrackPlayer(box, { [TITLE_COL]: "Tracks" }, items, "");
     else box.innerHTML = trackListHtml(items, false);
+    applyFolds(mount);
     const p = new URLSearchParams();
     if (st.types.length) p.set("type", st.types.join(","));
     if (st.q) p.set("q", st.q);
@@ -3496,6 +3604,35 @@ function buildTracksPage(mount, rows, data){
   mount.querySelector("input[type=search]").addEventListener("input", e => { st.q = e.target.value.trim(); clearTimeout(typing); typing = setTimeout(render, 200); });
   mount.querySelectorAll("[data-psd-tsel]").forEach(sel => sel.addEventListener("change", e => { st[sel.getAttribute("data-psd-tsel")] = e.target.value; render(); }));
   render();
+}
+
+// --- Folding on the tracks / remixes pages: a heading row (year, letter) folds the rows under it. The folded headings
+// are kept per page while it is open (mount._psdFolded) and re-applied after every re-render; each heading shows its count.
+function applyFolds(mount){
+  const folded = mount._psdFolded = mount._psdFolded || new Set();
+  mount.querySelectorAll("ol.psd-tracks").forEach(ol => {
+    let head = null, n = 0;
+    const close = () => { if (head) { head.setAttribute("data-n", n); head.setAttribute("role", "button"); head.setAttribute("tabindex", "0"); head.setAttribute("aria-expanded", folded.has(head.textContent) ? "false" : "true"); } };
+    [...ol.children].forEach(li => {
+      if (li.classList.contains("psd-h")) { close(); head = li; n = 0; return; }
+      n++; li.hidden = !!head && folded.has(head.textContent);
+    });
+    close();
+  });
+  const fa = mount.querySelector("[data-psd-foldall]");
+  if (fa) { const heads = [...mount.querySelectorAll("ol.psd-tracks li.psd-h")]; fa.textContent = heads.length && heads.every(h => folded.has(h.textContent)) ? "Unfold all" : "Fold all years"; fa.hidden = !heads.length; }
+}
+function toggleFold(head){
+  const mount = head.closest(".psd-foldable"); if (!mount) return;
+  const folded = mount._psdFolded = mount._psdFolded || new Set(), k = head.textContent;
+  if (folded.has(k)) folded.delete(k); else folded.add(k);
+  applyFolds(mount);
+}
+function foldAll(mount){
+  const folded = mount._psdFolded = mount._psdFolded || new Set();
+  const heads = [...mount.querySelectorAll("ol.psd-tracks li.psd-h")].map(h => h.textContent);
+  if (heads.every(k => folded.has(k))) folded.clear(); else heads.forEach(k => folded.add(k));
+  applyFolds(mount);
 }
 
 // --- VIDEOS page: <div id="psd-videos-page" data-kind="tracker"> (data-kind optional: preset filter) ---
