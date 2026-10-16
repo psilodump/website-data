@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.40.0";
+const JS_VERSION = "1.41.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -447,6 +447,10 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-tlinks svg { width: 16px !important; height: 16px !important; }
 .psd-embed { width: 100% !important; border: 0 !important; border-radius: 12px !important; display: block !important; }
 .psd-player { background: var(--rel-soft, #222) !important; color: var(--rel-soft-text, #fff) !important; border-radius: 10px !important; padding: 12px !important; }
+/* TRACKS page (v1.41.0) */
+.psd-trackspage .psd-vpage-bar select { font: inherit !important; font-size: 13px !important; padding: 5px 10px !important; border-radius: 999px !important; border: 1px solid rgba(127,127,127,.45) !important; background: transparent !important; color: inherit !important; }
+.psd-trackspage .psd-vpage-bar select option { color: #111 !important; background: #fff !important; }
+.psd-trackspage .psd-vpage-bar button.none:not([aria-pressed="true"]) { opacity: .45 !important; }
 /* Mini player (v1.40.0) */
 .psd-dock { position: fixed !important; left: 50% !important; transform: translateX(-50%) !important; bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important; z-index: 2147483000 !important; width: min(680px, calc(100% - 20px)) !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; gap: 6px !important; padding: 8px 10px 12px !important; background: #1d1d22 !important; color: #fff !important; border-radius: 14px !important; box-shadow: 0 8px 28px rgba(0,0,0,.5) !important; font-family: inherit !important; overflow: hidden !important; }
 .psd-dock[hidden] { display: none !important; }
@@ -1341,6 +1345,11 @@ if (!window._psilodumpModalDelegated) {
     if (th) { const m = document.getElementById("psd-catalogue-table"); if (m && m._psdTab) { const k = th.getAttribute("data-psd-sort"); m._psdTab.dir = m._psdTab.sort === k ? -m._psdTab.dir : 1; m._psdTab.sort = k; m._psdTabRender(); } return; }
     const rb = t.closest('[data-psd-rby]');
     if (rb) { const m = document.getElementById("psd-remixes-page"); if (m && m._psdRemix) { m._psdRemix.by = rb.getAttribute("data-psd-rby"); m._psdRemixRender(); } return; }
+    const tt = t.closest('[data-psd-ttype], [data-psd-ttog]');
+    if (tt) { const m = document.getElementById("psd-tracks-page"); const st = m && m._psdTracks; if (st) {
+      if (tt.hasAttribute("data-psd-ttog")) { const k = tt.getAttribute("data-psd-ttog"); st[k] = !st[k]; }
+      else { const k = tt.getAttribute("data-psd-ttype"); st.types = !k ? [] : (st.types.includes(k) ? st.types.filter(x => x !== k) : [...st.types, k]); }
+      m._psdTracksRender(); } return; }
     const rt = t.closest('[data-psd-rtype]');
     if (rt) { toggleType(rt.getAttribute("data-psd-rtype")); return; }
     const vk = t.closest('[data-psd-vkind]');
@@ -3306,7 +3315,6 @@ function buildRemixesPage(mount, rows, data){
     <p class="psd-rel-sub psd-rcount"></p><section class="psd-rel-player" id="psd-player"></section><section class="psd-rel-videos" id="psd-videos"></section></div>`;
   const render = () => {
     const v = views[st.by], items = v.items;
-    stopPlayer();
     mount.querySelectorAll("[data-psd-rby]").forEach(b => b.setAttribute("aria-pressed", b.getAttribute("data-psd-rby") === st.by ? "true" : "false"));
     mount.querySelector(".psd-rcount").textContent = `${items.length} remixes · ${items.filter(x => x.src).length} playable here`;
     const box = document.getElementById("psd-player");
@@ -3317,6 +3325,106 @@ function buildRemixesPage(mount, rows, data){
     if (h !== location.hash.replace(/^#/, "")) history.replaceState(history.state, "", location.pathname + location.search + (h ? "#" + h : ""));
   };
   mount._psdRemixRender = render;
+  render();
+}
+
+// --- TRACKS page: <div id="psd-tracks-page"> — every public track, in the REMIXES page's look, playable where we
+// have the audio. Filters: type buttons (several at once), search (title, version, artist, former titles, ISRC,
+// releases), decade, "unreleased too", "playable only", sort (newest / oldest / A–Z). All in the address.
+const TRACK_TYPE_ORDER = ["Original", "Remix", "Rework", "Edit", "Live", "Cover", "Collaboration"];
+const trackTypes = t => String(t.Type || "").split(/\s*[,|]\s*/).filter(Boolean);
+function initTracksPage(){
+  const mount = document.getElementById("psd-tracks-page");
+  if (!mount || mount._psdShown) return;
+  if (document.documentElement.hasAttribute("aria-busy")) return;
+  mount._psdShown = true;
+  ensureStyles();
+  mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading tracks…</div>`;
+  Promise.all([loadCatalogue(), loadTrackData(), loadPosts().catch(() => ({ posts: [] }))])
+    .then(([rows, data, { posts }]) => { data._postByTrack = {}; posts.forEach(p => String(p["Track IDs"] || "").split(",").filter(Boolean).forEach(id => { if (!data._postByTrack[id]) data._postByTrack[id] = postHref(p); })); return buildTracksPage(mount, rows, data); })
+    .catch(err => { console.error("Failed to load tracks:", err); mount.innerHTML = `<div class="psd-rel">Unable to load the tracks right now. Please refresh the page.</div>`; });
+}
+function buildTracksPage(mount, rows, data){
+  const relById = {}; rows.forEach(r => { relById[r["ID"]] = r; });
+  const onRelease = {};
+  Object.entries(data.lists).forEach(([rid, list]) => list.forEach(({ t }) => { const r = relById[rid]; if (r && !(onRelease[t.ID] || []).includes(r)) (onRelease[t.ID] = onRelease[t.ID] || []).push(r); }));
+  const relDate = r => [r._released, r._catalogue].filter(Boolean).sort()[0] || "";
+  Object.values(onRelease).forEach(l => l.sort((a, b) => relDate(a).localeCompare(relDate(b))));
+  // the date a track sorts by: released, else (unreleased) finished
+  const tdate = t => t.Released || t.Finished || "";
+  const all = Object.values(data.byId).map(t => {
+    const rels = onRelease[t.ID] || [];
+    const search = [t.Title, t.Version, t.Artist, t["Former Titles"], t.ISRC, t.Description, ...rels.map(r => r[TITLE_COL] + " " + (r[CAT_COL] || ""))].join(" ").toLowerCase();
+    return { t, rels, types: trackTypes(t), date: tdate(t), released: !!t.Released, playable: /track\/\d+/.test(String(t.Source || "")), search };
+  });
+  const decades = [...new Set(all.map(x => (x.date.match(/^(\d{3})\d/) || [])[1]).filter(Boolean))].sort().reverse().map(d => d + "0s");
+  const h = new URLSearchParams(location.hash.replace(/^#/, ""));
+  const st = mount._psdTracks = { types: (h.get("type") || "").split(",").filter(Boolean), q: h.get("q") || "", decade: h.get("decade") || "",
+    unreleased: h.get("unreleased") === "1", playable: h.get("playable") === "1", sort: ["old", "title"].includes(h.get("sort")) ? h.get("sort") : "new" };
+  const typesPresent = TRACK_TYPE_ORDER.filter(k => all.some(x => x.types.includes(k))).concat([...new Set(all.flatMap(x => x.types))].filter(k => !TRACK_TYPE_ORDER.includes(k)).sort());
+  mount.innerHTML = `<div class="psd-rel psd-vpage psd-trackspage">
+    <div class="psd-vpage-bar psd-ttypes"><button type="button" data-psd-ttype="">All <small></small></button>${typesPresent.map(k => `<button type="button" data-psd-ttype="${esc(k)}">${esc(k)} <small></small></button>`).join("")}</div>
+    <div class="psd-vpage-bar">
+      <input type="search" placeholder="Search tracks, versions, earlier titles, releases…" value="${esc(st.q)}" aria-label="Search tracks">
+      <select data-psd-tsel="decade" aria-label="Decade"><option value="">All years</option>${decades.map(d => `<option value="${d}">${d}</option>`).join("")}</select>
+      <select data-psd-tsel="sort" aria-label="Sort"><option value="new">Newest first</option><option value="old">Oldest first</option><option value="title">Title A–Z</option></select>
+      <button type="button" data-psd-ttog="unreleased">Unreleased too</button>
+      <button type="button" data-psd-ttog="playable">Playable only</button>
+    </div>
+    <p class="psd-rel-sub psd-rcount"></p><section class="psd-rel-player" id="psd-player"></section></div>`;
+  mount.querySelector('[data-psd-tsel="decade"]').value = st.decade;
+  mount.querySelector('[data-psd-tsel="sort"]').value = st.sort;
+  const pass = (x, ignoreType) => {
+    if (!st.unreleased && !x.released) return false;
+    if (st.playable && !x.playable) return false;
+    if (st.decade && !(x.date.slice(0, 3) + "0s" === st.decade)) return false;
+    if (st.q && !st.q.toLowerCase().split(/\s+/).every(w => x.search.includes(w))) return false;
+    if (!ignoreType && st.types.length && !x.types.some(k => st.types.includes(k))) return false;
+    return true;
+  };
+  const render = () => {
+    const list = all.filter(x => pass(x));
+    if (st.sort === "title") list.sort((a, b) => a.t.Title.localeCompare(b.t.Title, undefined, { sensitivity: "base", numeric: true }) || String(a.t.Version).localeCompare(String(b.t.Version)));
+    else list.sort((a, b) => (st.sort === "old" ? 1 : -1) * (a.date || (st.sort === "old" ? "9" : "")).localeCompare(b.date || (st.sort === "old" ? "9" : "")) || a.t.Title.localeCompare(b.t.Title));
+    // counts on the type buttons: what each would show with the other filters
+    const rest = all.filter(x => pass(x, true));
+    mount.querySelectorAll("[data-psd-ttype]").forEach(b => {
+      const k = b.getAttribute("data-psd-ttype"), n = k ? rest.filter(x => x.types.includes(k)).length : rest.length;
+      b.querySelector("small").textContent = n;
+      b.setAttribute("aria-pressed", (k ? st.types.includes(k) : !st.types.length) ? "true" : "false");
+      b.classList.toggle("none", !!k && !n);
+    });
+    mount.querySelectorAll("[data-psd-ttog]").forEach(b => b.setAttribute("aria-pressed", st[b.getAttribute("data-psd-ttog")] ? "true" : "false"));
+    let last = null;
+    const items = list.map(({ t, rels, released }) => {
+      const head = st.sort === "title" ? (t.Title.charAt(0).toUpperCase().match(/[A-ZÅÄÖ]/) ? t.Title.charAt(0).toUpperCase() : "#") : ((released ? t.Released : t.Finished) || "").slice(0, 4) || "Undated";
+      const heading = head !== last ? head : ""; last = head;
+      const bz = (String(t.Source || "").match(/track\/(\d+)/) || [])[1];
+      const ytm = (String(t.YouTube || "").match(/music\.youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/) || [])[1] || "";
+      return { title: t.Title || "(untitled)", version: t.Version || "", artist: t.Artist || "",
+        former: String(t["Former Titles"] || "").split(" | ").filter(Boolean), duration: secToTime(t.Length), disc: 1, pos: null, heading,
+        note: [t.Description, released ? "" : "unreleased" + (t.Finished ? ", finished " + t.Finished : ""), rels.length ? "on " + rels.map(r => r[TITLE_COL]).join(", ") : ""].filter(Boolean).join(" · "),
+        src: bz ? "/player/tracks/" + bz + ".mp3" : "", trackId: t.ID, ytMusic: ytm, video: ((data.videosByTrack[t.ID] || [])[0] || {})["Video ID"] || "",
+        post: (data._postByTrack || {})[t.ID] || "", cover: (rels.find(r => r._thumbUrl) || {})._thumbUrl || "" };
+    });
+    mount.querySelector(".psd-rcount").textContent = `${items.length} track${items.length === 1 ? "" : "s"} · ${items.filter(x => x.src).length} playable here`;
+    const box = mount.querySelector("#psd-player");
+    if (!items.length) box.innerHTML = `<p>No tracks match.</p>`;
+    else if (items.some(x => x.src)) buildTrackPlayer(box, { [TITLE_COL]: "Tracks" }, items, "");
+    else box.innerHTML = trackListHtml(items, false);
+    const p = new URLSearchParams();
+    if (st.types.length) p.set("type", st.types.join(","));
+    if (st.q) p.set("q", st.q);
+    if (st.decade) p.set("decade", st.decade);
+    if (st.unreleased) p.set("unreleased", "1");
+    if (st.playable) p.set("playable", "1");
+    if (st.sort !== "new") p.set("sort", st.sort);
+    const hs = p.toString(); if (hs !== location.hash.replace(/^#/, "")) history.replaceState(history.state, "", location.pathname + location.search + (hs ? "#" + hs : ""));
+  };
+  mount._psdTracksRender = render;
+  let typing = null;
+  mount.querySelector("input[type=search]").addEventListener("input", e => { st.q = e.target.value.trim(); clearTimeout(typing); typing = setTimeout(render, 200); });
+  mount.querySelectorAll("[data-psd-tsel]").forEach(sel => sel.addEventListener("change", e => { st[sel.getAttribute("data-psd-tsel")] = e.target.value; render(); }));
   render();
 }
 
@@ -3418,6 +3526,7 @@ function inFixed(r){
 }
 
 function initApp(){
+  initTracksPage();
   initLabel();
   initAppearances();
   initPerson();
@@ -3479,6 +3588,8 @@ new MutationObserver(() => {
   if (rp && !rp._psdShown) { initRemixesPage(); return; }
   const ap = document.getElementById("psd-appearances");
   if (ap && !ap._psdShown) { initAppearances(); return; }
+  const tp = document.getElementById("psd-tracks-page");
+  if (tp && !tp._psdShown) { initTracksPage(); return; }
   const lb = document.getElementById("psd-label");
   if (lb && lb._psdShown !== location.search) { initLabel(); return; }
   const pe = document.getElementById("psd-person");
