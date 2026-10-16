@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.36.0";
+const JS_VERSION = "1.36.1";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -3071,8 +3071,6 @@ function initVideosPage(){
     .catch(err => { console.error("Failed to load videos:", err); mount.innerHTML = `<div class="psd-rel">Unable to load the videos right now. Please refresh the page.</div>`; });
 }
 
-// kinds that only present a release's audio (made years later as uploads): sorted by the music's date
-const VIDEO_MUSIC_DATED = new Set(["full_album", "tracker", "audio", "visualiser", "vinyl"]);
 function buildVideosPage(mount, rows, data){
   const relById = {}; rows.forEach(r => { relById[r["ID"]] = r; });
   // the music's date: the earlier of Released and the catalogue date (476LEG reissues count from when they were made)
@@ -3086,10 +3084,10 @@ function buildVideosPage(mount, rows, data){
     const rel = relById[v["Release ID"]] || (t ? trackRel[t.ID] : null);
     const label = t ? t.Title + (t.Version ? " (" + t.Version + ")" : "") : (relById[v["Release ID"]] ? relById[v["Release ID"]][TITLE_COL] : (v["YouTube Title"] || "Video"));
     const artist = t && t.Artist && t.Artist.toLowerCase() !== "psilodump" ? t.Artist : "";
-    // videos that are their own event or film (a live set, a music video …) sort by the video's date (a track can be
-    // played live years before or after its release); videos that only present the release's audio by the music's date
+    // the video's own date (set in the admin) wins — a track can be played live years before or after its release;
+    // a video without one sorts by its music's date
     const kind = VIDEO_KINDS[v.Kind] ? v.Kind : "other";
-    const ownDate = !VIDEO_MUSIC_DATED.has(kind) && /^\d{4}/.test(v.Published || "");
+    const ownDate = /^\d{4}/.test(v.Published || "");
     return { id: v["Video ID"], kind, label, artist, by: v["Made By"] || "", others: v["From Others"] === "1", note: v.Note || "", rel,
       date: ownDate ? v.Published : (relDate(rel) || v.Published || ""), videoDate: ownDate ? v.Published : "", relYear: relDate(rel).slice(0, 4),
       search: [label, artist, v.Note, v["Made By"], rel ? rel[TITLE_COL] : "", v["YouTube Title"]].join(" ").toLowerCase() };
