@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.37.1";
+const JS_VERSION = "1.38.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -61,6 +61,18 @@ const CATALOGUE_CSS = `
 .rel-select { flex: 0 1 auto !important; min-width: 110px !important; padding: 7px 30px 7px 14px !important; border: 1px solid rgba(127,127,127,.45) !important; border-radius: 999px !important; background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23aaa' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 12px center !important; color: inherit !important; font: inherit !important; font-size: 13px !important; cursor: pointer !important; outline: none !important; -webkit-appearance: none !important; appearance: none !important; }
 .rel-select option, .rel-select optgroup { color: #111 !important; background: #fff !important; }
 
+/* Type toggles (v1.38.0): replace the type menu; several can be on, none = all */
+#rel-sel-type { display: none !important; }
+.rel-types { display: flex !important; flex-wrap: wrap !important; gap: 6px !important; margin-top: 8px !important; }
+.rel-types:empty { display: none !important; }
+.rel-types button { border: 1px solid rgba(127,127,127,.45) !important; background: transparent !important; color: inherit !important; padding: 5px 12px !important; border-radius: 999px !important; cursor: pointer !important; font: inherit !important; font-size: 13px !important; }
+.rel-types button small { opacity: .7 !important; margin-left: 2px !important; }
+.rel-types button[aria-pressed="true"] { background: rgba(255,255,255,.14) !important; border-color: transparent !important; font-weight: 600 !important; }
+/* Card meta: cat# · label, then the date on its own line (row view: one line) */
+.rel-meta .rel-m1, .rel-meta .rel-m2 { display: block !important; }
+.rel-meta .rel-m2 { opacity: .8 !important; }
+.rel-wrap.row-view .rel-meta .rel-m1, .rel-wrap.row-view .rel-meta .rel-m2 { display: inline !important; }
+.rel-wrap.row-view .rel-meta .rel-m1 + .rel-m2::before { content: " · " !important; }
 /* Active Filter Pills */
 .rel-pills { display: flex !important; flex-wrap: wrap !important; gap: 6px !important; align-items: center !important; margin-top: 8px !important; }
 .rel-pills:empty { display: none !important; }
@@ -277,6 +289,9 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-phys-card { margin: 0 !important; display: flex !important; flex-direction: column !important; gap: 8px !important; }
 .psd-phys-card .cv { position: relative !important; aspect-ratio: 1 !important; border-radius: 8px !important; overflow: hidden !important; background: rgba(127,127,127,.15) !important; display: flex !important; align-items: center !important; justify-content: center !important; }
 .psd-phys-card .cv img { width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important; }
+/* artwork that isn't square (digipaks, CD-R sleeves) is shown whole, with its own rounded corners (v1.38.0) */
+.psd-phys-card .cv.whole { background: transparent !important; overflow: visible !important; }
+.psd-phys-card .cv.whole img { width: auto !important; height: auto !important; max-width: 100% !important; max-height: 100% !important; object-fit: contain !important; border-radius: 8px !important; }
 .psd-phys-card .cv .psd-phys-icon { width: 46px !important; height: 46px !important; opacity: .6 !important; }
 .psd-phys-card .cv .kind { position: absolute !important; left: 8px !important; bottom: 8px !important; display: inline-flex !important; gap: 5px !important; align-items: center !important; background: rgba(0,0,0,.7) !important; color: #fff !important; border-radius: 999px !important; padding: 3px 9px 3px 6px !important; font-size: 12px !important; }
 .psd-phys-card .cv .kind .psd-phys-icon { width: 15px !important; height: 15px !important; opacity: 1 !important; }
@@ -459,6 +474,7 @@ const CATALOGUE_HTML = `
       <select id="rel-sel-series" class="rel-select"><option value="">All Series</option></select>
       <select id="rel-sel-label" class="rel-select"><option value="">All Labels</option></select>
     </div>
+    <div id="rel-types" class="rel-types" role="group" aria-label="Types"></div>
 
     <!-- Active Filter Badges/Pills -->
     <div id="rel-pills" class="rel-pills"></div>
@@ -836,10 +852,13 @@ function card(r, idx){
     : r._titleHref ? `<a href="${esc(r._titleHref)}" target="_blank" rel="noopener nofollow">${esc(r[TITLE_COL] || "(untitled)")}</a>` : esc(r[TITLE_COL] || "(untitled)");
   const activeDate = window._psilodumpCat.dateMode === "catalogue" ? r._catalogue : r._released;
   // the type is on the cover badge; in the row view (no badge) it shows in the line
-  const metaBits = [ activeDate, r[CAT_COL], r["Label"] ].filter(Boolean).map(esc);
-  if (r[TYPE_COL]) metaBits[0] = (metaBits[0] || "") + `<span class="rel-mtype">${metaBits.length ? " · " : ""}${esc(r[TYPE_COL])}${r["Netlabel"] === "1" ? " · netlabel" : ""}</span>`;
-  if (r._hiddenParts) metaBits.push(`<a class="rel-parts" href="${esc(workHref(r))}">${r._hiddenParts} part${r._hiddenParts === 1 ? "" : "s"}</a>`);
-  const meta = metaBits.join(" · ");
+  // line 1: cat# · label; line 2: the date (+ "N parts"); the type shows only in the row view (on the cover badge otherwise)
+  const m1 = [r[CAT_COL], r["Label"]].filter(Boolean).map(esc).join(" · ");
+  const m2bits = [activeDate ? esc(activeDate) : ""];
+  if (r[TYPE_COL]) m2bits[0] += `<span class="rel-mtype">${activeDate ? " · " : ""}${esc(r[TYPE_COL])}${r["Netlabel"] === "1" ? " · netlabel" : ""}</span>`;
+  if (r._hiddenParts) m2bits.push(`<a class="rel-parts" href="${esc(workHref(r))}">${r._hiddenParts} part${r._hiddenParts === 1 ? "" : "s"}</a>`);
+  const m2 = m2bits.filter(Boolean).join(" · ");
+  const meta = (m1 ? `<span class="rel-m1">${m1}</span>` : "") + (m2 ? `<span class="rel-m2">${m2}</span>` : "");
   
   const btn = releaseSurface(r['Bg Color'] || r['bg_color'], 0.85);
   const btnStyle = btn
@@ -883,7 +902,7 @@ function renderFilterPills(){
   if (q) pills.push({ label: `Search: ${q}`, clear: () => { const el = document.getElementById("rel-q"); if(el) el.value = ""; } });
   if (cat.activeDecade) pills.push({ label: `Decade: ${cat.activeDecade}`, clear: () => { cat.activeDecade = ""; const el = document.getElementById("rel-sel-decade"); if(el) el.value = ""; const w = document.getElementById("rel-sel-when"); if(w) w.value = ""; } });
   if (cat.activeYear) pills.push({ label: `Year: ${cat.activeYear}`, clear: () => { cat.activeYear = ""; const el = document.getElementById("rel-sel-year"); if(el) el.value = ""; const w = document.getElementById("rel-sel-when"); if(w) w.value = ""; } });
-  if (cat.activeType) pills.push({ label: `Type: ${cat.activeType}`, clear: () => { cat.activeType = ""; const el = document.getElementById("rel-sel-type"); if(el) el.value = ""; } });
+  if (cat.activeType) pills.push({ label: `Type: ${cat.activeType.split(",").map(typePlural).join(", ")}`, clear: () => { cat.activeType = ""; const el = document.getElementById("rel-sel-type"); if(el) el.value = ""; } });
   if (cat.activeSeries) pills.push({ label: `Series: ${cat.activeSeries}`, clear: () => { cat.activeSeries = ""; const el = document.getElementById("rel-sel-series"); if(el) el.value = ""; } });
   if (cat.activeLabel) pills.push({ label: cat.activeLabel === "@netlabel" ? "Netlabel releases" : `Label: ${cat.activeLabel}`, clear: () => { cat.activeLabel = ""; const el = document.getElementById("rel-sel-label"); if(el) el.value = ""; } });
   if (cat.activeWork) { const w = workParent(cat.rows, cat.activeWork); pills.push({ label: `Part of: ${w ? w[TITLE_COL] : cat.activeWork}`, clear: () => { cat.activeWork = ""; } }); }
@@ -1008,6 +1027,7 @@ function populateSelectOptions(){
       + (years.includes("Unknown") ? opt("y:Unknown", "Unknown year") : "");
   }
   const elY = document.getElementById("rel-sel-year"); if(elY) elY.innerHTML = `<option value="">All Years</option>` + years.map(y => `<option value="${esc(y)}" ${y===cat.activeYear?'selected':''}>${esc(y)}</option>`).join("");
+  renderTypeButtons(pool);
   const elT = document.getElementById("rel-sel-type"); if(elT) elT.innerHTML = `<option value="">All Types</option>` + types.map(t => `<option value="${esc(t)}" ${t===cat.activeType?'selected':''}>${esc(t)}</option>`).join("");
   const netOpt = pool.some(r => r["Netlabel"] === "1") ? `<option value="@netlabel" ${cat.activeLabel === "@netlabel" ? "selected" : ""}>Netlabel releases</option>` : "";
   const elL = document.getElementById("rel-sel-label"); if(elL) elL.innerHTML = `<option value="">All Labels</option>` + netOpt + labels.map(s => `<option value="${esc(s)}" ${s.toLowerCase()===cat.activeLabel.toLowerCase()?'selected':''}>${esc(s)}</option>`).join("");
@@ -1022,8 +1042,47 @@ function workParent(rows, key){
 }
 function workHref(parent){ return `${SITE_BASE}${CATALOGUE_PATH}#work=${encodeURIComponent(slugify(parent[TITLE_COL]))}`; }
 
+// --- Type toggles: one button per type with its count (from the releases this page shows), "All" clears them.
+const TYPE_PLURALS = { Album: "Albums", MiniAlbum: "Mini-albums", EP: "EPs", Single: "Singles", Compilation: "Compilations" };
+function typePlural(t){ const k = Object.keys(TYPE_PLURALS).find(x => x.toLowerCase() === String(t).toLowerCase()); return k ? TYPE_PLURALS[k] : t; }
+function renderTypeButtons(pool){
+  const cat = window._psilodumpCat;
+  let box = document.getElementById("rel-types");
+  if (!box) {             // the old embed (markup pasted in Bandzoogle) has no row for them
+    const bar = document.querySelector(".rel-toolbar"); if (!bar) return;
+    bar.insertAdjacentHTML("afterend", '<div id="rel-types" class="rel-types" role="group" aria-label="Types"></div>');
+    box = document.getElementById("rel-types");
+  }
+  const counts = {}; pool.forEach(r => r._types.forEach(t => { counts[t] = (counts[t] || 0) + 1; }));
+  const types = Object.keys(counts).sort((a, b) => ((TYPE_ORDER.indexOf(a) + 1) || 99) - ((TYPE_ORDER.indexOf(b) + 1) || 99) || a.localeCompare(b));
+  // a type page (data-type) or a page with one type only has nothing to choose
+  if ((cat.fixedTypes && cat.fixedTypes.length) || types.length < 2) { box.innerHTML = ""; return; }
+  // "All" shows the plain grid, which leaves out releases set to "Hide in grid"; a type filter shows them too
+  box.innerHTML = `<button type="button" data-psd-rtype="">All <small>${pool.filter(r => r["Hidden"] !== "1").length}</small></button>`
+    + types.map(t => `<button type="button" data-psd-rtype="${esc(t)}">${esc(typePlural(t))} <small>${counts[t]}</small></button>`).join("");
+  updateTypeButtons();
+}
+function updateTypeButtons(){
+  const cat = window._psilodumpCat;
+  const on = cat.activeType ? cat.activeType.toLowerCase().split(",") : [];
+  document.querySelectorAll("#rel-types [data-psd-rtype]").forEach(b => {
+    const t = b.getAttribute("data-psd-rtype").toLowerCase();
+    b.setAttribute("aria-pressed", (t ? on.includes(t) : !on.length) ? "true" : "false");
+  });
+}
+function toggleType(t){
+  const cat = window._psilodumpCat;
+  let on = cat.activeType ? cat.activeType.split(",") : [];
+  if (!t) on = [];
+  else if (on.some(x => x.toLowerCase() === t.toLowerCase())) on = on.filter(x => x.toLowerCase() !== t.toLowerCase());
+  else on.push(t);
+  cat.activeType = on.join(",");
+  applyFilters();
+}
+
 function applyFilters(){
   const cat = window._psilodumpCat;
+  updateTypeButtons();
   const qEl = document.getElementById("rel-q");
   const q = qEl ? qEl.value.trim().toLowerCase() : "";
   const work = cat.activeWork ? workParent(cat.rows, cat.activeWork) : null;
@@ -1036,7 +1095,7 @@ function applyFilters(){
     if (plain && r["Hidden"] === "1") return false;
     if (cat.activeDecade && currentDecade(r) !== cat.activeDecade) return false;
     if (cat.activeYear && currentYear(r) !== cat.activeYear) return false;
-    if (cat.activeType && !r._types.some(t => t.toLowerCase() === cat.activeType.toLowerCase())) return false;
+    if (cat.activeType) { const want = cat.activeType.toLowerCase().split(","); if (!r._types.some(t => want.includes(t.toLowerCase()))) return false; }
     if (!inFixed(r)) return false;
     if (cat.activeSeries && !r._series.some(s => s.toLowerCase() === cat.activeSeries.toLowerCase())) return false;
     if (cat.activeLabel === "@netlabel") { if (r["Netlabel"] !== "1") return false; }
@@ -1172,6 +1231,8 @@ if (!window._psilodumpModalDelegated) {
     if (th) { const m = document.getElementById("psd-catalogue-table"); if (m && m._psdTab) { const k = th.getAttribute("data-psd-sort"); m._psdTab.dir = m._psdTab.sort === k ? -m._psdTab.dir : 1; m._psdTab.sort = k; m._psdTabRender(); } return; }
     const rb = t.closest('[data-psd-rby]');
     if (rb) { const m = document.getElementById("psd-remixes-page"); if (m && m._psdRemix) { m._psdRemix.by = rb.getAttribute("data-psd-rby"); m._psdRemixRender(); } return; }
+    const rt = t.closest('[data-psd-rtype]');
+    if (rt) { toggleType(rt.getAttribute("data-psd-rtype")); return; }
     const vk = t.closest('[data-psd-vkind]');
     if (vk) { const m = document.getElementById("psd-videos-page"); if (m && m._psdState) { m._psdState.kind = vk.getAttribute("data-psd-vkind"); m._psdRender(); } return; }
     const yt = t.closest('[data-psd-yt]');
@@ -2181,7 +2242,7 @@ function initPhysical(){
       const e = x.e, past = editionPast(e), artist = e.Artist && e.Artist.toLowerCase() !== "psilodump" ? e.Artist : "";
       const buy = e.Status === "available" && e.URL ? `<a class="buy" href="${esc(e.URL)}" target="_blank" rel="noopener">Buy</a>` : `<span class="st">${esc(EDITION_STATUS_LABELS[e.Status] || (e.Status === "available" ? "Available" : ""))}</span>`;
       const contains = x.rels.length ? "Contains " + x.rels.map(r => `<a href="${esc(releaseHref(r))}">${esc(r[TITLE_COL])}</a>`).join(", ") : "";
-      return `<figure class="psd-phys-card${past ? " past" : ""}"><div class="cv">${x.cover ? `<img src="${esc(x.cover)}" alt="" loading="lazy">` : (PHYS_ICONS[x.kind] || "")}<span class="kind">${PHYS_ICONS[x.kind] || ""}${esc(e.Format || x.kind)}</span></div>
+      return `<figure class="psd-phys-card${past ? " past" : ""}"><div class="cv${e.Cover ? " whole" : ""}">${x.cover ? `<img src="${esc(x.cover)}" alt="" loading="lazy">` : (PHYS_ICONS[x.kind] || "")}<span class="kind">${PHYS_ICONS[x.kind] || ""}${esc(e.Format || x.kind)}</span></div>
         <h3>${esc(e.Title || "(untitled)")}${artist ? ` <small>by ${esc(artist)}</small>` : ""}</h3>
         <div class="meta">${esc([e["Cat#"], e.Label, e.Year].filter(Boolean).join(" · "))}${e.Note ? "<br>" + esc(e.Note) : ""}${contains ? "<br>" + contains : ""}${/^https:\/\/www\.discogs\.com\//.test(e.Discogs || "") ? ` · <a href="${esc(e.Discogs)}" target="_blank" rel="noopener">Discogs</a>` : ""}</div>
         <div class="act">${buy}</div></figure>`;
@@ -2970,7 +3031,7 @@ function initLabel(){
       <h3><a href="${esc(releaseHref(r))}">${esc(r[TITLE_COL] || "(untitled)")}</a>${releaseArtist(r).toLowerCase() !== "psilodump" ? ` <small>by ${esc(releaseArtist(r))}</small>` : ""}</h3>
       <div class="meta">${esc([String(r._released || r._catalogue || "").slice(0, 4), r[CAT_COL], r["Formats"]].filter(Boolean).join(" · "))}</div></figure>`;
     const edCard = e => { const r0 = e.Cover ? { _thumbUrl: e.Cover } : splitList(e.Releases).map(id => relById[id]).find(r => r && r._thumbUrl); const k = editionKind(e.Format);
-      return `<figure class="psd-phys-card${editionPast(e) ? " past" : ""}"><div class="cv">${r0 ? `<img src="${esc(r0._thumbUrl)}" alt="" loading="lazy">` : (PHYS_ICONS[k] || "")}<span class="kind">${PHYS_ICONS[k] || ""}${esc(e.Format || k || "")}</span></div>
+      return `<figure class="psd-phys-card${editionPast(e) ? " past" : ""}"><div class="cv${e.Cover ? " whole" : ""}">${r0 ? `<img src="${esc(r0._thumbUrl)}" alt="" loading="lazy">` : (PHYS_ICONS[k] || "")}<span class="kind">${PHYS_ICONS[k] || ""}${esc(e.Format || k || "")}</span></div>
         <h3>${esc(e.Title || "(untitled)")}</h3><div class="meta">${esc([e["Cat#"], e.Year, EDITION_STATUS_LABELS[e.Status] || ""].filter(Boolean).join(" · "))}</div>
         ${e.Status === "available" && e.URL ? `<div class="act"><a class="buy" href="${esc(e.URL)}" target="_blank" rel="noopener">Buy</a></div>` : ""}</figure>`; };
     const links = [l.URL, ...String(l.Links || "").split(" | ")].filter(u => /^https?:\/\//.test(u || ""))
