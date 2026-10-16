@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.39.1";
+const JS_VERSION = "1.39.2";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -67,6 +67,7 @@ const CATALOGUE_CSS = `
 .rel-types:empty { display: none !important; }
 .rel-types button { border: 1px solid rgba(127,127,127,.45) !important; background: transparent !important; color: inherit !important; padding: 5px 12px !important; border-radius: 999px !important; cursor: pointer !important; font: inherit !important; font-size: 13px !important; }
 .rel-types button small { opacity: .7 !important; margin-left: 2px !important; }
+.rel-types button.none:not([aria-pressed="true"]) { opacity: .45 !important; }
 .rel-types button[aria-pressed="true"] { background: rgba(255,255,255,.14) !important; border-color: transparent !important; font-weight: 600 !important; }
 /* Card meta: cat# · label, then the date on its own line (row view: one line) */
 .rel-meta .rel-m1, .rel-meta .rel-m2 { display: block !important; }
@@ -1120,6 +1121,7 @@ function renderTypeButtons(pool){
   box.innerHTML = `<button type="button" data-psd-rtype="">All <small>${pool.filter(r => r["Hidden"] !== "1").length}</small></button>`
     + types.map(t => `<button type="button" data-psd-rtype="${esc(t)}">${esc(typePlural(t))} <small>${counts[t]}</small></button>`).join("");
   updateTypeButtons();
+  if (cat._typeCounts) updateTypeCounts(...cat._typeCounts);
 }
 function updateTypeButtons(){
   const cat = window._psilodumpCat;
@@ -1150,11 +1152,10 @@ function applyFilters(){
   const hiddenParts = {};
   for (const r of cat.rows) if (r["Hidden"] === "1" && r["Part Of"]) hiddenParts[r["Part Of"]] = (hiddenParts[r["Part Of"]] || 0) + 1;
   for (const r of cat.rows) r._hiddenParts = plain && r["MusicBrainz"] ? (hiddenParts[r["MusicBrainz"]] || 0) : 0;
-  cat.viewRows = cat.rows.filter(r => {
-    if (plain && r["Hidden"] === "1") return false;
+  // every filter except the type: also used for the counts on the type buttons (what each would show)
+  const others = r => {
     if (cat.activeDecade && currentDecade(r) !== cat.activeDecade) return false;
     if (cat.activeYear && currentYear(r) !== cat.activeYear) return false;
-    if (cat.activeType) { const want = cat.activeType.toLowerCase().split(","); if (!r._types.some(t => want.includes(t.toLowerCase()))) return false; }
     if (!inFixed(r)) return false;
     if (cat.activeSeries && !r._series.some(s => s.toLowerCase() === cat.activeSeries.toLowerCase())) return false;
     if (cat.activeLabel === "@netlabel") { if (r["Netlabel"] !== "1") return false; }
@@ -1162,9 +1163,24 @@ function applyFilters(){
     if (cat.activeWork && !(work && (r === work || (r["Part Of"] && r["Part Of"] === work["MusicBrainz"])))) return false;
     if (q && !r._searchStr.includes(q)) return false;
     return true;
-  });
+  };
+  const want = cat.activeType ? cat.activeType.toLowerCase().split(",") : [];
+  cat.viewRows = cat.rows.filter(r => !(plain && r["Hidden"] === "1") && (!want.length || r._types.some(t => want.includes(t.toLowerCase()))) && others(r));
+  // type button counts: a type button shows hidden parts too (any filter does); "All" only when something else filters
+  const rest = cat.rows.filter(others);
+  const plainNoType = !q && !cat.activeDecade && !cat.activeYear && !cat.activeSeries && !cat.activeLabel && !work;
+  updateTypeCounts(rest, rest.filter(r => !(plainNoType && r["Hidden"] === "1")).length);
   sortView();
   render();
+}
+function updateTypeCounts(rows, all){
+  window._psilodumpCat._typeCounts = [rows, all];      // kept for when the buttons are rebuilt
+  const counts = {}; rows.forEach(r => r._types.forEach(t => { counts[t.toLowerCase()] = (counts[t.toLowerCase()] || 0) + 1; }));
+  document.querySelectorAll("#rel-types [data-psd-rtype]").forEach(b => {
+    const t = b.getAttribute("data-psd-rtype").toLowerCase(), n = t ? (counts[t] || 0) : all;
+    const sm = b.querySelector("small"); if (sm) sm.textContent = n;
+    b.classList.toggle("none", !!t && !n);
+  });
 }
 
 // Show the cover's thumbnail at once (the browser already has it from the
