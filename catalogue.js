@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.38.0";
+const JS_VERSION = "1.39.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -73,6 +73,12 @@ const CATALOGUE_CSS = `
 .rel-meta .rel-m2 { opacity: .8 !important; }
 .rel-wrap.row-view .rel-meta .rel-m1, .rel-wrap.row-view .rel-meta .rel-m2 { display: inline !important; }
 .rel-wrap.row-view .rel-meta .rel-m1 + .rel-m2::before { content: " · " !important; }
+/* Group headings (v1.39.0) */
+.rel-group-h { grid-column: 1 / -1 !important; margin: 22px 0 0 !important; padding: 0 0 6px !important; border-bottom: 1px solid rgba(127,127,127,.3) !important; font-size: 18px !important; font-weight: 600 !important; line-height: 1.3 !important; color: inherit !important; display: flex !important; align-items: baseline !important; gap: 8px !important; flex-wrap: wrap !important; }
+.rel-group-h:first-child { margin-top: 0 !important; }
+.rel-group-h small { font-size: 13px !important; font-weight: 400 !important; opacity: .65 !important; }
+.rel-group-h a { color: inherit !important; font-size: 12px !important; font-weight: 400 !important; opacity: .7 !important; text-decoration: underline !important; margin-left: auto !important; }
+.rel-sort #rel-sel-group { padding-top: 5px !important; padding-bottom: 5px !important; min-width: 0 !important; }
 /* Active Filter Pills */
 .rel-pills { display: flex !important; flex-wrap: wrap !important; gap: 6px !important; align-items: center !important; margin-top: 8px !important; }
 .rel-pills:empty { display: none !important; }
@@ -488,6 +494,7 @@ const CATALOGUE_HTML = `
     <button type="button" id="rel-date-mode" aria-pressed="false" title="Toggle date basis">Timeline: Catalogue</button>
     <button type="button" id="rel-view-compact" aria-pressed="false" title="Toggle compact grid">Compact grid</button>
     <button type="button" id="rel-view-rows" aria-pressed="false" title="Toggle list view">Row view</button>
+    <select id="rel-sel-group" class="rel-select" aria-label="Group by"></select>
   </div>
 
   <div id="rel-grid" class="rel-grid" aria-live="polite">
@@ -880,11 +887,52 @@ function card(r, idx){
   </article>`;
 }
 
+// --- Group by: headings in the grid. A release with two labels (or series) is shown under each. Years and decades
+// follow the timeline (catalogue / released), newest first; labels and series A–Z with "No label" / "No series" last.
+const GROUP_MODES = { "": "No grouping", year: "Group by year", decade: "Group by decade", label: "Group by label", type: "Group by type", series: "Group by series" };
+function groupKeys(r, mode){
+  if (mode === "year") return [currentYear(r)];
+  if (mode === "decade") return [currentDecade(r)];
+  if (mode === "label") return r._labels.length ? r._labels.map(normLabel) : ["No label"];
+  if (mode === "series") return r._series.length ? r._series : ["No series"];
+  if (mode === "type") return r._types.length ? r._types : ["No type"];
+  return [""];
+}
+function groupOrder(mode, keys){
+  const last = k => /^(No |Unknown)/.test(k) ? 1 : 0;
+  if (mode === "year" || mode === "decade") return keys.sort((a, b) => last(a) - last(b) || parseInt(b, 10) - parseInt(a, 10));
+  if (mode === "type") return keys.sort((a, b) => ((TYPE_ORDER.indexOf(a) + 1) || 99) - ((TYPE_ORDER.indexOf(b) + 1) || 99));
+  return keys.sort((a, b) => last(a) - last(b) || a.localeCompare(b, undefined, { sensitivity: "base" }));
+}
+function renderGroupSelect(){
+  const cat = window._psilodumpCat;
+  let sel = document.getElementById("rel-sel-group");
+  if (!sel) {           // the old embed has no menu for it
+    const bar = document.querySelector(".rel-sort"); if (!bar) return;
+    bar.insertAdjacentHTML("beforeend", '<select id="rel-sel-group" class="rel-select" aria-label="Group by"></select>');
+    sel = document.getElementById("rel-sel-group");
+  }
+  // on a page fixed to one type, grouping by type means nothing
+  const modes = Object.keys(GROUP_MODES).filter(m => !(m === "type" && cat.fixedTypes && cat.fixedTypes.length));
+  sel.innerHTML = modes.map(m => `<option value="${m}"${m === (cat.groupMode || "") ? " selected" : ""}>${GROUP_MODES[m]}</option>`).join("");
+  if (!sel._bound) { sel._bound = true; sel.addEventListener("change", e => { cat.groupMode = e.target.value; render(); }); }
+}
 function render(){
   const grid = document.getElementById("rel-grid");
   if (!grid) return;
   const cat = window._psilodumpCat;
-  grid.innerHTML = cat.viewRows.map((r, idx) => card(r, idx)).join("");
+  const mode = GROUP_MODES[cat.groupMode] && cat.groupMode ? cat.groupMode : "";
+  if (!mode) grid.innerHTML = cat.viewRows.map((r, idx) => card(r, idx)).join("");
+  else {
+    const groups = {};
+    cat.viewRows.forEach((r, idx) => groupKeys(r, mode).forEach(k => (groups[k] = groups[k] || []).push([r, idx])));
+    grid.innerHTML = groupOrder(mode, Object.keys(groups)).map(k => {
+      const L = mode === "label" ? labelFor(k) : null;
+      const title = mode === "type" ? typePlural(k) : k;
+      return `<h3 class="rel-group-h">${esc(title)} <small>${groups[k].length}</small>${L ? `<a href="${esc(labelHref(L))}">about the label</a>` : ""}</h3>`
+        + groups[k].map(([r, idx]) => card(r, idx)).join("");
+    }).join("");
+  }
   const stats = document.getElementById("rel-stats");
   if (stats) stats.innerHTML = `Showing <strong>${cat.viewRows.length}</strong> release${cat.viewRows.length === 1 ? "" : "s"}`;
   renderFilterPills();
@@ -943,7 +991,7 @@ window.clearAllFilters = function(){
 // --- Shareable links: the filters live in the address, e.g. #type=EP&q=saturnus ---
 // replaceState (not pushState) so typing doesn't add a history entry per key,
 // and it passes history.state through because Turbo keeps its own data there.
-const HASH_KEYS = ["q", "decade", "year", "type", "series", "label", "work", "sort", "timeline"];
+const HASH_KEYS = ["q", "decade", "year", "type", "series", "label", "work", "sort", "timeline", "group"];
 
 function hashParams(){
   const p = new URLSearchParams(location.hash.replace(/^#/, ""));
@@ -963,6 +1011,7 @@ function stateToHash(){
   if (cat.activeLabel) p.set("label", cat.activeLabel);
   if (cat.activeWork) p.set("work", cat.activeWork);
   if (cat.sortMode === "title") p.set("sort", "title");
+  if (cat.groupMode) p.set("group", cat.groupMode);
   // Years differ between the two timelines, so a link with a year or decade says which one.
   if (cat.activeYear || cat.activeDecade) p.set("timeline", cat.dateMode);
   return p.toString().replace(/\+/g, "%20");
@@ -990,6 +1039,8 @@ function applyHash(){
   cat.activeLabel = p.get("label") || "";
   cat.activeWork = p.get("work") || "";
   cat.sortMode = p.get("sort") === "title" ? "title" : "date";
+  cat.groupMode = GROUP_MODES[p.get("group") || ""] ? (p.get("group") || "") : "";
+  const sg = document.getElementById("rel-sel-group"); if (sg) sg.value = cat.groupMode;
   const tl = p.get("timeline");
   if (tl === "released" || tl === "catalogue") cat.dateMode = tl;   // for this visit only, not saved
   const qEl = document.getElementById("rel-q"); if (qEl) qEl.value = p.get("q") || "";
@@ -1028,6 +1079,7 @@ function populateSelectOptions(){
   }
   const elY = document.getElementById("rel-sel-year"); if(elY) elY.innerHTML = `<option value="">All Years</option>` + years.map(y => `<option value="${esc(y)}" ${y===cat.activeYear?'selected':''}>${esc(y)}</option>`).join("");
   renderTypeButtons(pool);
+  renderGroupSelect();
   const elT = document.getElementById("rel-sel-type"); if(elT) elT.innerHTML = `<option value="">All Types</option>` + types.map(t => `<option value="${esc(t)}" ${t===cat.activeType?'selected':''}>${esc(t)}</option>`).join("");
   const netOpt = pool.some(r => r["Netlabel"] === "1") ? `<option value="@netlabel" ${cat.activeLabel === "@netlabel" ? "selected" : ""}>Netlabel releases</option>` : "";
   const elL = document.getElementById("rel-sel-label"); if(elL) elL.innerHTML = `<option value="">All Labels</option>` + netOpt + labels.map(s => `<option value="${esc(s)}" ${s.toLowerCase()===cat.activeLabel.toLowerCase()?'selected':''}>${esc(s)}</option>`).join("");
