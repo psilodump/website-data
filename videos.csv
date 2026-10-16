@@ -9,11 +9,9 @@ ID,Platform,"Video ID",Kind,"Track ID","Release ID",Length,Published,Note,"YouTu
 65,youtube,KgxrfOqyBLU,live,,,151,2008-10-05,,"Psilodump feat. Malin Vulcano live@Norberg Festival 2008",Tävenlös,1,24
 66,youtube,xZ8cXu4F1Ds,live,,,87,2010-11-13,,"Psilodump feat. Malin Vulcano @ Peace and love festival 2008",Tävenlös,1,27
 67,youtube,9UMInJai83Q,live,,,176,2006-12-07,,"The X-Dump Live @ Norberg Modul, Copenhagen, Denmark 2006",,,52
-7,youtube,kTpGNFdPIP0,scrapbook,,,368,2026-04-22,,"Little Cat in Big World (from The King of Kong DVD)",,,
 20,youtube,IZVPPEDgTyg,tracker,186,,337,2024-03-26,"Protracker [Amiga]","psilodump - Down with Da Bass (Official Audio Visualizer)",,,
 37,youtube,r-jBjo8G49Y,tracker,209,,379,2013-12-13,"Protracker [Amiga]","psilodump - Party On! (Official Audio Visualizer)",,,
 19,youtube,nmfnigulkXU,tracker,212,,491,2024-04-03,"Protracker [Amiga]","psilodump - Recovery (Official Audio Visualizer)",,,
-24,youtube,02CQzRWJ6T8,tracker,305,,488,2024-02-24,"OctaMED Soundstudio [Amiga]","psilodump - Apocryphal Somnambulist (Official Audio Visualizer)",,,
 22,youtube,OKtx11XGXII,tracker,309,,432,2024-03-04,"OctaMED Soundstudio [Amiga]","psilodump - The Snabelnaut with the Green Pants (Official Audio Visualizer)",,,
 21,youtube,hNjIjCUYQiU,tracker,315,,564,2024-03-07,"OctaMED Soundstudio [Amiga]","psilodump - unnamed (Official Audio Visualizer)",,,
 25,youtube,Go2q-7y_eF0,tracker,317,,529,2024-02-23,"OctaMED Soundstudio [Amiga]","psilodump - Don't You Just Love Drums (Official Audio Visualizer)",,,
@@ -28,18 +26,19 @@ ID,Platform,"Video ID",Kind,"Track ID","Release ID",Length,Published,Note,"YouTu
 62,youtube,9K0s2DISiMU,tribute,853,,,2026-03-27,,"Psilodump - The Somnambulist (Radio Courtoisie Dub Edition)",,1,
 46,youtube,Tngo-kDpRXM,live,896,,320,2007-04-11,,"psilodump - psilodrunkuter (Live 2007)",,,
 45,youtube,OkQHZAkV91U,music_video,917,,164,2007-10-04,,"psilodump - psilodumputer (Dorothy's Magic Bag Rock Me-Mix)",,,
-58,youtube,qTPwp4qFW68,music_video,966,,,2010-05-27,,"The Droidduck","Raquel Meyers",,
 47,youtube,SW0U1MVIkVM,live,968,,51,2007-02-12,,"psilodump - Phonebook [Live @ Microdisko 2007]",,,51
 48,youtube,S2ld1oQGMc4,live,996,,81,2007-02-12,,"psilodump - Drop (Live @ Microdisko 2007-02-10)",,,51
 61,youtube,KLykWVLjs7s,tribute,996,,,2023-04-25,,"Psilodump - Drop (Shnabubula Cover)",Shnabubula,1,
+7,youtube,kTpGNFdPIP0,scrapbook,1005,,368,2026-04-22,,"Little Cat in Big World (from The King of Kong DVD)",,,
 59,youtube,IZFgWTUwGeM,audio,1092,,,2011-03-17,,"Psilodump - ""All You Need Is Love""(8-BIT OPERATORS - Beatles Cover)",,,
 2,youtube,mhzn_3OqJbM,visualiser,1172,,340,2026-09-20,,"Simon From Space",,,
 49,youtube,6N3XqvrnNls,live,1182,,284,2006-08-06,,"psilodump - Tangens (Elithora Remix) | Live 2006",,,
 10,youtube,2EdQLMv8oyo,vinyl,1188,,344,2025-12-12,,"Untitled (The Miller Redux)",,,
 1,youtube,TwHayjspYPo,scrapbook,1273,,268,2026-09-25,,"µ-Ziq - Goodbye, Goodbye (psilodump remix) - Meemo & Mu: Reloaded Clip",,,
 8,youtube,BYfszVZjEwA,audio,1331,,494,2026-04-21,,"Casbah - Tricky Game (tricky trip mix by psilodump)",,,
-32,youtube,mjAjFhbrhqE,music_video,1333,,240,2016-09-21,,"psilodump - Two (Official Music Video Edit)",,,
+32,youtube,mjAjFhbrhqE,music_video,1333,,240,2006-04-09,,"psilodump - Two (Official Music Video Edit)",,,
 35,youtube,fNaOClz8sV4,music_video,1377,,151,2014-04-25,,Aerobics,,,
+24,youtube,02CQzRWJ6T8,tracker,305,12,488,2024-02-24,"OctaMED Soundstudio [Amiga]","psilodump - Apocryphal Somnambulist (Official Audio Visualizer)",,,
 43,youtube,Ao2egVR6i1Y,full_album,,17,2111,2026-05-05,,"psilodump - Behind the False Smile (Official Full Album Audio)",,,
 40,youtube,TGktdxRQkqA,music_video,1067,20,150,2008-12-30,,"psilodump - Bolldans",,,
 34,youtube,-Cbi8xEjpjU,music_video,1081,30,245,2016-09-21,,"Digijam Dub (Official Music Video)",,,
@@ -55,6 +54,7 @@ ID,Platform,"Video ID",Kind,"Track ID","Release ID",Length,Published,Note,"YouTu
 42,youtube,DinsvOF-faY,full_album,,106,4537,2026-05-01,,"psilodump - psilodumputer (Official Full Album Audio)",,,
 18,youtube,WgVw2uaMykE,full_album,,136,4914,2024-05-19,,"psilodump - Suspiciously Average (Official Full Album Audio)",,,
 44,youtube,K4q9G_EyVlY,full_album,,147,1201,2026-05-29,,"psilodump - The Droidwhatever EP (Official Full Album Audio)",,,
+58,youtube,qTPwp4qFW68,music_video,966,147,,2010-05-27,,"The Droidduck","Raquel Meyers",,
 38,youtube,zSffhhAH3-Y,music_video,1045,147,292,2010-05-15,,"psilodump - Droidredux (Official Music Video)",,,
 14,youtube,kl8mHsEZ6XA,full_album,,148,3209,2024-11-07,,"psilodump - The Snabelnaut with the Green Pants (Official Full Album Audio)",,,
 26,youtube,JggcdUclg4U,full_album,,151,4918,2023-11-01,,"psilodump - The Ground (Official Full Album Audio)",,,
