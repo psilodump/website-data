@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.41.0";
+const JS_VERSION = "1.41.1";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -1328,7 +1328,7 @@ if (!window._psilodumpModalDelegated) {
     const apb = t.closest('[data-psd-appplay]');
     if (apb) { const m = document.getElementById("psd-appearances"); const a = m && (m._psdApps || []).find(x => x.ID === apb.getAttribute("data-psd-appplay"));
       if (a) { const now = m.querySelector(".psd-app-now"); now.hidden = false; now.querySelector("h2").textContent = a.Title + (a.Artist && !/^various artists$/i.test(a.Artist) ? " — " + a.Artist : "");
-        stopPlayer(); renderBzPlayer(document.getElementById("psd-player"), { [TITLE_COL]: a.Title, _thumbUrl: a.Cover }, a.Album, null); now.scrollIntoView({ behavior: "smooth", block: "start" }); }
+        renderBzPlayer(document.getElementById("psd-player"), { [TITLE_COL]: a.Title, _thumbUrl: a.Cover }, a.Album, null); now.scrollIntoView({ behavior: "smooth", block: "start" }); }
       return; }
     const ak = t.closest('[data-psd-akind]');
     if (ak) { const m = document.getElementById("psd-appearances"); if (m && m._psdApp) { m._psdApp.type = ak.getAttribute("data-psd-akind"); m._psdAppRender(); } return; }
@@ -1931,7 +1931,7 @@ function renderVideos(r, data, items){
 
 function renderPlayer(box, r, albumId){
   if (!box) return;
-  stopPlayer();
+  // (the music of another page keeps playing in the mini player until this page's player is used)
   box.innerHTML = `<div class="psd-player-note">Loading tracks…</div>`;
   loadTrackData().then(data => {
     if (!document.body.contains(box)) return;
@@ -2515,7 +2515,6 @@ function initToday(){
       const md = st.md, day = byDay[md] || { rels: [], tracks: [], vids: [], gigs: [] };
       const now = new Date(), isToday = md === pad2(now.getMonth() + 1) + "-" + pad2(now.getDate());
       const label = +md.slice(3) + " " + MONTHS[+md.slice(0, 2) - 1];
-      stopPlayer();
       const rels = day.rels.slice().sort((a, b) => a._released.localeCompare(b._released) || catOrder(a, b));
       const relHtml = rels.map(r => {
         const sf = releaseSurface(r["Bg Color"], 1) || { bg: "rgba(127,127,127,.12)", text: "inherit" };
