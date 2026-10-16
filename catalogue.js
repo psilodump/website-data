@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.43.1";
+const JS_VERSION = "1.44.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -2203,8 +2203,12 @@ function buildTrackPlayer(box, r, tracks, albumId){
   // One <audio> for the whole site (sharedAudio()); each list is an object on its .psd-player element. The list that
   // is playing is window._psdPlayer — it keeps playing when the visitor scrolls away or opens another page (the
   // mini player at the bottom takes over). A list with the same tracks as the playing one (back on its page) adopts it.
-  const p = { audio: sharedAudio(), tracks, index: first, box, title: r[TITLE_COL] || "", cover: r._largeUrl || r._thumbUrl || "",
+  const p = { tracks, index: first, box, title: r[TITLE_COL] || "", cover: r._largeUrl || r._thumbUrl || "",
     href: location.pathname + location.search + location.hash, cues: tracks.some(t => t.start != null) };
+  sharedAudio();
+  Object.defineProperty(p, "audio", { get: () => window._psdAudio });      // the <audio> element, or the gapless engine
+  // Seamless releases (mixed through) play gapless where the browser can: our own files only (476.digital's can't be read)
+  p.seamless = r["Seamless"] === "1" && !p.cues && tracks.every(t => !t.src || t.src.charAt(0) === "/");
   p.key = p.title + "|" + tracks.map(t => t.src + "@" + (t.start == null ? "" : t.start)).join("|");
   p.next = from => { for (let k = from; k < p.tracks.length; k++) if (p.tracks[k].src && !p.tracks[k].broken) return k; return -1; };
   const el = box.querySelector(".psd-player");
@@ -2217,9 +2221,14 @@ function buildTrackPlayer(box, r, tracks, albumId){
 // The list a clicked control belongs to (its .psd-player), else the one playing.
 function listOf(el){ const pl = el && el.closest(".psd-player"); return (pl && pl._psdList) || window._psdPlayer; }
 function sharedAudio(){
-  if (window._psdAudio) return window._psdAudio;
-  const audio = window._psdAudio = new Audio();
+  if (window._psdAudioEl) return window._psdAudioEl;
+  const audio = window._psdAudioEl = window._psdAudio = new Audio();
   audio.preload = "none";
+  attachPlayerEvents(audio);
+  return audio;
+}
+// The player's reactions to its engine (the <audio> element or the gapless engine): both get the same listeners.
+function attachPlayerEvents(audio){
   const P = () => window._psdPlayer;
   audio.addEventListener("timeupdate", () => {
     const p = P(); if (!p) return;
@@ -2245,7 +2254,111 @@ function sharedAudio(){
     const b = p.box.querySelector(`[data-psd-track="${p.index}"]`); if (b) { b.classList.add("is-broken"); b.disabled = true; b.title = "Not available"; }
     const n = p.next(p.index + 1); if (n >= 0) playTrack(n); else updatePlayerUI();
   });
-  return audio;
+}
+
+// --- Gapless engine (Web Audio) for Seamless lists. It looks like an <audio> element to the player (src, play, pause,
+// currentTime, duration, paused, events), but decodes whole tracks and starts the next one on the exact sample the
+// current one ends (setNext() tells it what comes next; the player's usual "ended" → playTrack() then adopts the
+// already-running track instead of starting it). Not on iPhone / iPad: there Web Audio stops when the screen locks.
+function gaplessOK(){
+  const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  return !iOS && !!(window.AudioContext || window.webkitAudioContext);
+}
+function gaplessEngine(){
+  if (window._psdGapless) return window._psdGapless;
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const on = {}, emit = ev => (on[ev] || []).forEach(fn => { try { fn(); } catch (e) { console.error(e); } });
+  const cache = new Map();
+  // a few milliseconds of digital silence at the edges (MP3 padding) are cut, at most 60 ms per side
+  const trim = buf => {
+    const n = buf.length, max = Math.round(buf.sampleRate * 0.06), quiet = i => { for (let c = 0; c < buf.numberOfChannels; c++) if (Math.abs(buf.getChannelData(c)[i]) > 0.0005) return false; return true; };
+    let a = 0; while (a < max && a < n && quiet(a)) a++;
+    let b = 0; while (b < max && b < n - a && quiet(n - 1 - b)) b++;
+    if (!a && !b) return buf;
+    const out = ctx.createBuffer(buf.numberOfChannels, n - a - b, buf.sampleRate);
+    for (let c = 0; c < buf.numberOfChannels; c++) out.copyToChannel(buf.getChannelData(c).subarray(a, n - b), c);
+    return out;
+  };
+  const load = src => {
+    if (!cache.has(src)) cache.set(src, fetch(src).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.arrayBuffer(); })
+      .then(ab => new Promise((ok, no) => ctx.decodeAudioData(ab, ok, no))).then(trim));
+    return cache.get(src);
+  };
+  const prune = () => { [...cache.keys()].forEach(k => { if (k !== E._src && k !== E.nextSrc) cache.delete(k); }); };
+  const E = window._psdGapless = { isGapless: true, preload: "none", paused: true, ended: false, seeking: false, error: null, readyState: 0,
+    _src: "", buf: null, node: null, t0: 0, pos: 0, want: false, nextSrc: "", next: null, timer: null };
+  const stopNode = n => { if (n) { try { n.onended = null; n.stop(); } catch (e) {} try { n.disconnect(); } catch (e) {} } };
+  const stopAll = () => { stopNode(E.node); E.node = null; if (E.next) { stopNode(E.next.node); E.next = null; } };
+  const startAt = off => {
+    stopAll();
+    const node = ctx.createBufferSource(); node.buffer = E.buf; node.connect(ctx.destination);
+    const when = ctx.currentTime + 0.03;
+    node.start(when, Math.max(0, Math.min(off, E.buf.duration - 0.01)));
+    E.node = node; E.t0 = when - off;
+    scheduleNext(); tick();
+  };
+  // the next track, queued to start exactly where the current one ends
+  const scheduleNext = () => {
+    if (!E.nextSrc || !E.buf || !E.node || E.next) return;
+    const src = E.nextSrc, cur = E._src;
+    load(src).then(buf => {
+      if (E._src !== cur || E.nextSrc !== src || !E.node || E.next) return;
+      const at = E.t0 + E.buf.duration;
+      if (at - ctx.currentTime < 0.08) return;          // too late to line it up: the normal way (a tiny gap) takes over
+      const node = ctx.createBufferSource(); node.buffer = buf; node.connect(ctx.destination); node.start(at);
+      E.next = { src, buf, node, t0: at };
+    }).catch(() => {});
+  };
+  const tick = () => {
+    clearInterval(E.timer);
+    E.timer = setInterval(() => {
+      if (!E.node) { clearInterval(E.timer); return; }
+      if (ctx.currentTime >= E.t0 + E.buf.duration - 0.01) {          // the current track is over
+        const before = E._src, hadNext = !!E.next;
+        if (hadNext) { E.ended = true; emit("ended"); E.ended = false; }   // the player sets src to the next one: adopted
+        if (E._src === before) {                                          // nobody took the queued track (or there was none)
+          if (E.next) { stopNode(E.next.node); E.next = null; }
+          stopNode(E.node); E.node = null; E.pos = E.buf ? E.buf.duration : 0; E.paused = true; E.ended = true; clearInterval(E.timer);
+          if (!hadNext) emit("ended");
+          return;
+        }
+      }
+      emit("timeupdate");
+    }, 200);
+  };
+  Object.defineProperties(E, {
+    src: { get: () => E._src, set: v => {
+      v = String(v || "");
+      if (v === E._src) return;
+      if (E.next && E.next.src === v) {                  // the scheduled next track is (about to be) playing: adopt it
+        stopNode(E.node); E._src = v; E.buf = E.next.buf; E.node = E.next.node; E.t0 = E.next.t0; E.next = null;
+        E.ended = false; E.readyState = 4; prune(); emit("loadedmetadata"); return;
+      }
+      stopAll(); E._src = v; E.buf = null; E.pos = 0; E.readyState = 0; E.ended = false; E.error = null;
+      if (!v) return;
+      load(v).then(buf => { if (E._src !== v) return; E.buf = buf; E.readyState = 4; emit("loadedmetadata"); if (E.want) startAt(E.pos); })
+        .catch(() => { if (E._src !== v) return; E.error = { code: 2 }; emit("error"); });
+      prune();
+    } },
+    currentTime: { get: () => E.node ? Math.max(0, Math.min(E.buf.duration, ctx.currentTime - E.t0)) : E.pos,
+      set: v => { E.pos = Math.max(0, +v || 0); if (E.node) startAt(E.pos); emit("timeupdate"); } },
+    duration: { get: () => E.buf ? E.buf.duration : NaN },
+  });
+  E.getAttribute = k => (k === "src" && E._src) ? E._src : null;
+  E.removeAttribute = k => { if (k === "src") { E.want = false; stopAll(); E._src = ""; E.buf = null; E.pos = 0; E.paused = true; clearInterval(E.timer); E.nextSrc = ""; prune(); } };
+  E.load = () => {};
+  E.addEventListener = (ev, fn, opt) => { const w = opt && opt.once ? function g(){ (on[ev] = on[ev].filter(x => x !== g)); fn(); } : fn; (on[ev] = on[ev] || []).push(w); };
+  E.play = () => { ctx.resume(); E.want = true; E.paused = false; E.ended = false; if (E.buf && !E.node) startAt(E.pos); emit("play"); return Promise.resolve(); };
+  E.pause = () => { E.want = false; if (E.node) { E.pos = ctx.currentTime - E.t0; stopAll(); } clearInterval(E.timer); E.paused = true; emit("pause"); };
+  E.setNext = src => { src = src || ""; if (E.nextSrc === src) return; E.nextSrc = src; if (E.next) { stopNode(E.next.node); E.next = null; } if (src) load(src).catch(() => {}); scheduleNext(); prune(); };
+  attachPlayerEvents(E);
+  return E;
+}
+// The engine a list plays on: gapless for Seamless lists (where possible), else the <audio> element.
+function useEngineFor(p){
+  const want = p.seamless && gaplessOK() ? gaplessEngine() : sharedAudio();
+  const cur = window._psdAudio;
+  if (cur !== want) { if (cur) { cur.pause(); cur.removeAttribute("src"); } window._psdAudio = want; }
 }
 
 function playTrack(i, list){
@@ -2253,7 +2366,9 @@ function playTrack(i, list){
   if (!p || !p.tracks[i] || !p.tracks[i].src || p.tracks[i].broken) return;
   if (window._psdPlayer !== p) {               // another list takes over the one audio
     const prev = window._psdPlayer;
+    if (window._psdAudio) window._psdAudio.removeAttribute("src");
     window._psdPlayer = p;
+    useEngineFor(p);
     p.audio.removeAttribute("src");
     if (prev) resetListUI(prev);
   }
@@ -2272,6 +2387,7 @@ function playTrack(i, list){
     p.audio.src = p.tracks[i].src;
   }
   p.audio.play().catch(() => {});
+  if (p.audio.setNext) { const n = p.next(i + 1); p.audio.setNext(n >= 0 ? p.tracks[n].src : ""); }
   if ("mediaSession" in navigator && window.MediaMetadata) {
     const tr = p.tracks[i];
     const art = tr.cover || p.cover;
