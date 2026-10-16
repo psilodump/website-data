@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.42.0";
+const JS_VERSION = "1.42.1";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -458,7 +458,8 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-trackspage .psd-vpage-bar select option { color: #111 !important; background: #fff !important; }
 .psd-trackspage .psd-vpage-bar button.none:not([aria-pressed="true"]) { opacity: .45 !important; }
 /* Mini player (v1.40.0) */
-.psd-dock { position: fixed !important; left: 50% !important; transform: translateX(-50%) !important; bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important; z-index: 2147483000 !important; width: min(680px, calc(100% - 20px)) !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; gap: 6px !important; padding: 8px 10px 12px !important; background: #1d1d22 !important; color: #fff !important; border-radius: 14px !important; box-shadow: 0 8px 28px rgba(0,0,0,.5) !important; font-family: inherit !important; overflow: hidden !important; }
+.psd-dock { position: fixed !important; left: 50% !important; transform: translateX(-50%) !important; bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important; z-index: 2147483000 !important; width: min(680px, calc(100% - 20px)) !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; gap: 6px !important; padding: 8px 10px 12px !important; background: #1d1d22 !important; color: #fff !important; border-radius: 14px !important; box-shadow: 0 8px 28px rgba(0,0,0,.5) !important; font-family: system-ui, -apple-system, sans-serif !important; overflow: hidden !important; }
+.psd-dock a, .psd-dock span, .psd-dock button { font-family: system-ui, -apple-system, sans-serif !important; }
 .psd-dock[hidden] { display: none !important; }
 .psd-dock-cv { flex: 0 0 42px !important; width: 42px !important; height: 42px !important; border-radius: 6px !important; overflow: hidden !important; background: rgba(255,255,255,.1) !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; }
 .psd-dock-cv img { width: 100% !important; height: 100% !important; object-fit: cover !important; display: block !important; }
