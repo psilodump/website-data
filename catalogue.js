@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.39.0";
+const JS_VERSION = "1.39.1";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -74,6 +74,12 @@ const CATALOGUE_CSS = `
 .rel-wrap.row-view .rel-meta .rel-m1, .rel-wrap.row-view .rel-meta .rel-m2 { display: inline !important; }
 .rel-wrap.row-view .rel-meta .rel-m1 + .rel-m2::before { content: " · " !important; }
 /* Group headings (v1.39.0) */
+/* grouped: #rel-grid becomes a column of boxes, each with its own card grid (class rel-grid, so the
+   compact / row / phone rules apply inside), every other box a shade lighter (v1.39.1) */
+#rel-grid.grouped { display: flex !important; flex-direction: column !important; gap: 10px !important; }
+.rel-group { border-radius: 10px !important; padding: 14px 14px 16px !important; background: rgba(0,0,0,.28) !important; }
+.rel-group:nth-child(even) { background: rgba(255,255,255,.075) !important; }
+.rel-group > .rel-grid { margin-top: 12px !important; }
 .rel-group-h { grid-column: 1 / -1 !important; margin: 22px 0 0 !important; padding: 0 0 6px !important; border-bottom: 1px solid rgba(127,127,127,.3) !important; font-size: 18px !important; font-weight: 600 !important; line-height: 1.3 !important; color: inherit !important; display: flex !important; align-items: baseline !important; gap: 8px !important; flex-wrap: wrap !important; }
 .rel-group-h:first-child { margin-top: 0 !important; }
 .rel-group-h small { font-size: 13px !important; font-weight: 400 !important; opacity: .65 !important; }
@@ -929,10 +935,11 @@ function render(){
     grid.innerHTML = groupOrder(mode, Object.keys(groups)).map(k => {
       const L = mode === "label" ? labelFor(k) : null;
       const title = mode === "type" ? typePlural(k) : k;
-      return `<h3 class="rel-group-h">${esc(title)} <small>${groups[k].length}</small>${L ? `<a href="${esc(labelHref(L))}">about the label</a>` : ""}</h3>`
-        + groups[k].map(([r, idx]) => card(r, idx)).join("");
+      return `<section class="rel-group"><h3 class="rel-group-h">${esc(title)} <small>${groups[k].length}</small>${L ? `<a href="${esc(labelHref(L))}">about the label</a>` : ""}</h3>`
+        + `<div class="rel-grid">${groups[k].map(([r, idx]) => card(r, idx)).join("")}</div></section>`;
     }).join("");
   }
+  grid.classList.toggle("grouped", !!mode);
   const stats = document.getElementById("rel-stats");
   if (stats) stats.innerHTML = `Showing <strong>${cat.viewRows.length}</strong> release${cat.viewRows.length === 1 ? "" : "s"}`;
   renderFilterPills();
