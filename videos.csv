@@ -5,10 +5,10 @@ ID,Platform,"Video ID",Kind,"Track ID","Release ID",Length,Published,Note,"YouTu
 9,youtube,QoedR8Bl86E,live,,,2159,1996-09-01,,"The Art of Realistix Live @ Kulturnatten II",,,140
 28,youtube,HtjYPjVZtvU,live,,,3724,2000-08-18,,"psilodump Live @ Betongkulvert 7 (Live)",,,129
 31,youtube,txobyPGtw5I,live,,,385,2016-10-01,,"psilodump & Matophonia - 1st Live Acid Web Stream",,,2
-64,youtube,YqBOpHJQupU,live,,,266,2007-02-15,,"Psilodump vs Goto80 - Exy II - Live @ Microdisko 2007-02-10",Microdisko,1,51
-65,youtube,KgxrfOqyBLU,live,,,151,2008-10-05,,"Psilodump feat. Malin Vulcano live@Norberg Festival 2008",Tävenlös,1,24
-66,youtube,xZ8cXu4F1Ds,live,,,87,2010-11-13,,"Psilodump feat. Malin Vulcano @ Peace and love festival 2008",Tävenlös,1,27
-67,youtube,9UMInJai83Q,live,,,176,2006-12-07,,"The X-Dump Live @ Norberg Modul, Copenhagen, Denmark 2006",,,52
+64,youtube,YqBOpHJQupU,live,,,266,2007-02-10,,"Psilodump vs Goto80 - Exy II - Live @ Microdisko 2007-02-10",Microdisko,1,51
+65,youtube,KgxrfOqyBLU,live,,,151,2008-07-25,,"Psilodump feat. Malin Vulcano live@Norberg Festival 2008",Tävenlös,1,24
+66,youtube,xZ8cXu4F1Ds,live,,,87,2008-06-27,,"Psilodump feat. Malin Vulcano @ Peace and love festival 2008",Tävenlös,1,27
+67,youtube,9UMInJai83Q,live,,,176,2006-12-02,,"The X-Dump Live @ Norberg Modul, Copenhagen, Denmark 2006",,,52
 20,youtube,IZVPPEDgTyg,tracker,186,,337,2024-03-26,"Protracker [Amiga]","psilodump - Down with Da Bass (Official Audio Visualizer)",,,
 37,youtube,r-jBjo8G49Y,tracker,209,,379,2013-12-13,"Protracker [Amiga]","psilodump - Party On! (Official Audio Visualizer)",,,
 19,youtube,nmfnigulkXU,tracker,212,,491,2024-04-03,"Protracker [Amiga]","psilodump - Recovery (Official Audio Visualizer)",,,
@@ -18,13 +18,13 @@ ID,Platform,"Video ID",Kind,"Track ID","Release ID",Length,Published,Note,"YouTu
 23,youtube,d4h5kuCXoUQ,tracker,323,,305,2024-02-29,"OctaMED Soundstudio [Amiga]","psilodump - Toothpaste (Official Audio Visualizer)",,,
 50,youtube,fPsPdW2fbGk,music_video,614,,308,2001-08-15,,"Sbindon & psilodump - Shareware",,,
 6,youtube,ZHvcXOAQQHk,audio,704,,195,2026-04-30,,"Antti the Elephant (cover)",,,
-53,youtube,cQLxcgkJi2o,live,729,,293,2003-03-06,,"Psilodump - Diskmusik4 [Live, 2003]",,,
+53,youtube,cQLxcgkJi2o,live,729,,293,2003-03-06,,"Psilodump - Diskmusik4 [Live, 2003]",,,116
 52,youtube,I3obkIpaiLE,live,781,,71,2005-04-21,,"psilodump - Sitting Down (Live in London 2005)",,,79
-63,youtube,_GCB040H9Fc,live,817,,54,2018-08-29,,"Psilodump LIVE @ Chipwrecked 2018, Denmark",Hepokatti,1,1
+63,youtube,_GCB040H9Fc,live,817,,54,2018-08-25,,"Psilodump LIVE @ Chipwrecked 2018, Denmark",Hepokatti,1,1
 30,youtube,hDeuUZb68es,teaser,833,,142,2016-10-06,,"Brinn / Never Heal Promo Trailer",,,
 39,youtube,lRwFcrZENKs,music_video,853,,207,2005-12-30,,"psilodump - The Somnambulist (Official Music Video)","Mattias Engström",,
 62,youtube,9K0s2DISiMU,tribute,853,,,2026-03-27,,"Psilodump - The Somnambulist (Radio Courtoisie Dub Edition)",,1,
-46,youtube,Tngo-kDpRXM,live,896,,320,2007-03-03,,"psilodump - psilodrunkuter (Live 2007)",,,
+46,youtube,Tngo-kDpRXM,live,896,,320,2007-03-03,,"psilodump - psilodrunkuter (Live 2007)",,,50
 45,youtube,OkQHZAkV91U,music_video,917,,164,2007-10-04,,"psilodump - psilodumputer (Dorothy's Magic Bag Rock Me-Mix)",,,
 47,youtube,SW0U1MVIkVM,live,968,,51,2007-02-12,,"psilodump - Phonebook [Live @ Microdisko 2007]",,,51
 48,youtube,S2ld1oQGMc4,live,996,,81,2007-02-12,,"psilodump - Drop (Live @ Microdisko 2007-02-10)",,,51
@@ -32,7 +32,7 @@ ID,Platform,"Video ID",Kind,"Track ID","Release ID",Length,Published,Note,"YouTu
 7,youtube,kTpGNFdPIP0,scrapbook,1005,,368,2026-04-22,,"Little Cat in Big World (from The King of Kong DVD)",,,
 59,youtube,IZFgWTUwGeM,audio,1092,,,2011-03-17,,"Psilodump - ""All You Need Is Love""(8-BIT OPERATORS - Beatles Cover)",,,
 2,youtube,mhzn_3OqJbM,visualiser,1172,,340,2026-09-20,,"Simon From Space",,,
-49,youtube,6N3XqvrnNls,live,1182,,284,2006-08-06,,"psilodump - Tangens (Elithora Remix) | Live 2006",,,
+49,youtube,6N3XqvrnNls,live,1182,,284,2006-08-06,,"psilodump - Tangens (Elithora Remix) | Live 2006",,,58
 10,youtube,2EdQLMv8oyo,vinyl,1188,,344,2025-12-12,,"Untitled (The Miller Redux)",,,
 1,youtube,TwHayjspYPo,scrapbook,1273,,268,2026-09-25,,"µ-Ziq - Goodbye, Goodbye (psilodump remix) - Meemo & Mu: Reloaded Clip","Meemo & Mu",,
 8,youtube,BYfszVZjEwA,audio,1331,,494,2026-04-21,,"Casbah - Tricky Game (tricky trip mix by psilodump)",,,
