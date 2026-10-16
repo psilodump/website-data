@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.36.1";
+const JS_VERSION = "1.37.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -52,29 +52,30 @@ const CATALOGUE_CSS = `
 .rel-wrap { max-width: 1100px !important; margin: 0 auto !important; font-family: system-ui, -apple-system, sans-serif !important; }
 
 /* Toolbar & Filters Layout */
-.rel-controls { margin-bottom: 1rem !important; color: inherit !important; }
-.rel-toolbar { display: flex !important; flex-wrap: wrap !important; gap: .5rem !important; margin-bottom: .5rem !important; }
-
-#rel-q { flex: 1 1 220px !important; min-width: 180px !important; padding: .6rem .8rem !important; border: 1px solid #ccc !important; border-radius: 6px !important; background: #fff !important; color: #000 !important; font-size: 14px !important; box-sizing: border-box !important; }
-
-/* Compact Filter Select Dropdowns */
-.rel-select { flex: 0 1 auto !important; min-width: 110px !important; padding: .6rem .8rem !important; border: 1px solid #ccc !important; border-radius: 6px !important; background: #fff !important; color: #111 !important; font-size: 13px !important; cursor: pointer !important; outline: none !important; }
-.rel-select:focus { border-color: #222 !important; }
+.rel-controls { margin-bottom: .6rem !important; color: inherit !important; }
+/* Filter bar in the same look as the VIDEOS page: rounded outline controls on the dark panel (v1.37.0) */
+.rel-toolbar { display: flex !important; flex-wrap: wrap !important; gap: 6px !important; align-items: center !important; margin-bottom: 0 !important; }
+#rel-q { flex: 1 1 220px !important; min-width: 160px !important; padding: 7px 14px !important; border: 1px solid rgba(127,127,127,.45) !important; border-radius: 999px !important; background: transparent !important; color: inherit !important; font: inherit !important; font-size: 13px !important; box-sizing: border-box !important; outline: none !important; }
+#rel-q::placeholder { color: inherit !important; opacity: .55 !important; }
+#rel-q:focus, .rel-select:focus { border-color: rgba(200,200,200,.8) !important; }
+.rel-select { flex: 0 1 auto !important; min-width: 110px !important; padding: 7px 30px 7px 14px !important; border: 1px solid rgba(127,127,127,.45) !important; border-radius: 999px !important; background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23aaa' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 12px center !important; color: inherit !important; font: inherit !important; font-size: 13px !important; cursor: pointer !important; outline: none !important; -webkit-appearance: none !important; appearance: none !important; }
+.rel-select option, .rel-select optgroup { color: #111 !important; background: #fff !important; }
 
 /* Active Filter Pills */
-.rel-pills { display: flex !important; flex-wrap: wrap !important; gap: .4rem !important; align-items: center !important; margin-top: .6rem !important; min-height: 28px !important; }
-.rel-pill { display: inline-flex !important; align-items: center !important; gap: .3rem !important; background: #222 !important; color: #fff !important; padding: .2rem .55rem !important; border-radius: 999px !important; font-size: 12px !important; line-height: 1 !important; }
+.rel-pills { display: flex !important; flex-wrap: wrap !important; gap: 6px !important; align-items: center !important; margin-top: 8px !important; }
+.rel-pills:empty { display: none !important; }
+.rel-pill { display: inline-flex !important; align-items: center !important; gap: .3rem !important; background: rgba(255,255,255,.12) !important; color: inherit !important; padding: 4px 10px !important; border-radius: 999px !important; font-size: 12px !important; line-height: 1.2 !important; }
 .rel-pill-remove { cursor: pointer !important; font-weight: bold !important; margin-left: 2px !important; opacity: .8 !important; }
 .rel-pill-remove:hover { opacity: 1 !important; }
-.rel-clear-all { background: none !important; border: none !important; color: #d9534f !important; font-size: 12px !important; cursor: pointer !important; text-decoration: underline !important; padding: .2rem .4rem !important; }
+.rel-clear-all { background: none !important; border: none !important; color: #e8837f !important; font-size: 12px !important; cursor: pointer !important; text-decoration: underline !important; padding: .2rem .4rem !important; }
 .rel-copy-link { background: none !important; border: none !important; color: inherit !important; font-size: 12px !important; cursor: pointer !important; text-decoration: underline !important; padding: .2rem .4rem !important; opacity: .85 !important; }
 
-#rel-stats { margin-top: .5rem !important; font-size: 13px !important; opacity: .85 !important; color: inherit !important; }
+#rel-stats { margin-top: 10px !important; font-size: 13px !important; opacity: .85 !important; color: inherit !important; }
 
-/* Sort & View Bar */
-.rel-sort { display: flex !important; gap: .5rem !important; margin: .6rem 0 1rem !important; flex-wrap: wrap !important; color: inherit !important; }
-.rel-sort button { border: 1px solid #bbb !important; background: #fff !important; color: #000 !important; padding: .35rem .6rem !important; border-radius: 6px !important; cursor: pointer !important; font-size: 13px !important; }
-.rel-sort button[aria-pressed="true"] { background: #e0e0e0 !important; font-weight: 600 !important; }
+/* Sort & View Bar: pill buttons, the active ones filled */
+.rel-sort { display: flex !important; gap: 6px !important; margin: 4px 0 16px !important; flex-wrap: wrap !important; color: inherit !important; }
+.rel-sort button { border: 1px solid rgba(127,127,127,.45) !important; background: transparent !important; color: inherit !important; padding: 5px 12px !important; border-radius: 999px !important; cursor: pointer !important; font: inherit !important; font-size: 13px !important; }
+.rel-sort button[aria-pressed="true"] { background: rgba(255,255,255,.14) !important; border-color: transparent !important; font-weight: 600 !important; }
 
 /* Grid & Cards */
 .rel-grid { display: grid !important; grid-template-columns: repeat( auto-fill, minmax(220px, 1fr) ) !important; gap: 16px !important; }
