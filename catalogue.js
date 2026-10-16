@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.37.0";
+const JS_VERSION = "1.37.1";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -2169,7 +2169,8 @@ function initPhysical(){
     const preLabel = (mount.getAttribute("data-label") || "").split(",").map(x => normLabel(x).toLowerCase()).filter(Boolean);
     const eds = (cat.editions || []).filter(e => !preLabel.length || String(e.Label || "").split(/\s*,\s*/).some(l => preLabel.includes(normLabel(l).toLowerCase()))).map(e => {
       const rels = splitList(e["Releases"]).map(id => relById[id]).filter(Boolean);
-      return { e, kind: editionKind(e.Format) || "Other", rels, cover: (rels.find(r => r._thumbUrl) || {})._thumbUrl || "" };
+      // the edition's own artwork (editions.csv Cover), else the cover of its first release that has one
+      return { e, kind: editionKind(e.Format) || "Other", rels, cover: e.Cover || (rels.find(r => r._thumbUrl) || {})._thumbUrl || "" };
     });
     const kinds = [...EDITION_KINDS.filter(k => eds.some(x => x.kind === k)), ...(eds.some(x => x.kind === "Other") ? ["Other"] : [])];
     const preset = mount.getAttribute("data-kind") || "";
@@ -2968,7 +2969,7 @@ function initLabel(){
     const relCard = r => `<figure class="psd-phys-card"><a class="cv" href="${esc(releaseHref(r))}" tabindex="-1" aria-hidden="true">${r._thumbUrl ? `<img src="${esc(r._thumbUrl)}" alt="" loading="lazy">` : `<div class="psd-app-plain"><b>${esc(r[TITLE_COL])}</b></div>`}<span class="kind">${esc(r[TYPE_COL] === "MiniAlbum" ? "Mini-album" : r[TYPE_COL] || "")}</span>${r["Netlabel"] === "1" ? `<span class="net">netlabel</span>` : ""}</a>
       <h3><a href="${esc(releaseHref(r))}">${esc(r[TITLE_COL] || "(untitled)")}</a>${releaseArtist(r).toLowerCase() !== "psilodump" ? ` <small>by ${esc(releaseArtist(r))}</small>` : ""}</h3>
       <div class="meta">${esc([String(r._released || r._catalogue || "").slice(0, 4), r[CAT_COL], r["Formats"]].filter(Boolean).join(" · "))}</div></figure>`;
-    const edCard = e => { const r0 = splitList(e.Releases).map(id => relById[id]).find(r => r && r._thumbUrl); const k = editionKind(e.Format);
+    const edCard = e => { const r0 = e.Cover ? { _thumbUrl: e.Cover } : splitList(e.Releases).map(id => relById[id]).find(r => r && r._thumbUrl); const k = editionKind(e.Format);
       return `<figure class="psd-phys-card${editionPast(e) ? " past" : ""}"><div class="cv">${r0 ? `<img src="${esc(r0._thumbUrl)}" alt="" loading="lazy">` : (PHYS_ICONS[k] || "")}<span class="kind">${PHYS_ICONS[k] || ""}${esc(e.Format || k || "")}</span></div>
         <h3>${esc(e.Title || "(untitled)")}</h3><div class="meta">${esc([e["Cat#"], e.Year, EDITION_STATUS_LABELS[e.Status] || ""].filter(Boolean).join(" · "))}</div>
         ${e.Status === "available" && e.URL ? `<div class="act"><a class="buy" href="${esc(e.URL)}" target="_blank" rel="noopener">Buy</a></div>` : ""}</figure>`; };
