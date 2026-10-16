@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.35.2";
+const JS_VERSION = "1.35.3";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -2895,7 +2895,11 @@ function appendRelated(box, r, rows){
     const old = box.querySelector(".psd-related"); if (old) old.remove();
     if (!all.length) return;
     const html = `<section class="psd-innews psd-related"><h2>Related releases</h2><ul>${all.map(([label, xs]) =>
-      `<li><b>${esc(label)}</b> ${xs.map(({ x, note }) => `${link(x)} <span class="by">${esc(yr(x))}${note ? " · " + esc(note) : ""}</span>`).join(", ")}</li>`).join("")}</ul></section>`;
+      `<li><b>${esc(label)}</b> ${xs.map(({ x, note }) => {
+        // the same title twice in one list (an original and its reissue): tell them apart by cat#, else label
+        const twin = xs.filter(y => slugify(y.x[TITLE_COL]) === slugify(x[TITLE_COL])).length > 1;
+        const tell = twin ? (x[CAT_COL] || x["Label"] || "") : "";
+        return `${link(x)} <span class="by">${esc(yr(x))}${tell ? " · " + esc(tell) : ""}${note ? " · " + esc(note) : ""}</span>`; }).join(", ")}</li>`).join("")}</ul></section>`;
     const anchor = box.querySelector(".psd-rel-editions, .psd-rel-credits, .psd-alsoon, .psd-rel-more");
     if (anchor) anchor.insertAdjacentHTML("beforebegin", html); else box.insertAdjacentHTML("beforeend", html);
   };
