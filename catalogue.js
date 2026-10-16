@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.44.0";
+const JS_VERSION = "1.44.1";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -2269,11 +2269,22 @@ function gaplessEngine(){
   const ctx = new (window.AudioContext || window.webkitAudioContext)();
   const on = {}, emit = ev => (on[ev] || []).forEach(fn => { try { fn(); } catch (e) { console.error(e); } });
   const cache = new Map();
-  // a few milliseconds of digital silence at the edges (MP3 padding) are cut, at most 60 ms per side
+  // MP3 padding at the edges: Bandzoogle's files carry no header saying how much the encoder added (an empty frame
+  // of 1152 samples + the encoder's run-in, ~50–75 ms at a track's start), so it is measured: per 1 ms window, the
+  // edge ends where the level first reaches a fifth of the music around it (the median of the next / previous
+  // 300 ms). At most 150 ms per side; a genuinely quiet intro is measured against its own quiet level.
   const trim = buf => {
-    const n = buf.length, max = Math.round(buf.sampleRate * 0.06), quiet = i => { for (let c = 0; c < buf.numberOfChannels; c++) if (Math.abs(buf.getChannelData(c)[i]) > 0.0005) return false; return true; };
-    let a = 0; while (a < max && a < n && quiet(a)) a++;
-    let b = 0; while (b < max && b < n - a && quiet(n - 1 - b)) b++;
+    const n = buf.length, sr = buf.sampleRate, w = Math.max(1, Math.round(sr / 1000)), max = Math.round(sr * 0.15);
+    const chs = [...Array(buf.numberOfChannels)].map((_, c) => buf.getChannelData(c));
+    const rms = from => { let s = 0; for (let j = 0; j < w && from + j < n; j++) for (const ch of chs) s += ch[from + j] * ch[from + j]; return Math.sqrt(s / (w * chs.length)); };
+    const median = arr => { const v = arr.slice().sort((x, y) => x - y); return v[Math.floor(v.length / 2)] || 0; };
+    if (n < sr) return buf;
+    const head = [], tail = [];
+    for (let k = 0; k < 450 && (k + 1) * w < n; k++) { head.push(rms(k * w)); tail.push(rms(n - (k + 1) * w)); }
+    const thrA = Math.max(0.0005, median(head.slice(50, 350)) * 0.2), thrB = Math.max(0.0005, median(tail.slice(50, 350)) * 0.2);
+    let a = 0; while (a * w < max && head[a] < thrA) a++;
+    let b = 0; while (b * w < max && tail[b] < thrB) b++;
+    a = Math.min(a * w, max); b = Math.min(b * w, max);
     if (!a && !b) return buf;
     const out = ctx.createBuffer(buf.numberOfChannels, n - a - b, buf.sampleRate);
     for (let c = 0; c < buf.numberOfChannels; c++) out.copyToChannel(buf.getChannelData(c).subarray(a, n - b), c);
@@ -2287,11 +2298,13 @@ function gaplessEngine(){
   const prune = () => { [...cache.keys()].forEach(k => { if (k !== E._src && k !== E.nextSrc) cache.delete(k); }); };
   const E = window._psdGapless = { isGapless: true, preload: "none", paused: true, ended: false, seeking: false, error: null, readyState: 0,
     _src: "", buf: null, node: null, t0: 0, pos: 0, want: false, nextSrc: "", next: null, timer: null };
-  const stopNode = n => { if (n) { try { n.onended = null; n.stop(); } catch (e) {} try { n.disconnect(); } catch (e) {} } };
+  const stopNode = n => { if (n) { try { n.onended = null; n.stop(); } catch (e) {} try { n.disconnect(); if (n._g) n._g.disconnect(); } catch (e) {} } };
   const stopAll = () => { stopNode(E.node); E.node = null; if (E.next) { stopNode(E.next.node); E.next = null; } };
+  const XF = 0.003;          // crossfade at a join, so two edges that don't line up exactly can't click
+  const voice = buf => { const node = ctx.createBufferSource(), g = ctx.createGain(); node.buffer = buf; node.connect(g); g.connect(ctx.destination); node._g = g; return node; };
   const startAt = off => {
     stopAll();
-    const node = ctx.createBufferSource(); node.buffer = E.buf; node.connect(ctx.destination);
+    const node = voice(E.buf);
     const when = ctx.currentTime + 0.03;
     node.start(when, Math.max(0, Math.min(off, E.buf.duration - 0.01)));
     E.node = node; E.t0 = when - off;
@@ -2303,9 +2316,11 @@ function gaplessEngine(){
     const src = E.nextSrc, cur = E._src;
     load(src).then(buf => {
       if (E._src !== cur || E.nextSrc !== src || !E.node || E.next) return;
-      const at = E.t0 + E.buf.duration;
+      const at = E.t0 + E.buf.duration - XF;
       if (at - ctx.currentTime < 0.08) return;          // too late to line it up: the normal way (a tiny gap) takes over
-      const node = ctx.createBufferSource(); node.buffer = buf; node.connect(ctx.destination); node.start(at);
+      const node = voice(buf); node.start(at);
+      node._g.gain.setValueAtTime(0, at); node._g.gain.linearRampToValueAtTime(1, at + XF);
+      E.node._g.gain.setValueAtTime(1, at); E.node._g.gain.linearRampToValueAtTime(0, at + XF);
       E.next = { src, buf, node, t0: at };
     }).catch(() => {});
   };
