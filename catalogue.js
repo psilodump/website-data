@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.43.0";
+const JS_VERSION = "1.43.1";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -662,6 +662,9 @@ const SERIES_SPLIT = /[,;|/]+/;
 const labelList = v => String(v || "").split(",").map(x => x.replace(/[\u2010-\u2015]/g, "-").trim()).filter(Boolean);
 
 function parseCSV(text){
+  // Images: the repository outgrew jsDelivr's 50 MB limit for GitHub ("Package size exceeded"), so the same pinned
+  // files are loaded from raw.githubusercontent.com instead (same commit, same path).
+  text = String(text).replace(/https:\/\/cdn\.jsdelivr\.net\/gh\/psilodump\/website-data@([^\/"\s]+)\//g, "https://raw.githubusercontent.com/psilodump/website-data/$1/");
   const out = []; let row=[], cell="", i=0, q=false;
   while (i < text.length){
     const ch = text[i];
