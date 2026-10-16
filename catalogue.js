@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.35.3";
+const JS_VERSION = "1.36.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -3071,9 +3071,12 @@ function initVideosPage(){
     .catch(err => { console.error("Failed to load videos:", err); mount.innerHTML = `<div class="psd-rel">Unable to load the videos right now. Please refresh the page.</div>`; });
 }
 
+// kinds that only present a release's audio (made years later as uploads): sorted by the music's date
+const VIDEO_MUSIC_DATED = new Set(["full_album", "tracker", "audio", "visualiser", "vinyl"]);
 function buildVideosPage(mount, rows, data){
   const relById = {}; rows.forEach(r => { relById[r["ID"]] = r; });
-  const relDate = r => r ? (r._released || r._catalogue || "") : "";
+  // the music's date: the earlier of Released and the catalogue date (476LEG reissues count from when they were made)
+  const relDate = r => r ? ([r._released, r._catalogue].filter(Boolean).sort()[0] || "") : "";
   // a track's release = the earliest release it is on
   const trackRel = {};
   Object.entries(data.lists).forEach(([rid, list]) => { const r = relById[rid]; if (!r) return;
@@ -3083,7 +3086,12 @@ function buildVideosPage(mount, rows, data){
     const rel = relById[v["Release ID"]] || (t ? trackRel[t.ID] : null);
     const label = t ? t.Title + (t.Version ? " (" + t.Version + ")" : "") : (relById[v["Release ID"]] ? relById[v["Release ID"]][TITLE_COL] : (v["YouTube Title"] || "Video"));
     const artist = t && t.Artist && t.Artist.toLowerCase() !== "psilodump" ? t.Artist : "";
-    return { id: v["Video ID"], kind: VIDEO_KINDS[v.Kind] ? v.Kind : "other", label, artist, by: v["Made By"] || "", others: v["From Others"] === "1", note: v.Note || "", rel, date: relDate(rel) || v.Published || "",
+    // videos that are their own event or film (a live set, a music video …) sort by the video's date (a track can be
+    // played live years before or after its release); videos that only present the release's audio by the music's date
+    const kind = VIDEO_KINDS[v.Kind] ? v.Kind : "other";
+    const ownDate = !VIDEO_MUSIC_DATED.has(kind) && /^\d{4}/.test(v.Published || "");
+    return { id: v["Video ID"], kind, label, artist, by: v["Made By"] || "", others: v["From Others"] === "1", note: v.Note || "", rel,
+      date: ownDate ? v.Published : (relDate(rel) || v.Published || ""), videoDate: ownDate ? v.Published : "", relYear: relDate(rel).slice(0, 4),
       search: [label, artist, v.Note, v["Made By"], rel ? rel[TITLE_COL] : "", v["YouTube Title"]].join(" ").toLowerCase() };
   }).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
   const preset = mount.getAttribute("data-kind") || "";
@@ -3094,7 +3102,7 @@ function buildVideosPage(mount, rows, data){
   fromHash();
   const counts = {}; items.forEach(x => { const k = x.others ? OTHERS : x.kind; counts[k] = (counts[k] || 0) + 1; });
   const kinds = Object.keys(VIDEO_KINDS).filter(k => counts[k]);   // (OTHERS is added separately, last)
-  const card = x => `<figure class="psd-vcard" id="psd-v-${esc(x.id)}">${liteYouTube(x.id, x.label)}<figcaption>${esc(x.label)}${x.artist ? " <small style=\"display:inline!important\">by " + esc(x.artist) + "</small>" : ""}<small>${[st.kind && !x.others ? "" : esc(VIDEO_KINDS[x.kind]), x.by ? (x.others ? "by " : "video by ") + esc(x.by) : "", x.note && x.kind !== "tracker" ? esc(x.note) : "", x.rel ? `from <a href="${esc(releaseHref(x.rel))}">${esc(x.rel[TITLE_COL])}</a>${x.date ? " (" + esc(x.date.slice(0, 4)) + ")" : ""}` : ""].filter(Boolean).join(" · ")}</small></figcaption></figure>`;
+  const card = x => `<figure class="psd-vcard" id="psd-v-${esc(x.id)}">${liteYouTube(x.id, x.label)}<figcaption>${esc(x.label)}${x.artist ? " <small style=\"display:inline!important\">by " + esc(x.artist) + "</small>" : ""}<small>${[st.kind && !x.others ? "" : esc(VIDEO_KINDS[x.kind]), x.by ? (x.others ? "by " : "video by ") + esc(x.by) : "", x.note && x.kind !== "tracker" ? esc(x.note) : "", x.videoDate ? esc(x.videoDate) : "", x.rel ? `from <a href="${esc(releaseHref(x.rel))}">${esc(x.rel[TITLE_COL])}</a>${x.relYear ? " (" + esc(x.relYear) + ")" : ""}` : ""].filter(Boolean).join(" · ")}</small></figcaption></figure>`;
   const grid = list => `<div class="psd-vgrid">${list.map(card).join("")}</div>`;
   const render = () => {
     const q = st.q.trim().toLowerCase();
