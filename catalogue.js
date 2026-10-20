@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.45.0";
+const JS_VERSION = "1.46.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -630,6 +630,8 @@ const TRACKLISTS_URL = "https://raw.githubusercontent.com/psilodump/website-data
 const VIDEOS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/videos.csv";
 const LABELS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/labels.csv";
 const RELATIONS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/release_relations.csv";
+// Wholes and parts of tracks (v1.46.0): one recording cut into parts for a release, or parts joined into one
+const PARTS_URL = "https://raw.githubusercontent.com/psilodump/website-data/refs/heads/main/track_parts.csv";
 // Order and names of video kinds (admin: VIDEO_KINDS in videos_lib.php).
 const VIDEO_KINDS = { music_video: "Music video", tracker: "Tracker video", visualiser: "Visualiser", vinyl: "Vinyl playback", live: "Live",
   teaser: "Teaser / trailer", full_album: "Full album audio", audio: "Audio", scrapbook: "Scrapbook", dj_set: "DJ set / mix", tribute: "Cover / tribute", other: "Video" };
@@ -1738,7 +1740,8 @@ function loadTrackData(){
   if (!cat._trackPromise) {
     const get = url => fetch(url + "?v=" + Date.now()).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); }).then(t => toObjects(parseCSV(t)).rows);
     const vids = get(VIDEOS_URL).catch(() => []);   // optional
-    cat._trackPromise = Promise.all([get(TRACKS_URL), get(TRACKLISTS_URL), vids]).then(([tracks, rows, videos]) => {
+    const partsCsv = get(PARTS_URL).catch(() => []);  // optional
+    cat._trackPromise = Promise.all([get(TRACKS_URL), get(TRACKLISTS_URL), vids, partsCsv]).then(([tracks, rows, videos, parts]) => {
       const byId = {}; tracks.forEach(t => { byId[t.ID] = t; });
       const lists = {};
       rows.forEach(r => { const t = byId[r["Track ID"]]; if (t) (lists[r["Release ID"]] = lists[r["Release ID"]] || []).push({ row: r, t }); });
@@ -1749,10 +1752,35 @@ function loadTrackData(){
         if (v["Track ID"]) (videosByTrack[v["Track ID"]] = videosByTrack[v["Track ID"]] || []).push(v);
         if (v["Release ID"]) (videosByRelease[v["Release ID"]] = videosByRelease[v["Release ID"]] || []).push(v);
       });
-      return { byId, lists, videosByTrack, videosByRelease, videos };
-    }).catch(err => { console.warn("Track lists unavailable:", err.message); cat._trackPromise = null; return { byId: {}, lists: {}, videosByTrack: {}, videosByRelease: {}, videos: [] }; });
+      // wholes and parts: partsOf[part] = [{whole, pos}], partsIn[whole] = [{part, pos}] in order; trackRels[track] = [release ids]
+      const partsOf = {}, partsIn = {}, trackRels = {};
+      parts.forEach(p => {
+        if (!byId[p["Whole ID"]] || !byId[p["Part ID"]]) return;
+        (partsOf[p["Part ID"]] = partsOf[p["Part ID"]] || []).push({ whole: p["Whole ID"], pos: +p.Position || 1 });
+        (partsIn[p["Whole ID"]] = partsIn[p["Whole ID"]] || []).push({ part: p["Part ID"], pos: +p.Position || 1 });
+      });
+      Object.values(partsIn).forEach(l => l.sort((a, b) => a.pos - b.pos));
+      Object.entries(lists).forEach(([rid, l]) => l.forEach(({ t }) => { const a = trackRels[t.ID] = trackRels[t.ID] || []; if (!a.includes(rid)) a.push(rid); }));
+      return (cat._trackData = { byId, lists, videosByTrack, videosByRelease, videos, partsOf, partsIn, trackRels });
+    }).catch(err => { console.warn("Track lists unavailable:", err.message); cat._trackPromise = null; return { byId: {}, lists: {}, videosByTrack: {}, videosByRelease: {}, videos: [], partsOf: {}, partsIn: {}, trackRels: {} }; });
   }
   return cat._trackPromise;
+}
+// "part 1 of Senki Otus (on You Sick Little Monkey)" / "contains noll ett + noll två" (releases other than curRel)
+function partNote(t, data, curRel){
+  if (!data || !data.partsOf) return "";
+  const cat = window._psilodumpCat;
+  if (!cat._relById || cat._relByIdN !== (cat.rows || []).length) { cat._relById = {}; (cat.rows || []).forEach(r => { cat._relById[r["ID"]] = r; }); cat._relByIdN = (cat.rows || []).length; }
+  const name = id => { const x = data.byId[id]; return x ? (x.Title || "(untitled)") + (x.Version ? " (" + x.Version + ")" : "") : ""; };
+  const onRel = id => (data.trackRels[id] || []).filter(rid => rid !== String(curRel || "")).map(rid => cat._relById[rid]).filter(Boolean).map(r => r[TITLE_COL]);
+  const out = [];
+  (data.partsOf[t.ID] || []).forEach(({ whole, pos }) => {
+    const n = (data.partsIn[whole] || []).length, rr = onRel(whole);
+    out.push((n > 1 ? "part " + pos + " of " : "part of ") + name(whole) + (rr.length ? " (on " + rr.join(", ") + ")" : ""));
+  });
+  const ps = data.partsIn[t.ID];
+  if (ps && ps.length) out.push("contains " + ps.map(p => name(p.part)).join(" + "));
+  return out.join(" · ");
 }
 const secToTime = s => { s = parseInt(s, 10); return s > 0 ? Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0") : ""; };
 
@@ -1768,7 +1796,8 @@ function releaseTrackItems(list){
       title: row.Title || t.Title || "(untitled)", version: row.Title ? "" : (t.Version || ""), artist: t.Artist || "",
       former: String(t["Former Titles"] || "").split(" | ").filter(Boolean),
       duration: secToTime(row.Length) || secToTime(t.Length), disc: +row.Disc || 1, pos: +row.Position || 0,
-      heading: row.Heading || "", note: row.Note || "", src: bz ? (site ? "https://" + site : "") + "/player/tracks/" + bz + ".mp3" : "",
+      heading: row.Heading || "", note: [row.Note || "", partNote(t, window._psilodumpCat._trackData, row["Release ID"])].filter(Boolean).join(" · "),
+      src: bz ? (site ? "https://" + site : "") + "/player/tracks/" + bz + ".mp3" : "",
       trackId: t.ID, ytMusic: row["YouTube Music"] || "",
     };
   });
@@ -3495,9 +3524,20 @@ function appendRelated(box, r, rows){
       else if (shared === mine.size && shared === theirs.size) alsoOn.push({ x, note: "same tracks" });
     });
     const byDate = (a, b) => String(a.x._catalogue || a.x._released || "").localeCompare(String(b.x._catalogue || b.x._released || ""));
+    // through wholes and parts (track_parts.csv): a part here whose whole is on another release, and the other way round
+    const used = new Set([...alsoOn, ...collects].map(o => o.x["ID"]));
+    const wholeOn = {}, partsOn = {};
+    const addTo = (bag, rid, t) => { const x = relById[rid]; if (!x || rid === r["ID"] || shown.has(rid) || used.has(rid)) return; (bag[rid] = bag[rid] || { x, ts: new Set() }).ts.add(t); };
+    mine.forEach(tid => {
+      (data.partsOf[tid] || []).forEach(({ whole }) => (data.trackRels[whole] || []).forEach(rid => addTo(wholeOn, rid, (data.byId[whole] || {}).Title)));
+      (data.partsIn[tid] || []).forEach(({ part }) => (data.trackRels[part] || []).forEach(rid => addTo(partsOn, rid, (data.byId[part] || {}).Title)));
+    });
+    const withNote = bag => Object.values(bag).map(o => ({ x: o.x, note: [...o.ts].filter(Boolean).join(", ") })).sort(byDate);
     const extra = [];
     if (alsoOn.length) extra.push(["Also on", alsoOn.sort(byDate)]);
     if (collects.length) extra.push(["Collects", collects.sort(byDate)]);
+    if (Object.keys(wholeOn).length) extra.push(["The whole track on", withNote(wholeOn)]);
+    if (Object.keys(partsOn).length) extra.push(["Parts released on", withNote(partsOn)]);
     if (extra.length) render(extra);
   }).catch(() => {});
 }
@@ -3664,7 +3704,7 @@ function buildTracksPage(mount, rows, data){
   const LOST_TEXT = { both: "lost", audio: "no recording left", project: "project files lost" };
   const all = Object.values(data.byId).map(t => {
     const rels = onRelease[t.ID] || [];
-    const search = [t.Title, t.Version, t.Artist, t["Former Titles"], t.ISRC, t.Description, LOST_TEXT[t.Lost] || "", ...rels.map(r => r[TITLE_COL] + " " + (r[CAT_COL] || ""))].join(" ").toLowerCase();
+    const search = [t.Title, t.Version, t.Artist, t["Former Titles"], t.ISRC, t.Description, LOST_TEXT[t.Lost] || "", partNote(t, data, ""), ...rels.map(r => r[TITLE_COL] + " " + (r[CAT_COL] || ""))].join(" ").toLowerCase();
     return { t, rels, types: trackTypes(t), date: tdate(t), released: !!t.Released, playable: /track\/\d+/.test(String(t.Source || "")), search };
   });
   const decades = [...new Set(all.map(x => (x.date.match(/^(\d{3})\d/) || [])[1]).filter(Boolean))].sort().reverse().map(d => d + "0s");
@@ -3716,7 +3756,7 @@ function buildTracksPage(mount, rows, data){
       const ytm = (String(t.YouTube || "").match(/music\.youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/) || [])[1] || "";
       return { title: t.Title || "(untitled)", version: t.Version || "", artist: t.Artist || "",
         former: String(t["Former Titles"] || "").split(" | ").filter(Boolean), duration: secToTime(t.Length), disc: 1, pos: null, heading,
-        note: [t.Finished, released ? "" : "unreleased", LOST_TEXT[t.Lost] || "", t.Description, rels.length ? "on " + rels.map(r => r[TITLE_COL]).join(", ") : ""].filter(Boolean).join(" · "),
+        note: [t.Finished, released ? "" : "unreleased", LOST_TEXT[t.Lost] || "", t.Description, partNote(t, data, ""), rels.length ? "on " + rels.map(r => r[TITLE_COL]).join(", ") : ""].filter(Boolean).join(" · "),
         src: bz ? "/player/tracks/" + bz + ".mp3" : "", trackId: t.ID, ytMusic: ytm, video: ((data.videosByTrack[t.ID] || [])[0] || {})["Video ID"] || "",
         post: (data._postByTrack || {})[t.ID] || "", cover: (rels.find(r => r._thumbUrl) || {})._thumbUrl || "" };
     });
