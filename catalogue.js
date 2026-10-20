@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.46.0";
+const JS_VERSION = "1.47.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -1978,6 +1978,19 @@ function renderRelease(mount, rows){
   moveModalsToBody();
   document.title = title + " | psilodump";
   renderPlayer(document.getElementById("psd-player"), r, albumId);
+  // Length (v1.47.0): the release's total from our track list (each row's own length, else the track's), shown only
+  // when every track has one (DaDoomDay and Greatest Hits miss some) — "29:29 · 7 tracks", after Format
+  loadTrackData().then(data => {
+    const list = data.lists[r["ID"]] || [], dl = mount.querySelector(".psd-rel-facts");
+    if (!list.length || !dl || !document.body.contains(dl) || dl.querySelector(".psd-len")) return;
+    const secs = list.map(({ row, t }) => parseInt(row.Length || t.Length, 10) || 0);
+    if (secs.some(x => !x)) return;
+    const tot = secs.reduce((a, b) => a + b, 0), h = Math.floor(tot / 3600), m = Math.floor(tot % 3600 / 60), sec = tot % 60;
+    const txt = (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(sec).padStart(2, "0") + " · " + list.length + " track" + (list.length === 1 ? "" : "s");
+    const dts = [...dl.querySelectorAll("dt")], after = dts.find(d => d.textContent === "Format") || dts.find(d => d.textContent === "Label") || dts[dts.length - 1];
+    const html = `<dt class="psd-len">Length</dt><dd class="psd-len">${txt}</dd>`;
+    if (after && after.nextElementSibling) after.nextElementSibling.insertAdjacentHTML("afterend", html); else dl.insertAdjacentHTML("beforeend", html);
+  }).catch(() => {});
   appendReleasePictures(mount.querySelector(".psd-rel"), r);
   appendRelated(mount.querySelector(".psd-rel"), r, rows);
   appendAlsoOn(mount.querySelector(".psd-rel"), r);
