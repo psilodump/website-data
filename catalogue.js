@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.47.1";
+const JS_VERSION = "1.48.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -3389,6 +3389,18 @@ function initPerson(){
     Object.entries(data.lists).forEach(([rid, list]) => { if (relById[rid] && list.some(({ t }) => trackHits.includes(t))) addRole(relById[rid], "track"); });
     const rels = [...relSet.values()].sort((a, b) => String(b._catalogue || b._released || "").localeCompare(String(a._catalogue || a._released || "")));
     const remixes = trackHits.filter(t => /remix/i.test(t.Type || "") || /remix|mix|rmx/i.test(t.Version || ""));
+    // v1.48.0 (the user's wish): the other tracks with them — collaborations, released and unreleased, newest first
+    const together = trackHits.filter(t => !remixes.includes(t)).sort((a, b) => String(b.Finished || b.Released || "").localeCompare(String(a.Finished || a.Released || "")) || String(a.Title).localeCompare(String(b.Title)));
+    let lastYear = null;
+    const togetherItems = together.map(t => {
+      const rr = (data.trackRels[t.ID] || []).map(rid => relById[rid]).filter(Boolean);
+      const year = String(t.Finished || t.Released || "").slice(0, 4) || "Undated", heading = year !== lastYear ? year : ""; lastYear = year;
+      const bz = (String(t.Source || "").match(/track\/(\d+)/) || [])[1];
+      return { title: t.Title || "(untitled)", version: t.Version || "", artist: t.Artist || "", former: String(t["Former Titles"] || "").split(" | ").filter(Boolean),
+        duration: secToTime(t.Length), disc: 1, pos: null, heading,
+        note: [t.Finished, t.Released ? "" : "unreleased", t.Description, partNote(t, data, ""), rr.length ? "on " + rr.map(r => r[TITLE_COL]).join(", ") : ""].filter(Boolean).join(" · "),
+        src: bz ? "/player/tracks/" + bz + ".mp3" : "", trackId: t.ID, cover: (rr.find(r => r._thumbUrl) || {})._thumbUrl || "" };
+    });
     const tagged = posts.filter(x => String(x.Tags || "").split(/\s*,\s*/).some(t => pp.byKey[personKey(t)] === p));
     const vids = (data.videos || []).filter(v => namesPerson(v["Made By"], p));
     const appsBy = apps.filter(a => namesPerson(a.Artist, p) || namesPerson(a.Label, p));
@@ -3407,11 +3419,14 @@ function initPerson(){
       ${sec("Gigs together", gl.length, `<ul>${gl.map(({ r, g }) => `<li><small>${esc(String(g.Date).slice(0, 10))}</small><a href="${esc(gigHref(g))}">${esc(g.Event || "Gig")}</a> <span class="by">${esc([g.City, g.Country].filter(Boolean).join(", "))} · ${esc(LINEUP_ROLE_NAMES[r.Role] || r.Role)}${billedName(r["Billed As"]) && personKey(billedName(r["Billed As"])) !== personKey(p.Name) ? " as “" + esc(r["Billed As"]) + "”" : ""}</span></li>`).join("")}</ul>`)}
       ${sec("Releases", rels.length, `<ul>${rels.map(relRow).join("")}</ul>`)}
       ${appsBy.length ? `<section class="psd-person-sec"><h2>Appearances <small>${appsBy.length}</small></h2><div class="psd-phys-grid">${appsBy.map(a => appCard(a)).join("")}</div></section>` : ""}
+      ${together.length ? `<section class="psd-innews psd-person-sec"><h2>Tracks together <small>${together.length}</small></h2><section class="psd-rel-player" id="psd-person-tracks"></section></section>` : ""}
       ${sec("Remixes", remixes.length, `<ul>${remixes.map(t => `<li><small>${esc(String(t.Released || t.Finished || "").slice(0, 4))}</small>${esc(t.Title)}${t.Version ? ` <span class="by">(${esc(t.Version)})</span>` : ""}${t.Artist && t.Artist.toLowerCase() !== "psilodump" ? ` <span class="by">by ${esc(t.Artist)}</span>` : ""}</li>`).join("")}</ul>`)}
       ${sec("In the news", tagged.length, `<ul>${tagged.map(x => `<li><small>${esc(String(x.Date).slice(0, 10))}</small><a href="${esc(postHref(x))}">${esc(x.Title)}</a></li>`).join("")}</ul>`)}
       ${vids.length ? `<section class="psd-rel-videos"><h2>Videos</h2><div class="psd-vgrid">${vids.map(v => `<figure class="psd-vcard">${liteYouTube(v["Video ID"], v["YouTube Title"] || "Video")}<figcaption>${esc(v["YouTube Title"] || "Video")}<small>${esc(VIDEO_KINDS[v.Kind] || "Video")}</small></figcaption></figure>`).join("")}</div></section>` : ""}
-      ${!gl.length && !rels.length && !remixes.length && !tagged.length && !vids.length && !appsBy.length ? `<p>Nothing linked yet.</p>` : ""}
+      ${!gl.length && !rels.length && !remixes.length && !together.length && !tagged.length && !vids.length && !appsBy.length ? `<p>Nothing linked yet.</p>` : ""}
     </div>`;
+    const tbox = mount.querySelector("#psd-person-tracks");
+    if (tbox) { if (togetherItems.some(x => x.src)) buildTrackPlayer(tbox, { [TITLE_COL]: "Tracks with " + p.Name }, togetherItems, ""); else tbox.innerHTML = trackListHtml(togetherItems, false); }
     document.title = p.Name + " | psilodump";
   })).catch(err => { console.error("Failed to load person:", err); mount.innerHTML = `<div class="psd-rel">Unable to load this page right now. Please refresh the page.</div>`; });
 }
