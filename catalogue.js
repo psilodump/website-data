@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.47.0";
+const JS_VERSION = "1.47.1";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -412,6 +412,7 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-post-tags { margin-top: 18px !important; display: flex !important; flex-wrap: wrap !important; gap: 6px !important; }
 .psd-rel .psd-post-tags a { font-size: 12px !important; padding: 2px 9px !important; border-radius: 999px !important; border: 1px solid rgba(127,127,127,.35) !important; text-decoration: none !important; }
 .psd-post-old { font-size: 12px !important; opacity: .7 !important; margin-top: 10px !important; }
+.psd-innews h2 { font-size: 15px !important; margin: 0 0 6px !important; color: inherit !important; opacity: .75 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
 .psd-innews ul { list-style: none !important; margin: 0 !important; padding: 0 !important; }
 .psd-innews li { font-size: 14px !important; padding: 3px 0 !important; margin: 0 !important; list-style: none !important; }
 .psd-innews li small { opacity: .65 !important; margin-right: 8px !important; font-variant-numeric: tabular-nums !important; }
