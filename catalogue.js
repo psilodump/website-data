@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.44.2";
+const JS_VERSION = "1.45.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -3660,9 +3660,11 @@ function buildTracksPage(mount, rows, data){
   Object.values(onRelease).forEach(l => l.sort((a, b) => relDate(a).localeCompare(relDate(b))));
   // the tracks page lists and sorts by when a track was finished (the user's choice); no finished date = "Undated", last
   const tdate = t => t.Finished || "";
+  // tracks.csv "Lost" (v1.45.0): project files and/or every recording of the track are gone
+  const LOST_TEXT = { both: "lost", audio: "no recording left", project: "project files lost" };
   const all = Object.values(data.byId).map(t => {
     const rels = onRelease[t.ID] || [];
-    const search = [t.Title, t.Version, t.Artist, t["Former Titles"], t.ISRC, t.Description, ...rels.map(r => r[TITLE_COL] + " " + (r[CAT_COL] || ""))].join(" ").toLowerCase();
+    const search = [t.Title, t.Version, t.Artist, t["Former Titles"], t.ISRC, t.Description, LOST_TEXT[t.Lost] || "", ...rels.map(r => r[TITLE_COL] + " " + (r[CAT_COL] || ""))].join(" ").toLowerCase();
     return { t, rels, types: trackTypes(t), date: tdate(t), released: !!t.Released, playable: /track\/\d+/.test(String(t.Source || "")), search };
   });
   const decades = [...new Set(all.map(x => (x.date.match(/^(\d{3})\d/) || [])[1]).filter(Boolean))].sort().reverse().map(d => d + "0s");
@@ -3714,7 +3716,7 @@ function buildTracksPage(mount, rows, data){
       const ytm = (String(t.YouTube || "").match(/music\.youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/) || [])[1] || "";
       return { title: t.Title || "(untitled)", version: t.Version || "", artist: t.Artist || "",
         former: String(t["Former Titles"] || "").split(" | ").filter(Boolean), duration: secToTime(t.Length), disc: 1, pos: null, heading,
-        note: [t.Finished, released ? "" : "unreleased", t.Description, rels.length ? "on " + rels.map(r => r[TITLE_COL]).join(", ") : ""].filter(Boolean).join(" · "),
+        note: [t.Finished, released ? "" : "unreleased", LOST_TEXT[t.Lost] || "", t.Description, rels.length ? "on " + rels.map(r => r[TITLE_COL]).join(", ") : ""].filter(Boolean).join(" · "),
         src: bz ? "/player/tracks/" + bz + ".mp3" : "", trackId: t.ID, ytMusic: ytm, video: ((data.videosByTrack[t.ID] || [])[0] || {})["Video ID"] || "",
         post: (data._postByTrack || {})[t.ID] || "", cover: (rels.find(r => r._thumbUrl) || {})._thumbUrl || "" };
     });
