@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.59.2";
+const JS_VERSION = "1.60.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -232,6 +232,17 @@ a.rel-cover { display: block !important; text-decoration: none !important; }
 .psd-rel a.psd-rel-svc, .psd-rel a.psd-rel-phys-btn, .psd-rel a.psd-ed-buy { text-decoration: none !important; }
 .psd-rel-loading { opacity: .7 !important; background: transparent !important; color: inherit !important; }
 .psd-rel-nav { display: flex !important; justify-content: space-between !important; gap: 12px !important; font-size: 14px !important; margin-bottom: 16px !important; }
+.psd-rel-top { margin: -20px -20px 18px !important; padding: 14px 20px 0 !important; background: var(--rel-top, rgba(0,0,0,.25)) !important; color: var(--rel-top-text, inherit) !important; border-radius: 12px 12px 0 0 !important; }
+.psd-rel-top .psd-rel-nav { margin-bottom: 0 !important; padding-bottom: 14px !important; }
+.psd-rel-top .psd-rel-nav a { color: inherit !important; }
+.psd-ed-tabs { display: flex !important; align-items: flex-end !important; gap: 4px !important; overflow-x: auto !important; scrollbar-width: thin !important; }
+.psd-ed-label { font-size: 12px !important; opacity: .75 !important; text-transform: uppercase !important; letter-spacing: .06em !important; padding: 0 8px 9px 0 !important; white-space: nowrap !important; }
+.psd-ed-tab { display: inline-flex !important; align-items: center !important; gap: 7px !important; padding: 6px 12px 7px 7px !important; border-radius: 9px 9px 0 0 !important; background: var(--ed-bg) !important; color: var(--ed-text) !important; text-decoration: none !important; font-size: 13px !important; white-space: nowrap !important; opacity: .82 !important; box-shadow: inset 0 -6px 8px -6px rgba(0,0,0,.35) !important; }
+.psd-ed-tab:hover { opacity: 1 !important; }
+.psd-rel a.psd-ed-tab, .psd-rel a.psd-ed-tab:hover, .psd-rel a.psd-ed-tab * { text-decoration: none !important; }
+.psd-ed-tab.is-on { background: var(--rel-bg) !important; color: var(--rel-text) !important; opacity: 1 !important; box-shadow: none !important; font-weight: 600 !important; padding-bottom: 9px !important; }
+.psd-ed-tab img, .psd-ed-tab .ph { width: 22px !important; height: 22px !important; border-radius: 3px !important; object-fit: cover !important; flex: 0 0 22px !important; background: rgba(127,127,127,.3) !important; }
+.psd-ed-tab small { opacity: .7 !important; font-weight: normal !important; }
 .psd-rel-nav a { text-decoration: none !important; opacity: .85 !important; }
 .psd-rel-nav a:hover { opacity: 1 !important; text-decoration: underline !important; }
 .psd-rel-step { display: flex !important; gap: 16px !important; }
@@ -926,6 +937,25 @@ function luminance(rgb){
 }
 const DARK_TEXT_LUM = luminance([17, 17, 17]);
 // Returns {bg, text} for the colour darkened to `shade` (1 = as is), or null.
+// A release's editions (itself included), newest first: the same title when the MusicBrainz groups don't disagree,
+// or connected (also through each other) by a reissue / remaster / expanded / version relation. Used by the edition
+// tabs on release pages; Related releases then leaves these out.
+const EDITION_REL_KINDS = ["reissue", "remaster", "expanded", "version"];
+function editionFamily(r, rows){
+  const rels = (window._psilodumpCat.relations || []).filter(x => EDITION_REL_KINDS.includes(x.Kind));
+  const sameTitle = (a, b) => slugify(a[TITLE_COL]) === slugify(b[TITLE_COL]) && !(a["MusicBrainz"] && b["MusicBrainz"] && a["MusicBrainz"] !== b["MusicBrainz"]);
+  const byId = {}; rows.forEach(x => { byId[x["ID"]] = x; });
+  const fam = new Set([r]);
+  for (let grew = true; grew; ) {
+    grew = false;
+    rows.forEach(x => { if (!fam.has(x) && [...fam].some(m => sameTitle(m, x))) { fam.add(x); grew = true; } });
+    rels.forEach(x => {
+      const a = byId[x["Release ID"]], b = byId[x["Related ID"]];
+      if (a && b && fam.has(a) !== fam.has(b)) { fam.add(fam.has(a) ? b : a); grew = true; }
+    });
+  }
+  return [...fam].sort((a, b) => String(b._released || b._catalogue || "").localeCompare(String(a._released || a._catalogue || "")));
+}
 function releaseSurface(bgHex, shade){
   const rgb = hexToRgb(bgHex);
   if (!rgb) return null;
@@ -1994,7 +2024,8 @@ function renderRelease(mount, rows){
   const panel = releaseSurface(r["Bg Color"], 1) || { bg: "#181818", text: "#ffffff" };
   const soft = releaseSurface(r["Bg Color"], 0.85) || { bg: "#222222", text: "#ffffff" };
   const deep = releaseSurface(r["Bg Color"], 0.6) || { bg: "#2a2a2a", text: "#ffffff" };
-  const vars = `--rel-bg:${panel.bg};--rel-text:${panel.text};--rel-soft:${soft.bg};--rel-soft-text:${soft.text};--rel-deep:${deep.bg};--rel-deep-text:${deep.text}`;
+  const top = releaseSurface(r["Bg Color"], 0.72) || { bg: "#111111", text: "#ffffff" };
+  const vars = `--rel-bg:${panel.bg};--rel-text:${panel.text};--rel-soft:${soft.bg};--rel-soft-text:${soft.text};--rel-deep:${deep.bg};--rel-deep-text:${deep.text};--rel-top:${top.bg};--rel-top-text:${top.text}`;
 
   const title = r[TITLE_COL] || "(untitled)";
   const link = (x, label) => `<a href="${esc(releaseHref(x))}">${esc(label || x[TITLE_COL] || "(untitled)")}</a>`;
@@ -2021,7 +2052,15 @@ function renderRelease(mount, rows){
     .sort((a, b) => String(b._released || b._catalogue || "").localeCompare(String(a._released || a._catalogue || "")));   // newest first (the user's wish)
   // the year, plus the label when it's the same year (8BP114: 8bitpeoples in January 2011, 476 Digital in April)
   const edYear = x => x._yearRel !== "Unknown" ? x._yearRel : x._yearCat;
-  if (editions.length) facts.push(["Other editions", editions.map(x => link(x, `${x[TITLE_COL]} (${edYear(x)}${edYear(x) === edYear(r) && x["Label"] ? ", " + x._labels.join(", ") : ""})`)).join(", ")]);
+  // edition tabs (the user's filing-cabinet idea): the selected tab has the card's colour and flows into it
+  const family = editionFamily(r, rows);
+  const edWord = x => { const extra = String(x[TITLE_COL] || "").match(/\(([^)]+)\)\s*$/); return extra && !/\(([^)]+)\)\s*$/.test(title) ? extra[1] : ""; };
+  const tabs = family.length > 1 ? `<div class="psd-ed-tabs" role="tablist" aria-label="Editions"><span class="psd-ed-label">Editions</span>${family.map(x => {
+      const sf = releaseSurface(x["Bg Color"], 0.85) || { bg: "#2a2a2a", text: "#ffffff" };
+      const bits = [edWord(x), x["Netlabel"] === "1" ? "netlabel" : "", x["Live"] === "1" ? "in stores" : ""].filter(Boolean).join(" · ");
+      return `<a class="psd-ed-tab${x === r ? " is-on" : ""}" role="tab" aria-selected="${x === r}" href="${esc(releaseHref(x))}" style="--ed-bg:${sf.bg};--ed-text:${sf.text}"${x === r ? ' aria-current="page"' : ""}>${x._thumbUrl ? `<img src="${esc(x._thumbUrl)}" alt="">` : '<span class="ph"></span>'}<span>${esc(edYear(x))}${bits ? ` <small>· ${esc(bits)}</small>` : ""}</span></a>`;
+    }).join("")}</div>` : "";
+  if (editions.length && family.length < 2) facts.push(["Other editions", editions.map(x => link(x, `${x[TITLE_COL]} (${edYear(x)}${edYear(x) === edYear(r) && x["Label"] ? ", " + x._labels.join(", ") : ""})`)).join(", ")]);
 
   const listen = r._svc.map(s => `<a class="psd-rel-svc" href="${esc(s.href)}" target="_blank" rel="noopener nofollow">${icon(s.key)}<span>${esc(s.label)}</span></a>`).join("");
 
@@ -2037,13 +2076,15 @@ function renderRelease(mount, rows){
   const cover = r._largeUrl || r._thumbUrl;
   mount.innerHTML = `
   <div class="psd-rel" style="${vars}">
+    <div class="psd-rel-top">
     <nav class="psd-rel-nav">
       <a href="${CATALOGUE_PATH}">← Catalogue</a>
       <span class="psd-rel-step">
         ${newer ? `<a href="${esc(releaseHref(newer))}" title="${esc(newer[TITLE_COL])}">‹ Newer</a>` : ""}
         ${older ? `<a href="${esc(releaseHref(older))}" title="${esc(older[TITLE_COL])}">Older ›</a>` : ""}
       </span>
-    </nav>
+    </nav>${tabs}
+    </div>
     <div class="psd-rel-hero">
       <div class="psd-rel-cover"${cover ? ` data-lightbox="${esc(r._largeUrl || cover)}" data-thumb="${esc(r._thumbUrl)}" role="button" tabindex="0" aria-label="View larger artwork"` : ""}>
         ${cover ? `<img src="${esc(cover)}" alt="${esc(title)}">` : noCoverHtml(r)}
@@ -3690,6 +3731,8 @@ function appendRelated(box, r, rows){
   const shown = new Set([r["ID"]]);
   // already in the facts: parent, parts, other editions (same title)
   rows.forEach(x => { if ((r["Part Of"] && x["MusicBrainz"] === r["Part Of"]) || (r["MusicBrainz"] && x["Part Of"] === r["MusicBrainz"]) || slugify(x[TITLE_COL]) === slugify(r[TITLE_COL])) shown.add(x["ID"]); });
+  const famIds = new Set(editionFamily(r, rows).map(x => x["ID"]));
+  famIds.forEach(id => shown.add(id));
   const lines = [];      // [label, [releases], note]
   const group = {};
   (cat.relations || []).forEach(rel => {
@@ -3698,6 +3741,7 @@ function appendRelated(box, r, rows){
     if (rel["Release ID"] === r["ID"]) { other = relById[rel["Related ID"]]; label = names[0]; }
     else if (rel["Related ID"] === r["ID"]) { other = relById[rel["Release ID"]]; label = names[1]; }
     if (!other) return;
+    if (EDITION_REL_KINDS.includes(rel.Kind) && famIds.has(other["ID"])) return;     // shown as an edition tab
     shown.add(other["ID"]);
     (group[label] = group[label] || []).push({ x: other, note: rel.Note || "" });
   });
