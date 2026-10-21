@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.51.0";
+const JS_VERSION = "1.52.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -1637,8 +1637,19 @@ function creditLines(c){
   if (c.mastered_by || c.mastered_at) lines.push(`${c.remaster ? "Remastered" : "Mastered"}${c.mastered_by ? " by " + c.mastered_by : ""}${c.mastered_at ? " at " + c.mastered_at : ""}.`);
   if (c.artwork_by) lines.push(`Artwork by ${c.artwork_by}.`);
   if (c.copyright_holder || c.copyright_year) lines.push(`© ${[c.copyright_holder, c.copyright_year].filter(Boolean).join(" ")}`);
+  if (c.license) lines.push(`Licensed under Creative Commons ${ccLicenseName(c.license)}: ${c.license}`);
   if (c.other) String(c.other).split(/\n+/).map(l => l.trim()).filter(Boolean).forEach(l => lines.push(l));
   return lines;
+}
+// A Creative Commons licence address as its name (the admin's ccLicenseName() does the same).
+function ccLicenseName(url){
+  if (/publicdomain\/zero/i.test(url)) return "CC0 (public domain)";
+  if (/publicdomain/i.test(url)) return "Public domain";
+  const m = String(url).match(/licenses\/([a-z-]+)\/([\d.]+)(?:\/([a-z]{2}))?/i);
+  if (!m) return url;
+  const names = { by: "Attribution", nc: "NonCommercial", nd: "NoDerivs", sa: "ShareAlike" };
+  const countries = { se: "Sweden", de: "Germany", es: "Spain", uk: "UK", us: "US", fi: "Finland", nl: "Netherlands", fr: "France" };
+  return m[1].split("-").map(p => names[p.toLowerCase()] || p).join("-") + " " + m[2] + (m[3] ? " " + (countries[m[3].toLowerCase()] || m[3].toUpperCase()) : "");
 }
 // Escaped text with web addresses turned into links.
 const linkify = s => esc(s).replace(/\b((?:https?:\/\/|www\.)[^\s<]+[^\s<.,;:!?)])/gi,
