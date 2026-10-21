@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.55.0";
+const JS_VERSION = "1.56.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -455,7 +455,11 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-ytbox { position: relative !important; width: 100% !important; aspect-ratio: 16 / 9 !important; border-radius: 10px !important; overflow: hidden !important; background: #000 !important; }
 .psd-tracks li.psd-row { display: flex !important; align-items: center !important; gap: 4px !important; }
 .psd-tracks li.psd-row > button, .psd-tracks li.psd-row > .psd-off { flex: 1 1 auto !important; min-width: 0 !important; }
-.psd-tlinks { display: flex !important; gap: 2px !important; flex: 0 0 auto !important; justify-content: flex-end !important; }
+.psd-tlinks { display: flex !important; gap: 2px !important; flex: 0 0 auto !important; justify-content: flex-end !important; align-self: flex-start !important; margin-top: 3px !important; }
+.psd-tinfo { display: flex !important; flex: 0 0 28px !important; width: 28px !important; justify-content: center !important; align-self: flex-start !important; margin-top: 3px !important; }
+.psd-tinfo button { display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 28px !important; height: 28px !important; border-radius: 6px !important; border: 0 !important; background: transparent !important; color: inherit !important; opacity: .55 !important; cursor: pointer !important; padding: 0 !important; }
+.psd-tinfo button:hover, .psd-tinfo button[aria-expanded="true"] { opacity: 1 !important; background: rgba(127,127,127,.18) !important; }
+.psd-tinfo svg { width: 16px !important; height: 16px !important; }
 .psd-tlinks a, .psd-tlinks button { display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 28px !important; height: 28px !important; border-radius: 6px !important; border: 0 !important; background: transparent !important; color: inherit !important; opacity: .65 !important; cursor: pointer !important; padding: 0 !important; text-decoration: none !important; }
 .psd-tlinks a:hover, .psd-tlinks button:hover { opacity: 1 !important; background: rgba(127,127,127,.18) !important; }
 .psd-tlinks svg { width: 16px !important; height: 16px !important; }
@@ -1802,7 +1806,10 @@ function loadTrackData(){
     const vids = get(VIDEOS_URL).catch(() => []);   // optional
     const partsCsv = get(PARTS_URL).catch(() => []);  // optional
     const perfCsv = get(PERFORMERS_URL).catch(() => []);  // optional
-    cat._trackPromise = Promise.all([get(TRACKS_URL), get(TRACKLISTS_URL), vids, partsCsv, perfCsv]).then(([tracks, rows, videos, parts, perf]) => {
+    const peopleCsv = get(PEOPLE_URL).catch(() => []);   // optional: names for the automatic remix credit
+    cat._trackPromise = Promise.all([get(TRACKS_URL), get(TRACKLISTS_URL), vids, partsCsv, perfCsv, peopleCsv]).then(([tracks, rows, videos, parts, perf, people]) => {
+      const personNames = {};                         // personKey(name or alias) -> the person's name
+      people.forEach(p => [p.Name, ...String(p.Aliases || "").split(" | ")].forEach(n => { const k = personKey(n); if (k && !personNames[k]) personNames[k] = p.Name; }));
       // performers per track (track_performers.csv): who plays what, e.g. "concert flute" by Ingrid Karlsson
       const performers = {};
       perf.forEach(x => { if (x["Track ID"] && x.Name) (performers[x["Track ID"]] = performers[x["Track ID"]] || []).push(x); });
@@ -1825,8 +1832,8 @@ function loadTrackData(){
       });
       Object.values(partsIn).forEach(l => l.sort((a, b) => a.pos - b.pos));
       Object.entries(lists).forEach(([rid, l]) => l.forEach(({ t }) => { const a = trackRels[t.ID] = trackRels[t.ID] || []; if (!a.includes(rid)) a.push(rid); }));
-      return (cat._trackData = { byId, lists, videosByTrack, videosByRelease, videos, partsOf, partsIn, trackRels, performers });
-    }).catch(err => { console.warn("Track lists unavailable:", err.message); cat._trackPromise = null; return { byId: {}, lists: {}, videosByTrack: {}, videosByRelease: {}, videos: [], partsOf: {}, partsIn: {}, trackRels: {}, performers: {} }; });
+      return (cat._trackData = { byId, lists, videosByTrack, videosByRelease, videos, partsOf, partsIn, trackRels, performers, personNames });
+    }).catch(err => { console.warn("Track lists unavailable:", err.message); cat._trackPromise = null; return { byId: {}, lists: {}, videosByTrack: {}, videosByRelease: {}, videos: [], partsOf: {}, partsIn: {}, trackRels: {}, performers: {}, personNames: {} }; });
   }
   return cat._trackPromise;
 }
@@ -1856,6 +1863,18 @@ function partNote(t, data, curRel, noPerformers){
   if (!noPerformers) (data.performers && data.performers[t.ID] || []).forEach(x => out.push((x.Role ? x.Role + " by " : "with ") + x.Name));
   return out.join(" · ");
 }
+// The remixer named in a track's version, as a known person's name ("" when none): "… remix by X", "X's … remix",
+// "X remix" — trying the leading words from longest to shortest ("John Novak 16:9 Anamorphic" -> "John Novak").
+function remixerOf(t, data){
+  const v = String(t.Version || ""), names = (data && data.personNames) || {};
+  if (!/\b(remix|rmx)\b/i.test(v)) return "";
+  const by = v.match(/\b(?:remix|rmx)\s+by\s+(.+)$/i);
+  let cand = by ? by[1] : v.replace(/\s*\b(?:remix|rmx)\b.*$/i, "");
+  if (!by && /['’]s\b/.test(cand)) cand = cand.split(/['’]s\b/)[0];
+  const words = cand.trim().split(/\s+/).filter(Boolean);
+  for (let n = words.length; n > 0; n--) { const k = personKey(words.slice(0, n).join(" ")); if (names[k]) return names[k]; }
+  return "";
+}
 const secToTime = s => { s = parseInt(s, 10); return s > 0 ? Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0") : ""; };
 
 // Our track list for a release as player items: title/version/artist/former titles, length (this
@@ -1872,7 +1891,11 @@ function releaseTrackItems(list){
       duration: secToTime(row.Length) || secToTime(t.Length), disc: +row.Disc || 1, pos: +row.Position || 0,
       // the row's own note stays visible; the generated details (parts, edits) and performers fold out (the user's wish)
       heading: row.Heading || "", note: row.Note || "", more: partNote(t, window._psilodumpCat._trackData, row["Release ID"], true),
-      perf: ((window._psilodumpCat._trackData || {}).performers || {})[t.ID] || [],
+      perf: (() => {
+        const d = window._psilodumpCat._trackData || {}, list = [...((d.performers || {})[t.ID] || [])], rx = remixerOf(t, d);
+        if (rx && !list.some(p => personKey(p.Name) === personKey(rx) && /remix/i.test(p.Role || ""))) list.push({ Name: rx, Role: "remix" });
+        return list;
+      })(),
       src: bz ? (site ? "https://" + site : "") + "/player/tracks/" + bz + ".mp3" : "",
       trackId: t.ID, ytMusic: row["YouTube Music"] || "",
       year: String(t.Finished || "").slice(0, 4),        // tiny "(2006)" after the title (the user's check on Finished)
@@ -2322,7 +2345,8 @@ function trackListHtml(items, playable){
     return (x.more ? `<span class="psd-more-txt">${esc(x.more)}</span>` : "")
       + byName.map(g => `<span class="psd-perf"><span class="psd-perf-n">${esc(g.name)}</span>${g.roles.map(r => `<span class="psd-perf-i">${esc(r)}</span>`).join("")}</span>`).join("");
   };
-  const iconSlots = Math.max(0, ...items.map(x => (x.video ? 1 : 0) + (nLinks(x) ? 1 : 0) + (x.post ? 1 : 0) + (moreHtml(x) ? 1 : 0)));
+  const iconSlots = Math.max(0, ...items.map(x => (x.video ? 1 : 0) + (nLinks(x) ? 1 : 0) + (x.post ? 1 : 0)));
+  const anyMore = items.some(x => moreHtml(x));
   let html = "", lastDisc = 0;
   items.forEach((x, i) => {
     if (discs && x.disc !== lastDisc) html += `<li class="psd-h">Disc ${x.disc}${x.heading ? " · " + esc(x.heading) : ""}</li>`;
@@ -2330,13 +2354,13 @@ function trackListHtml(items, playable){
     lastDisc = x.disc;
     const sub = [x.artist && x.artist.toLowerCase() !== "psilodump" ? "by " + esc(x.artist) : "", x.former.length ? "previously " + x.former.map(esc).join(", ") : "", x.note ? esc(x.note) : ""].filter(Boolean).join(" · ");
     const inner = `<span class="psd-n">${x.pos === null ? "" : (x.pos || i + 1)}</span><span class="psd-t">${esc(x.title)}${x.version ? ` <span class="psd-v">(${esc(x.version)})</span>` : ""}${x.year ? `<span class="psd-yr" title="Finished">(${esc(x.year)})</span>` : ""}${sub ? `<span class="psd-sub">${sub}</span>` : ""}${moreHtml(x) ? `<span class="psd-more">${moreHtml(x)}</span>` : ""}</span><span class="psd-d">${esc(x.duration)}</span>`;
-    const links = (moreHtml(x) ? `<button type="button" data-psd-more aria-expanded="false" title="More about this track" aria-label="More about ${esc(x.title)}">${INFO_ICON}</button>` : "")
-      + (x.video ? `<button type="button" data-psd-video="${esc(x.video)}" title="Video" aria-label="Video: ${esc(x.title)}">${VIDEO_ICON}</button>` : "")
+    const info = anyMore ? `<span class="psd-tinfo">${moreHtml(x) ? `<button type="button" data-psd-more aria-expanded="false" title="More about this track" aria-label="More about ${esc(x.title)}">${INFO_ICON}</button>` : ""}</span>` : "";
+    const links = (x.video ? `<button type="button" data-psd-video="${esc(x.video)}" title="Video" aria-label="Video: ${esc(x.title)}">${VIDEO_ICON}</button>` : "")
       + (nLinks(x) > 1 || (nLinks(x) && !x.ytMusic) ? `<button type="button" data-psd-listen="${esc(x.trackId || "")}" data-ytm="${esc(x.ytMusic || "")}" title="Listen on…" aria-label="Listen to ${esc(x.title)} on…" aria-haspopup="menu">${LISTEN_ICON}</button>`
         : x.ytMusic ? `<a href="https://music.youtube.com/watch?v=${esc(x.ytMusic)}" target="_blank" rel="noopener" title="YouTube Music" aria-label="${esc(x.title)} on YouTube Music">${YTMUSIC_ICON}</a>` : "")
       + (x.post ? `<a href="${esc(x.post)}" title="Read the post" aria-label="Read the post about ${esc(x.title)}">${POST_ICON}</a>` : "");
     const body = playable && x.src ? `<button type="button" data-psd-track="${i}">${inner}</button>` : `<div class="psd-off">${inner}</div>`;
-    html += `<li class="psd-row">${body}${iconSlots ? `<span class="psd-tlinks" style="width:${iconSlots * 30}px">${links}</span>` : ""}</li>`;
+    html += `<li class="psd-row">${info}${body}${iconSlots ? `<span class="psd-tlinks" style="flex:0 0 ${iconSlots * 30}px;width:${iconSlots * 30}px">${links}</span>` : ""}</li>`;
   });
   return `<ol class="psd-tracks">${html}</ol>`;
 }
