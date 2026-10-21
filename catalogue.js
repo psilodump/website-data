@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.49.0";
+const JS_VERSION = "1.50.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -1790,6 +1790,15 @@ function partNote(t, data, curRel){
   });
   const ps = data.partsIn[t.ID];
   if (ps && ps.length) out.push("contains " + ps.map(p => name(p.part)).join(" + "));
+  // edits (tracks.csv "Edited From"): the Never Heal versions are cut from the uncut originals on Brains
+  if (!data._editsOf) { data._editsOf = {}; Object.values(data.byId).forEach(x => { const f = x["Edited From"]; if (f && data.byId[f]) (data._editsOf[f] = data._editsOf[f] || []).push(x.ID); }); }
+  const from = t["Edited From"];
+  if (from && data.byId[from]) { const rr = onRel(from); out.push("edited from " + name(from) + (rr.length ? " (on " + rr.join(", ") + ")" : "")); }
+  const kids = data._editsOf[t.ID];
+  if (kids && kids.length) {
+    const rr = [...new Set(kids.flatMap(onRel))];
+    out.push(rr.length ? "edited for " + rr.join(", ") : "edited as " + kids.map(name).join(", "));
+  }
   return out.join(" · ");
 }
 const secToTime = s => { s = parseInt(s, 10); return s > 0 ? Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0") : ""; };
