@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.50.0";
+const JS_VERSION = "1.50.1";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -497,7 +497,7 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-dock button.psd-dock-x { opacity: .6 !important; width: 30px !important; }
 .psd-dock button.psd-dock-x svg { width: 16px !important; height: 16px !important; }
 .psd-dock-prog { position: absolute !important; left: 0 !important; right: 0 !important; bottom: 0 !important; height: 5px !important; background: rgba(255,255,255,.15) !important; cursor: pointer !important; }
-.psd-dock-fill { height: 100% !important; width: 0 !important; background: #fff !important; }
+.psd-dock-fill { height: 100% !important; width: 0; background: #fff !important; }
 html.psd-dock-on body { padding-bottom: 84px !important; }
 @media (max-width: 480px) { .psd-dock button[data-psd-dock="prev"] { display: none !important; } }
 .psd-player-note { opacity: .75 !important; font-size: 13px !important; padding: 8px 0 !important; }
@@ -2176,6 +2176,10 @@ function shuffleItems(){
     Object.values(data.byId).forEach(t => {
       const bz = (String(t.Source || "").match(/track\/(\d+)/) || [])[1];
       if (!bz || seen.has(bz)) return; seen.add(bz);
+      // wholes (a recording also released in parts, e.g. Never Heal's chapters on the Chopstick Edition) are left out:
+      // they are long and their parts are in the shuffle already (only when a part is playable); they still play
+      // from their release page
+      if ((data.partsIn[t.ID] || []).some(x => /track\/\d+/.test((data.byId[x.part] || {}).Source || ""))) return;
       const r = firstRel[t.ID];
       items.push({ title: t.Title || "(untitled)", version: t.Version || "", artist: t.Artist || "", former: [], duration: secToTime(t.Length), disc: 1, pos: null, heading: "",
         note: r ? "on " + r[TITLE_COL] : "", src: "/player/tracks/" + bz + ".mp3", trackId: t.ID, ytMusic: "", video: "", cover: r ? (r._thumbUrl || "") : "" });
@@ -2598,7 +2602,7 @@ function updateDock(){
   d.querySelector(".psd-dock-s").textContent = [t.artist && t.artist.toLowerCase() !== "psilodump" ? t.artist : "", p.title, fmtTime(a.currentTime) + (isFinite(a.duration) ? " / " + fmtTime(a.duration) : "")].filter(Boolean).join(" · ");
   updateShuffleButtons();
   const pp = d.querySelector(".psd-dock-pp"); pp.innerHTML = playing ? PAUSE_ICON : PLAY_ICON; pp.setAttribute("aria-label", playing ? "Pause" : "Play");
-  d.querySelector(".psd-dock-fill").style.width = (isFinite(a.duration) && a.duration > 0 ? a.currentTime / a.duration * 100 : 0) + "%";
+  d.querySelector(".psd-dock-fill").style.setProperty("width", (isFinite(a.duration) && a.duration > 0 ? a.currentTime / a.duration * 100 : 0) + "%", "important");
 }
 // Show / hide the dock as the page's player scrolls in and out of view.
 let dockScrollTick = false;
