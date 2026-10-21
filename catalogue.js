@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.57.1";
+const JS_VERSION = "1.58.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -817,6 +817,7 @@ function getCoverUrl(r, isLarge = false) {
 
 // The store version of a release can have another name (e.g. Whut is in stores only as
 // "Whut (Hardfloor Remix)"), so listeners aren't surprised by a different track list.
+const IA_RE = /archive\.org\/details\//i;
 function storeNote(r){
   return r["In Stores As"] ? `In stores as “${esc(r["In Stores As"])}”` : "";
 }
@@ -829,6 +830,9 @@ function withDerived(arr){
       const expanded = expandPlatformUrl(f, s.key);
       return expanded ? { href: normHref(expanded), label: s.label, key: s.key, class: s.class } : null;
     }).filter(Boolean);
+    // netlabel releases: their archive.org page (in Sources) as a listening service too
+    const ia = String(r["Sources"] || "").split(MULTI_LINK_SEP).map(x => x.trim()).find(u => IA_RE.test(u));
+    if (ia) svc.push({ href: normHref(ia), label: "Internet Archive", key: "archive", class: "svc-ia" });
     
     const relDate = r[DATE_COL] || "";
     const catDate = r[CATDATE_COL] || "";
@@ -896,7 +900,8 @@ function icon(key){
     "spotify":  "spotify.png",
     "youtube":  "youtube.png",
     "apple":    "applemusic.png",
-    "beatport": "beatport.png"
+    "beatport": "beatport.png",
+    "archive":  "archive.svg"
   };
   const fileName = iconMap[key];
   if (!fileName) return "";
@@ -1776,7 +1781,7 @@ const releaseHref = r => SITE_BASE + RELEASE_PATH + "?r=" + encodeURIComponent(r
 function moreLinks(r){
   const out = [{ label: "Release page on psilodu.mp", href: releaseHref(r) }];
   const host = u => u.replace(/^https?:\/\/(www\.)?/, "").split("/")[0];
-  String(r["Sources"] || "").split(MULTI_LINK_SEP).map(x => x.trim()).filter(Boolean).forEach(u => { const h = normHref(u); out.push({ label: host(h), href: h, ext: true }); });
+  String(r["Sources"] || "").split(MULTI_LINK_SEP).map(x => x.trim()).filter(u => u && !IA_RE.test(u)).forEach(u => { const h = normHref(u); out.push({ label: host(h), href: h, ext: true }); });
   if (/^https:\/\/www\.discogs\.com\//.test(r["Discogs"] || "")) out.push({ label: "Discogs", href: r["Discogs"], ext: true });
   if (MBID_RE.test(r["MusicBrainz"] || "")) out.push({ label: "MusicBrainz", href: MB_RG_URL + r["MusicBrainz"], ext: true });
   return out;
@@ -2022,7 +2027,7 @@ function renderRelease(mount, rows){
   const more = [];
   if (albumId) more.push(`<a href="${SITE}/album/${albumId}">Album page on psilodu.mp</a>`);
   else if (r["Source"]) more.push(`<a href="${esc(normHref(expandPlatformUrl(r["Source"], "source")))}">Release page</a>`);
-  String(r["Sources"] || "").split(MULTI_LINK_SEP).map(x => x.trim()).filter(Boolean)
+  String(r["Sources"] || "").split(MULTI_LINK_SEP).map(x => x.trim()).filter(u => u && !IA_RE.test(u))
     .forEach(u => { const h = normHref(u); more.push(`<a href="${esc(h)}" target="_blank" rel="noopener nofollow">${esc(h.replace(/^https?:\/\/(www\.)?/, "").split("/")[0])}</a>`); });
   if (MBID_RE.test(r["MusicBrainz"] || "")) more.push(`<a href="${MB_RG_URL}${esc(r["MusicBrainz"])}" target="_blank" rel="noopener">MusicBrainz</a>`);
   if (/^https:\/\/www\.discogs\.com\//.test(r["Discogs"] || "")) more.push(`<a href="${esc(r["Discogs"])}" target="_blank" rel="noopener">Discogs</a>`);
