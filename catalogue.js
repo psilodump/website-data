@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.57.0";
+const JS_VERSION = "1.57.1";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -3673,7 +3673,8 @@ function appendRelated(box, r, rows){
   if (!box) return;
   const cat = window._psilodumpCat;
   const relById = {}; rows.forEach(x => { relById[x["ID"]] = x; });
-  const yr = x => String(x._catalogue || x._released || "").slice(0, 4);
+  // the year it came out (a reissue keeps the original's catalogue date, so that would make all versions look alike)
+  const yr = x => String(x._released || x._catalogue || "").slice(0, 4);
   const link = x => `<a href="${esc(releaseHref(x))}">${esc(x[TITLE_COL] || "(untitled)")}</a>`;
   const shown = new Set([r["ID"]]);
   // already in the facts: parent, parts, other editions (same title)
