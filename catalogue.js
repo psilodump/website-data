@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.48.0";
+const JS_VERSION = "1.49.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -452,6 +452,10 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-tlinks a, .psd-tlinks button { display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 28px !important; height: 28px !important; border-radius: 6px !important; border: 0 !important; background: transparent !important; color: inherit !important; opacity: .65 !important; cursor: pointer !important; padding: 0 !important; text-decoration: none !important; }
 .psd-tlinks a:hover, .psd-tlinks button:hover { opacity: 1 !important; background: rgba(127,127,127,.18) !important; }
 .psd-tlinks svg { width: 16px !important; height: 16px !important; }
+.psd-listen-pop { position: absolute !important; z-index: 2147483000 !important; background: #1e1e1e !important; color: #eee !important; border-radius: 10px !important; padding: 6px !important; box-shadow: 0 6px 24px rgba(0,0,0,.45) !important; font: 14px/1.3 system-ui, sans-serif !important; min-width: 170px !important; }
+.psd-listen-pop a { display: flex !important; gap: 10px !important; align-items: center !important; padding: 6px 10px !important; color: inherit !important; text-decoration: none !important; border-radius: 6px !important; }
+.psd-listen-pop a:hover, .psd-listen-pop a:focus { background: rgba(255,255,255,.1) !important; }
+.psd-listen-pop img { width: 22px !important; height: 22px !important; border-radius: 5px !important; flex: 0 0 auto !important; }
 .psd-embed { width: 100% !important; border: 0 !important; border-radius: 12px !important; display: block !important; }
 .psd-player { background: var(--rel-soft, #222) !important; color: var(--rel-soft-text, #fff) !important; border-radius: 10px !important; padding: 12px !important; }
 /* TRACKS page (v1.41.0) */
@@ -1355,6 +1359,9 @@ if (!window._psilodumpModalDelegated) {
   document.addEventListener('click', (e) => {
     const t = e.target;
     if (!(t instanceof Element)) return;
+    const lb = t.closest('[data-psd-listen]');
+    if (lb) { e.preventDefault(); e.stopPropagation(); openListenPop(lb); return; }
+    if (!t.closest('.psd-listen-pop')) closeListenPop();
     if (t.classList.contains('rel-modal-overlay') || t.classList.contains('rel-lightbox-img')) {
       t.closest('.rel-modal-overlay')?.classList.remove('active');
       return;
@@ -1471,6 +1478,8 @@ if (!window._psilodumpModalDelegated) {
   // or filter pill acts like a click.
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+      const lp = document.querySelector('.psd-listen-pop');
+      if (lp) { const b = lp._from; closeListenPop(); if (b && b.isConnected) b.focus(); return; }
       document.querySelectorAll('.rel-modal-overlay.active').forEach(m => m.classList.remove('active'));
       return;
     }
@@ -2019,6 +2028,41 @@ const PAUSE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y=
 // with one <audio> element. Otherwise: the Spotify / Apple Music / YouTube player.
 const VIDEO_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 10.5l5-3v9l-5-3z" fill="currentColor"/></svg>';
 const POST_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="2"/></svg>';
+const LISTEN_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15v-3a8 8 0 0 1 16 0v3" fill="none" stroke="currentColor" stroke-width="2"/><rect x="3" y="14" width="5" height="7" rx="1.5" fill="currentColor"/><rect x="16" y="14" width="5" height="7" rx="1.5" fill="currentColor"/></svg>';
+// Where a track can be heard in the stores (tracks.csv: Spotify track id, Apple address, Deezer / Tidal track id,
+// Amazon "<album ASIN>/<track ASIN>") + its YouTube Music art track. Icons from ICON_BASE.
+function trackListenLinks(t, ytMusic){
+  if (!t) return ytMusic ? [{ label: "YouTube Music", icon: "youtubemusic.webp", url: "https://music.youtube.com/watch?v=" + ytMusic }] : [];
+  const out = [], v = k => String(t[k] || "").trim();
+  if (v("Spotify")) out.push({ label: "Spotify", icon: "spotify.png", url: /^https?:/.test(v("Spotify")) ? v("Spotify") : "https://open.spotify.com/track/" + v("Spotify") });
+  if (/^https?:/.test(v("Apple"))) out.push({ label: "Apple Music", icon: "applemusic.png", url: v("Apple") });
+  if (ytMusic) out.push({ label: "YouTube Music", icon: "youtubemusic.webp", url: "https://music.youtube.com/watch?v=" + ytMusic });
+  if (/^\d+$/.test(v("Deezer"))) out.push({ label: "Deezer", icon: "deezer.webp", url: "https://www.deezer.com/track/" + v("Deezer") });
+  if (/^\d+$/.test(v("Tidal"))) out.push({ label: "TIDAL", icon: "tidal.webp", url: "https://tidal.com/browse/track/" + v("Tidal") });
+  const am = v("Amazon").split("/");
+  if (am.length === 2 && am[0] && am[1]) out.push({ label: "Amazon Music", icon: "amazon.webp", url: "https://music.amazon.com/albums/" + am[0] + "?trackAsin=" + am[1] });
+  return out;
+}
+function closeListenPop(){ document.querySelectorAll(".psd-listen-pop").forEach(x => x.remove()); }
+function openListenPop(btn){
+  const open = document.querySelector(".psd-listen-pop");
+  closeListenPop();
+  if (open && open._from === btn) return;                         // the same button again = close
+  const td = (window._psilodumpCat || {})._trackData;
+  const links = trackListenLinks(td && td.byId[btn.getAttribute("data-psd-listen")], btn.getAttribute("data-ytm") || "");
+  if (!links.length) return;
+  const pop = document.createElement("div");
+  pop.className = "psd-listen-pop"; pop._from = btn;
+  pop.setAttribute("role", "menu");
+  pop.innerHTML = links.map(l => `<a role="menuitem" href="${esc(l.url)}" target="_blank" rel="noopener"><img src="${ICON_BASE}${l.icon}" alt="">${esc(l.label)}</a>`).join("");
+  document.body.appendChild(pop);
+  const r = btn.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+  const left = Math.max(8, Math.min(window.scrollX + r.right - w, window.scrollX + document.documentElement.clientWidth - w - 8));
+  const below = r.bottom + h + 8 <= window.innerHeight;
+  pop.style.setProperty("left", left + "px", "important");
+  pop.style.setProperty("top", (window.scrollY + (below ? r.bottom + 4 : r.top - h - 4)) + "px", "important");
+  const first = pop.querySelector("a"); if (first) first.focus({ preventScroll: true });
+}
 const YTMUSIC_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 8.5v7l6-3.5z" fill="currentColor"/></svg>';
 // A YouTube video that only loads (from youtube-nocookie.com) when clicked.
 function liteYouTube(id, label){
@@ -2197,7 +2241,9 @@ function renderBzPlayer(box, r, albumId, items){
 function trackListHtml(items, playable){
   const discs = new Set(items.map(x => x.disc)).size > 1;
   // Icons sit right of the length; every row reserves the same width so the lengths line up.
-  const iconSlots = Math.max(0, ...items.map(x => (x.video ? 1 : 0) + (x.ytMusic ? 1 : 0) + (x.post ? 1 : 0)));
+  const td = (window._psilodumpCat || {})._trackData;
+  const nLinks = x => trackListenLinks(td && x.trackId ? td.byId[x.trackId] : null, x.ytMusic).length;
+  const iconSlots = Math.max(0, ...items.map(x => (x.video ? 1 : 0) + (nLinks(x) ? 1 : 0) + (x.post ? 1 : 0)));
   let html = "", lastDisc = 0;
   items.forEach((x, i) => {
     if (discs && x.disc !== lastDisc) html += `<li class="psd-h">Disc ${x.disc}${x.heading ? " · " + esc(x.heading) : ""}</li>`;
@@ -2206,7 +2252,8 @@ function trackListHtml(items, playable){
     const sub = [x.artist && x.artist.toLowerCase() !== "psilodump" ? "by " + esc(x.artist) : "", x.former.length ? "previously " + x.former.map(esc).join(", ") : "", x.note ? esc(x.note) : ""].filter(Boolean).join(" · ");
     const inner = `<span class="psd-n">${x.pos === null ? "" : (x.pos || i + 1)}</span><span class="psd-t">${esc(x.title)}${x.version ? ` <span class="psd-v">(${esc(x.version)})</span>` : ""}${sub ? `<span class="psd-sub">${sub}</span>` : ""}</span><span class="psd-d">${esc(x.duration)}</span>`;
     const links = (x.video ? `<button type="button" data-psd-video="${esc(x.video)}" title="Video" aria-label="Video: ${esc(x.title)}">${VIDEO_ICON}</button>` : "")
-      + (x.ytMusic ? `<a href="https://music.youtube.com/watch?v=${esc(x.ytMusic)}" target="_blank" rel="noopener" title="YouTube Music" aria-label="${esc(x.title)} on YouTube Music">${YTMUSIC_ICON}</a>` : "")
+      + (nLinks(x) > 1 || (nLinks(x) && !x.ytMusic) ? `<button type="button" data-psd-listen="${esc(x.trackId || "")}" data-ytm="${esc(x.ytMusic || "")}" title="Listen on…" aria-label="Listen to ${esc(x.title)} on…" aria-haspopup="menu">${LISTEN_ICON}</button>`
+        : x.ytMusic ? `<a href="https://music.youtube.com/watch?v=${esc(x.ytMusic)}" target="_blank" rel="noopener" title="YouTube Music" aria-label="${esc(x.title)} on YouTube Music">${YTMUSIC_ICON}</a>` : "")
       + (x.post ? `<a href="${esc(x.post)}" title="Read the post" aria-label="Read the post about ${esc(x.title)}">${POST_ICON}</a>` : "");
     const body = playable && x.src ? `<button type="button" data-psd-track="${i}">${inner}</button>` : `<div class="psd-off">${inner}</div>`;
     html += `<li class="psd-row">${body}${iconSlots ? `<span class="psd-tlinks" style="width:${iconSlots * 30}px">${links}</span>` : ""}</li>`;
@@ -4032,6 +4079,7 @@ document.addEventListener("turbo:render", initApp);
 // Leaving a release page: stop its music (a removed <audio> element keeps playing).
 // Page changes no longer stop the music: the mini player moves into the new page's body.
 document.addEventListener("turbo:before-render", e => {
+  closeListenPop();
   const d = document.getElementById("psd-dock"), nb = e.detail && e.detail.newBody;
   if (nb) nb.querySelectorAll("#psd-dock").forEach(x => { if (x !== d) x.remove(); });   // a stale copy in Turbo's cached page
   if (d && nb) nb.appendChild(d);
