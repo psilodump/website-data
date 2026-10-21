@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.56.0";
+const JS_VERSION = "1.57.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -1808,8 +1808,11 @@ function loadTrackData(){
     const perfCsv = get(PERFORMERS_URL).catch(() => []);  // optional
     const peopleCsv = get(PEOPLE_URL).catch(() => []);   // optional: names for the automatic remix credit
     cat._trackPromise = Promise.all([get(TRACKS_URL), get(TRACKLISTS_URL), vids, partsCsv, perfCsv, peopleCsv]).then(([tracks, rows, videos, parts, perf, people]) => {
-      const personNames = {};                         // personKey(name or alias) -> the person's name
-      people.forEach(p => [p.Name, ...String(p.Aliases || "").split(" | ")].forEach(n => { const k = personKey(n); if (k && !personNames[k]) personNames[k] = p.Name; }));
+      const personNames = {}, personIdByKey = {}, personById = {};   // name/alias key -> name / id; id -> {name, self}
+      people.forEach(p => {
+        personById[p.ID] = { name: p.Name, self: p.Self === "1" };
+        [p.Name, ...String(p.Aliases || "").split(" | ")].forEach(n => { const k = personKey(n); if (k && !personNames[k]) { personNames[k] = p.Name; personIdByKey[k] = p.ID; } });
+      });
       // performers per track (track_performers.csv): who plays what, e.g. "concert flute" by Ingrid Karlsson
       const performers = {};
       perf.forEach(x => { if (x["Track ID"] && x.Name) (performers[x["Track ID"]] = performers[x["Track ID"]] || []).push(x); });
@@ -1832,8 +1835,8 @@ function loadTrackData(){
       });
       Object.values(partsIn).forEach(l => l.sort((a, b) => a.pos - b.pos));
       Object.entries(lists).forEach(([rid, l]) => l.forEach(({ t }) => { const a = trackRels[t.ID] = trackRels[t.ID] || []; if (!a.includes(rid)) a.push(rid); }));
-      return (cat._trackData = { byId, lists, videosByTrack, videosByRelease, videos, partsOf, partsIn, trackRels, performers, personNames });
-    }).catch(err => { console.warn("Track lists unavailable:", err.message); cat._trackPromise = null; return { byId: {}, lists: {}, videosByTrack: {}, videosByRelease: {}, videos: [], partsOf: {}, partsIn: {}, trackRels: {}, performers: {}, personNames: {} }; });
+      return (cat._trackData = { byId, lists, videosByTrack, videosByRelease, videos, partsOf, partsIn, trackRels, performers, personNames, personIdByKey, personById });
+    }).catch(err => { console.warn("Track lists unavailable:", err.message); cat._trackPromise = null; return { byId: {}, lists: {}, videosByTrack: {}, videosByRelease: {}, videos: [], partsOf: {}, partsIn: {}, trackRels: {}, performers: {}, personNames: {}, personIdByKey: {}, personById: {} }; });
   }
   return cat._trackPromise;
 }
@@ -1893,7 +1896,7 @@ function releaseTrackItems(list){
       heading: row.Heading || "", note: row.Note || "", more: partNote(t, window._psilodumpCat._trackData, row["Release ID"], true),
       perf: (() => {
         const d = window._psilodumpCat._trackData || {}, list = [...((d.performers || {})[t.ID] || [])], rx = remixerOf(t, d);
-        if (rx && !list.some(p => personKey(p.Name) === personKey(rx) && /remix/i.test(p.Role || ""))) list.push({ Name: rx, Role: "remix" });
+        if (rx && !list.some(p => personKey(p.Name) === personKey(rx) && /remix/i.test(p.Role || ""))) list.unshift({ Name: rx, Role: "remix", "Person ID": (d.personIdByKey || {})[personKey(rx)] || "" });
         return list;
       })(),
       src: bz ? (site ? "https://" + site : "") + "/player/tracks/" + bz + ".mp3" : "",
@@ -2339,9 +2342,17 @@ function trackListHtml(items, playable){
   const td = (window._psilodumpCat || {})._trackData;
   const nLinks = x => trackListenLinks(td && x.trackId ? td.byId[x.trackId] : null, x.ytMusic).length;
   // fold-out details (release pages): generated notes + performers, one name each with an instrument per line
+  // grouped by person: the person's name as the heading, a role credited under another name says so
+  // ("production (as Jani Antero Pasanen)"); psilodump's own credits keep the name as credited (Simon Rahm)
   const moreHtml = x => {
-    const byName = [];
-    (x.perf || []).forEach(p => { let g = byName.find(b => b.name === p.Name); if (!g) byName.push(g = { name: p.Name, roles: [] }); g.roles.push(...String(p.Role || "").split(/\s*,\s*/).filter(Boolean)); });
+    const byName = [], pid = (td && td.personIdByKey) || {}, pbi = (td && td.personById) || {};
+    (x.perf || []).forEach(p => {
+      const id = p["Person ID"] || pid[personKey(p.Name)] || "", person = pbi[id];
+      const head = person && !person.self ? person.name : p.Name, key = id ? "id:" + id : "n:" + personKey(p.Name);
+      let g = byName.find(b => b.key === key); if (!g) byName.push(g = { key, name: head, roles: [] });
+      const as = personKey(p.Name) !== personKey(g.name) ? " (as " + p.Name + ")" : "";
+      g.roles.push(...String(p.Role || "").split(/\s*,\s*/).filter(Boolean).map(r => r + as));
+    });
     return (x.more ? `<span class="psd-more-txt">${esc(x.more)}</span>` : "")
       + byName.map(g => `<span class="psd-perf"><span class="psd-perf-n">${esc(g.name)}</span>${g.roles.map(r => `<span class="psd-perf-i">${esc(r)}</span>`).join("")}</span>`).join("");
   };
