@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.52.0";
+const JS_VERSION = "1.53.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -452,6 +452,8 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-tlinks a, .psd-tlinks button { display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 28px !important; height: 28px !important; border-radius: 6px !important; border: 0 !important; background: transparent !important; color: inherit !important; opacity: .65 !important; cursor: pointer !important; padding: 0 !important; text-decoration: none !important; }
 .psd-tlinks a:hover, .psd-tlinks button:hover { opacity: 1 !important; background: rgba(127,127,127,.18) !important; }
 .psd-tlinks svg { width: 16px !important; height: 16px !important; }
+.psd-cc-icons { display: inline-flex !important; gap: 3px !important; vertical-align: -0.25em !important; margin-left: 6px !important; text-decoration: none !important; color: inherit !important; }
+.psd-cc { display: inline-block !important; width: 1.35em !important; height: 1.35em !important; flex: 0 0 auto !important; }
 .psd-yr { font-size: .7em !important; opacity: .45 !important; font-weight: normal !important; margin-left: .25em !important; white-space: nowrap !important; }
 .psd-listen-pop { position: absolute !important; z-index: 2147483000 !important; background: #1e1e1e !important; color: #eee !important; border-radius: 10px !important; padding: 6px !important; box-shadow: 0 6px 24px rgba(0,0,0,.45) !important; font: 14px/1.3 system-ui, sans-serif !important; min-width: 170px !important; }
 .psd-listen-pop a { display: flex !important; gap: 10px !important; align-items: center !important; padding: 6px 10px !important; color: inherit !important; text-decoration: none !important; border-radius: 6px !important; }
@@ -1641,6 +1643,24 @@ function creditLines(c){
   if (c.other) String(c.other).split(/\n+/).map(l => l.trim()).filter(Boolean).forEach(l => lines.push(l));
   return lines;
 }
+// The Creative Commons icons of a licence (cc + by / nc / nd / sa, or zero / pd), drawn inline in the text colour
+// (creativecommons.org's own SVGs can't be used as masks from another site: no CORS header).
+const CC_SVG = {
+  cc: '<text x="12" y="15.6" text-anchor="middle" font-size="10.5" font-weight="700" font-family="Arial,sans-serif" fill="currentColor">cc</text>',
+  by: '<circle cx="12" cy="7.2" r="1.9" fill="currentColor"/><path d="M9.3 10.2h5.4v4.6h-1.5V19h-2.4v-4.2H9.3z" fill="currentColor"/>',
+  nc: '<text x="12" y="16.2" text-anchor="middle" font-size="12" font-weight="700" font-family="Arial,sans-serif" fill="currentColor">$</text><path d="M5.6 5.6l12.8 12.8" stroke="currentColor" stroke-width="1.8"/>',
+  nd: '<path d="M7.5 9.6h9M7.5 14.4h9" stroke="currentColor" stroke-width="2.2"/>',
+  sa: '<path d="M16.6 12a4.6 4.6 0 1 1-1.5-3.4" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M13.4 6.9l3.4.6-.9 3.3z" fill="currentColor"/>',
+  zero: '<text x="12" y="16" text-anchor="middle" font-size="11" font-weight="700" font-family="Arial,sans-serif" fill="currentColor">0</text>',
+  pd: '<text x="12" y="15.4" text-anchor="middle" font-size="8.5" font-weight="700" font-family="Arial,sans-serif" fill="currentColor">PD</text>',
+};
+function ccIcons(url){
+  const u = String(url), keys = /publicdomain\/zero/i.test(u) ? ["cc", "zero"] : /publicdomain/i.test(u) ? ["pd"]
+    : ["cc", ...((u.match(/licenses\/([a-z-]+)\//i) || [, ""])[1].toLowerCase().split("-").filter(k => ["by", "nc", "nd", "sa"].includes(k)))];
+  const names = { cc: "Creative Commons", by: "Attribution", nc: "NonCommercial", nd: "NoDerivs", sa: "ShareAlike", zero: "CC0", pd: "Public domain" };
+  return ` <a class="psd-cc-icons" href="${esc(u)}" target="_blank" rel="noopener license" title="${esc("Creative Commons " + ccLicenseName(u))}">`
+    + keys.map(k => `<svg class="psd-cc" viewBox="0 0 24 24" role="img" aria-label="${names[k]}"><circle cx="12" cy="12" r="10.4" fill="none" stroke="currentColor" stroke-width="1.8"/>${CC_SVG[k]}</svg>`).join("") + "</a>";
+}
 // A Creative Commons licence address as its name (the admin's ccLicenseName() does the same).
 function ccLicenseName(url){
   if (/publicdomain\/zero/i.test(url)) return "CC0 (public domain)";
@@ -2009,7 +2029,7 @@ function renderRelease(mount, rows){
         return `<li>${k ? PHYS_ICONS[k] : ""}<span class="psd-ed-main"><b>${other}${esc(e.Title)}</b>
           <span class="psd-ed-meta">${[e.Format, e["Cat#"], e.Label, e.Year].filter(Boolean).map(esc).join(" · ")}${e.Note ? " — " + esc(e.Note) : ""}${/^https:\/\/www\.discogs\.com\//.test(e.Discogs || "") ? ` · <a href="${esc(e.Discogs)}" target="_blank" rel="noopener">Discogs</a>` : ""}</span></span>${status}</li>`;
       }).join("")}</ul></section>` : ""}
-    ${(() => { const lines = creditLines(releaseCredits(r)); return lines.length ? `<section class="psd-rel-credits"><h2>Credits</h2><p>${lines.map(linkify).join("<br>")}</p></section>` : ""; })()}
+    ${(() => { const c = releaseCredits(r), lines = creditLines(c); return lines.length ? `<section class="psd-rel-credits"><h2>Credits</h2><p>${lines.map(l => linkify(l) + (c.license && l.startsWith("Licensed under Creative Commons") ? ccIcons(c.license) : "")).join("<br>")}</p></section>` : ""; })()}
     ${more.length ? `<div class="psd-rel-more">${more.join(" · ")}</div>` : ""}
   </div>
   <div id="rel-lightbox" class="rel-modal-overlay"><img id="rel-lightbox-img" class="rel-lightbox-img" src="" alt="Album Artwork"></div>`;
