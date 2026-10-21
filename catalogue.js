@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.59.1";
+const JS_VERSION = "1.59.2";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -3701,6 +3701,8 @@ function appendRelated(box, r, rows){
     shown.add(other["ID"]);
     (group[label] = group[label] || []).push({ x: other, note: rel.Note || "" });
   });
+  // newest first within each kind (the user's wish, like "Other editions")
+  Object.values(group).forEach(xs => xs.sort((a, b) => String(b.x._released || b.x._catalogue || "").localeCompare(String(a.x._released || a.x._catalogue || ""))));
   const render = extra => {
     if (!document.body.contains(box)) return;
     const all = Object.entries(group).map(([label, xs]) => [label, xs]).concat(extra);
