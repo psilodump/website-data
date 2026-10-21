@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.59.0";
+const JS_VERSION = "1.59.1";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -2017,7 +2017,8 @@ function renderRelease(mount, rows){
   // Same title AND (when both are on MusicBrainz) the same release group: the psilodumputer singles
   // (2000, 2023) are editions of each other, not of the 2006 album with the same name.
   const editions = rows.filter(x => x !== r && norm(x[TITLE_COL]) === norm(title)
-    && !(x["MusicBrainz"] && r["MusicBrainz"] && x["MusicBrainz"] !== r["MusicBrainz"]));
+    && !(x["MusicBrainz"] && r["MusicBrainz"] && x["MusicBrainz"] !== r["MusicBrainz"]))
+    .sort((a, b) => String(b._released || b._catalogue || "").localeCompare(String(a._released || a._catalogue || "")));   // newest first (the user's wish)
   // the year, plus the label when it's the same year (8BP114: 8bitpeoples in January 2011, 476 Digital in April)
   const edYear = x => x._yearRel !== "Unknown" ? x._yearRel : x._yearCat;
   if (editions.length) facts.push(["Other editions", editions.map(x => link(x, `${x[TITLE_COL]} (${edYear(x)}${edYear(x) === edYear(r) && x["Label"] ? ", " + x._labels.join(", ") : ""})`)).join(", ")]);
