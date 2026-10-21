@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.53.0";
+const JS_VERSION = "1.54.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -412,6 +412,7 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-post-tags { margin-top: 18px !important; display: flex !important; flex-wrap: wrap !important; gap: 6px !important; }
 .psd-rel .psd-post-tags a { font-size: 12px !important; padding: 2px 9px !important; border-radius: 999px !important; border: 1px solid rgba(127,127,127,.35) !important; text-decoration: none !important; }
 .psd-post-old { font-size: 12px !important; opacity: .7 !important; margin-top: 10px !important; }
+.psd-innews { margin-top: 24px !important; }
 .psd-innews h2 { font-size: 15px !important; margin: 0 0 6px !important; color: inherit !important; opacity: .75 !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
 .psd-innews ul { list-style: none !important; margin: 0 !important; padding: 0 !important; }
 .psd-innews li { font-size: 14px !important; padding: 3px 0 !important; margin: 0 !important; list-style: none !important; }
@@ -422,6 +423,12 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-gig-role li small { opacity: .6 !important; font-size: 11px !important; margin-left: 4px !important; }
 .psd-rel .psd-post-tags a.person { border-style: solid !important; font-weight: 600 !important; }
 .psd-app-card .app-tracks { font-style: italic !important; }
+.psd-nocover { position: absolute !important; inset: 0 !important; display: flex !important; flex-direction: column !important; justify-content: center !important; align-items: center !important; gap: 10% !important; padding: 12% !important; text-align: center !important; background: radial-gradient(circle at 50% 45%, #343434, #171717 72%) !important; color: #e4e4e4 !important; z-index: 1 !important; }
+.psd-nocover img { width: 62% !important; height: auto !important; opacity: .22 !important; object-fit: contain !important; position: static !important; transform: none !important; }
+.psd-nocover b { font-size: 15px !important; line-height: 1.25 !important; letter-spacing: .02em !important; font-weight: 600 !important; overflow-wrap: anywhere !important; }
+.psd-rel-cover .psd-nocover b { font-size: 22px !important; }
+.psd-rel-cover { position: relative !important; }
+.rel-wrap.row-view .psd-nocover b, .rel-wrap.compact .psd-nocover b { display: none !important; }
 .psd-app-plain { position: absolute !important; inset: 0 !important; display: flex !important; flex-direction: column !important; justify-content: center !important; align-items: center !important; gap: 6px !important; padding: 18px !important; text-align: center !important; background: radial-gradient(circle at 50% 45%, #3a3a3a, #1c1c1c 70%) !important; color: #e8e8e8 !important; }
 .psd-app-plain b { font-size: 17px !important; line-height: 1.25 !important; letter-spacing: .02em !important; }
 .psd-app-plain span { font-size: 13px !important; opacity: .8 !important; }
@@ -914,7 +921,7 @@ function releaseSurface(bgHex, shade){
 function card(r, idx){
   const coverHtml = r._thumbUrl 
     ? `<img loading="lazy" src="${esc(r._thumbUrl)}" alt="${esc(r[TITLE_COL] || "Cover")}" onerror="this.style.display='none'">` 
-    : '';
+    : noCoverHtml(r);
   // With release pages, the cover opens the release page like the title does (the
   // full-size artwork is one click further, on that page). The cover link is left out
   // of keyboard/screen-reader navigation so each card has one link, not two the same.
@@ -1994,7 +2001,7 @@ function renderRelease(mount, rows){
     </nav>
     <div class="psd-rel-hero">
       <div class="psd-rel-cover"${cover ? ` data-lightbox="${esc(r._largeUrl || cover)}" data-thumb="${esc(r._thumbUrl)}" role="button" tabindex="0" aria-label="View larger artwork"` : ""}>
-        ${cover ? `<img src="${esc(cover)}" alt="${esc(title)}">` : ""}
+        ${cover ? `<img src="${esc(cover)}" alt="${esc(title)}">` : noCoverHtml(r)}
       </div>
       <div class="psd-rel-info">
         <h1 class="psd-rel-title">${esc(title)}</h1>
@@ -3555,6 +3562,8 @@ function appLinkLabel(u){
   if (/bandcamp\.com$/.test(host)) return "Bandcamp";
   return { "discogs.com": "Discogs", "open.spotify.com": "Spotify", "music.apple.com": "Apple Music", "youtube.com": "YouTube", "soundcloud.com": "SoundCloud", "archive.org": "Internet Archive", "beatport.com": "Beatport", "mixcloud.com": "Mixcloud" }[host] || host;
 }
+// A release without artwork: the 476 logo (the one at the top of psilodu.mp), dimmed, with the title.
+function noCoverHtml(r){ return `<div class="psd-nocover"><img src="${ICON_BASE}476-logo.png" alt=""><b>${esc(r[TITLE_COL] || "")}</b></div>`; }
 function appCard(a, extra){
   const tracks = a._tracks.map(({ r, t }) => esc(t ? t.Title + (t.Version ? " (" + t.Version + ")" : "") : r.Title)).join(", ");
   const links = [...(/^[0-9a-f-]{36}$/.test(a.MusicBrainz || "") ? [`<a href="https://musicbrainz.org/release-group/${esc(a.MusicBrainz)}" target="_blank" rel="noopener">MusicBrainz</a>`] : []),
@@ -3710,7 +3719,7 @@ function initLabel(){
     const eds = (cat.editions || []).filter(e => String(e.Label || "").split(/\s*,\s*/).some(x => l._names.includes(normLabel(x))));
     const appsOn = apps.filter(a => String(a.Label || "").split(/\s*,\s*/).some(x => l._names.includes(normLabel(x))));
     const relById = {}; rows.forEach(r => { relById[r["ID"]] = r; });
-    const relCard = r => `<figure class="psd-phys-card"><a class="cv" href="${esc(releaseHref(r))}" tabindex="-1" aria-hidden="true">${r._thumbUrl ? `<img src="${esc(r._thumbUrl)}" alt="" loading="lazy">` : `<div class="psd-app-plain"><b>${esc(r[TITLE_COL])}</b></div>`}<span class="kind">${esc(r[TYPE_COL] === "MiniAlbum" ? "Mini-album" : r[TYPE_COL] || "")}</span>${r["Netlabel"] === "1" ? `<span class="net">netlabel</span>` : ""}</a>
+    const relCard = r => `<figure class="psd-phys-card"><a class="cv" href="${esc(releaseHref(r))}" tabindex="-1" aria-hidden="true">${r._thumbUrl ? `<img src="${esc(r._thumbUrl)}" alt="" loading="lazy">` : noCoverHtml(r)}<span class="kind">${esc(r[TYPE_COL] === "MiniAlbum" ? "Mini-album" : r[TYPE_COL] || "")}</span>${r["Netlabel"] === "1" ? `<span class="net">netlabel</span>` : ""}</a>
       <h3><a href="${esc(releaseHref(r))}">${esc(r[TITLE_COL] || "(untitled)")}</a>${releaseArtist(r).toLowerCase() !== "psilodump" ? ` <small>by ${esc(releaseArtist(r))}</small>` : ""}</h3>
       <div class="meta">${esc([String(r._released || r._catalogue || "").slice(0, 4), r[CAT_COL], r["Formats"]].filter(Boolean).join(" · "))}</div></figure>`;
     const edCard = e => { const r0 = e.Cover ? { _thumbUrl: e.Cover } : splitList(e.Releases).map(id => relById[id]).find(r => r && r._thumbUrl); const k = editionKind(e.Format);
