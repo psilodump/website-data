@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.54.0";
+const JS_VERSION = "1.55.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -461,7 +461,7 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-tlinks svg { width: 16px !important; height: 16px !important; }
 .psd-cc-icons { display: inline-flex !important; gap: 3px !important; vertical-align: -0.25em !important; margin-left: 6px !important; text-decoration: none !important; color: inherit !important; }
 .psd-cc { display: inline-block !important; width: 1.35em !important; height: 1.35em !important; flex: 0 0 auto !important; }
-.psd-yr { font-size: .7em !important; opacity: .45 !important; font-weight: normal !important; margin-left: .25em !important; white-space: nowrap !important; }
+.psd-yr { font-size: .7em !important; opacity: .45 !important; font-weight: normal !important; margin-left: .55em !important; white-space: nowrap !important; }
 .psd-listen-pop { position: absolute !important; z-index: 2147483000 !important; background: #1e1e1e !important; color: #eee !important; border-radius: 10px !important; padding: 6px !important; box-shadow: 0 6px 24px rgba(0,0,0,.45) !important; font: 14px/1.3 system-ui, sans-serif !important; min-width: 170px !important; }
 .psd-listen-pop a { display: flex !important; gap: 10px !important; align-items: center !important; padding: 6px 10px !important; color: inherit !important; text-decoration: none !important; border-radius: 6px !important; }
 .psd-listen-pop a:hover, .psd-listen-pop a:focus { background: rgba(255,255,255,.1) !important; }
@@ -529,6 +529,14 @@ html.psd-dock-on body { padding-bottom: 84px !important; }
 .psd-tracks .psd-h { padding: 14px 6px 4px !important; font-size: 12px !important; font-weight: 700 !important; letter-spacing: .06em !important; text-transform: uppercase !important; opacity: .8 !important; }
 .psd-tracks .psd-h:first-child { padding-top: 4px !important; }
 .psd-tracks .psd-v { opacity: .7 !important; }
+.psd-tracks .psd-more { display: none !important; font-size: 12px !important; opacity: .72 !important; font-weight: normal !important; margin-top: 3px !important; }
+.psd-tracks li.psd-open .psd-more { display: block !important; }
+.psd-more-txt { display: block !important; }
+.psd-perf { display: block !important; margin-top: 5px !important; }
+.psd-perf-n { display: block !important; font-weight: 600 !important; }
+.psd-perf-i { display: block !important; padding-left: 12px !important; }
+.psd-perf-i::before { content: "• " !important; opacity: .6 !important; }
+.psd-tlinks button[data-psd-more][aria-expanded="true"] { opacity: 1 !important; background: rgba(127,127,127,.18) !important; }
 .psd-tracks .psd-sub { display: block !important; font-size: 12px !important; opacity: .65 !important; font-weight: normal !important; }
 .psd-tracks .psd-off { display: flex !important; gap: 10px !important; align-items: baseline !important; padding: 8px 6px !important; font-size: 14px !important; opacity: .55 !important; }
 .psd-tracks button.is-broken { opacity: .45 !important; cursor: default !important; }
@@ -1370,6 +1378,8 @@ if (!window._psilodumpModalDelegated) {
   document.addEventListener('click', (e) => {
     const t = e.target;
     if (!(t instanceof Element)) return;
+    const mb = t.closest('[data-psd-more]');
+    if (mb) { e.preventDefault(); e.stopPropagation(); const li = mb.closest('li.psd-row'); if (li) { const open = li.classList.toggle('psd-open'); mb.setAttribute('aria-expanded', open ? 'true' : 'false'); } return; }
     const lb = t.closest('[data-psd-listen]');
     if (lb) { e.preventDefault(); e.stopPropagation(); openListenPop(lb); return; }
     if (!t.closest('.psd-listen-pop')) closeListenPop();
@@ -1821,7 +1831,7 @@ function loadTrackData(){
   return cat._trackPromise;
 }
 // "part 1 of Senki Otus (on You Sick Little Monkey)" / "contains noll ett + noll två" (releases other than curRel)
-function partNote(t, data, curRel){
+function partNote(t, data, curRel, noPerformers){
   if (!data || !data.partsOf) return "";
   const cat = window._psilodumpCat;
   if (!cat._relById || cat._relByIdN !== (cat.rows || []).length) { cat._relById = {}; (cat.rows || []).forEach(r => { cat._relById[r["ID"]] = r; }); cat._relByIdN = (cat.rows || []).length; }
@@ -1843,7 +1853,7 @@ function partNote(t, data, curRel){
     const rr = [...new Set(kids.flatMap(onRel))];
     out.push(rr.length ? "edited for " + rr.join(", ") : "edited as " + kids.map(name).join(", "));
   }
-  (data.performers && data.performers[t.ID] || []).forEach(x => out.push((x.Role ? x.Role + " by " : "with ") + x.Name));
+  if (!noPerformers) (data.performers && data.performers[t.ID] || []).forEach(x => out.push((x.Role ? x.Role + " by " : "with ") + x.Name));
   return out.join(" · ");
 }
 const secToTime = s => { s = parseInt(s, 10); return s > 0 ? Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0") : ""; };
@@ -1860,7 +1870,9 @@ function releaseTrackItems(list){
       title: row.Title || t.Title || "(untitled)", version: row.Title ? "" : (t.Version || ""), artist: t.Artist || "",
       former: String(t["Former Titles"] || "").split(" | ").filter(Boolean),
       duration: secToTime(row.Length) || secToTime(t.Length), disc: +row.Disc || 1, pos: +row.Position || 0,
-      heading: row.Heading || "", note: [row.Note || "", partNote(t, window._psilodumpCat._trackData, row["Release ID"])].filter(Boolean).join(" · "),
+      // the row's own note stays visible; the generated details (parts, edits) and performers fold out (the user's wish)
+      heading: row.Heading || "", note: row.Note || "", more: partNote(t, window._psilodumpCat._trackData, row["Release ID"], true),
+      perf: ((window._psilodumpCat._trackData || {}).performers || {})[t.ID] || [],
       src: bz ? (site ? "https://" + site : "") + "/player/tracks/" + bz + ".mp3" : "",
       trackId: t.ID, ytMusic: row["YouTube Music"] || "",
       year: String(t.Finished || "").slice(0, 4),        // tiny "(2006)" after the title (the user's check on Finished)
@@ -2081,6 +2093,7 @@ const PLAY_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v1
 const PAUSE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5.5" width="4" height="13" rx="1" fill="currentColor"/><rect x="13.5" y="5.5" width="4" height="13" rx="1" fill="currentColor"/></svg>';
 // Bandzoogle album: read the track list from the album page and play the tracks
 // with one <audio> element. Otherwise: the Spotify / Apple Music / YouTube player.
+const INFO_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 10.5v6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="7.3" r="1.3" fill="currentColor"/></svg>';
 const VIDEO_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 10.5l5-3v9l-5-3z" fill="currentColor"/></svg>';
 const POST_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="2"/></svg>';
 const LISTEN_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15v-3a8 8 0 0 1 16 0v3" fill="none" stroke="currentColor" stroke-width="2"/><rect x="3" y="14" width="5" height="7" rx="1.5" fill="currentColor"/><rect x="16" y="14" width="5" height="7" rx="1.5" fill="currentColor"/></svg>';
@@ -2302,15 +2315,23 @@ function trackListHtml(items, playable){
   // Icons sit right of the length; every row reserves the same width so the lengths line up.
   const td = (window._psilodumpCat || {})._trackData;
   const nLinks = x => trackListenLinks(td && x.trackId ? td.byId[x.trackId] : null, x.ytMusic).length;
-  const iconSlots = Math.max(0, ...items.map(x => (x.video ? 1 : 0) + (nLinks(x) ? 1 : 0) + (x.post ? 1 : 0)));
+  // fold-out details (release pages): generated notes + performers, one name each with an instrument per line
+  const moreHtml = x => {
+    const byName = [];
+    (x.perf || []).forEach(p => { let g = byName.find(b => b.name === p.Name); if (!g) byName.push(g = { name: p.Name, roles: [] }); g.roles.push(...String(p.Role || "").split(/\s*,\s*/).filter(Boolean)); });
+    return (x.more ? `<span class="psd-more-txt">${esc(x.more)}</span>` : "")
+      + byName.map(g => `<span class="psd-perf"><span class="psd-perf-n">${esc(g.name)}</span>${g.roles.map(r => `<span class="psd-perf-i">${esc(r)}</span>`).join("")}</span>`).join("");
+  };
+  const iconSlots = Math.max(0, ...items.map(x => (x.video ? 1 : 0) + (nLinks(x) ? 1 : 0) + (x.post ? 1 : 0) + (moreHtml(x) ? 1 : 0)));
   let html = "", lastDisc = 0;
   items.forEach((x, i) => {
     if (discs && x.disc !== lastDisc) html += `<li class="psd-h">Disc ${x.disc}${x.heading ? " · " + esc(x.heading) : ""}</li>`;
     else if (x.heading) html += `<li class="psd-h">${esc(x.heading)}</li>`;
     lastDisc = x.disc;
     const sub = [x.artist && x.artist.toLowerCase() !== "psilodump" ? "by " + esc(x.artist) : "", x.former.length ? "previously " + x.former.map(esc).join(", ") : "", x.note ? esc(x.note) : ""].filter(Boolean).join(" · ");
-    const inner = `<span class="psd-n">${x.pos === null ? "" : (x.pos || i + 1)}</span><span class="psd-t">${esc(x.title)}${x.version ? ` <span class="psd-v">(${esc(x.version)})</span>` : ""}${x.year ? `<span class="psd-yr" title="Finished">(${esc(x.year)})</span>` : ""}${sub ? `<span class="psd-sub">${sub}</span>` : ""}</span><span class="psd-d">${esc(x.duration)}</span>`;
-    const links = (x.video ? `<button type="button" data-psd-video="${esc(x.video)}" title="Video" aria-label="Video: ${esc(x.title)}">${VIDEO_ICON}</button>` : "")
+    const inner = `<span class="psd-n">${x.pos === null ? "" : (x.pos || i + 1)}</span><span class="psd-t">${esc(x.title)}${x.version ? ` <span class="psd-v">(${esc(x.version)})</span>` : ""}${x.year ? `<span class="psd-yr" title="Finished">(${esc(x.year)})</span>` : ""}${sub ? `<span class="psd-sub">${sub}</span>` : ""}${moreHtml(x) ? `<span class="psd-more">${moreHtml(x)}</span>` : ""}</span><span class="psd-d">${esc(x.duration)}</span>`;
+    const links = (moreHtml(x) ? `<button type="button" data-psd-more aria-expanded="false" title="More about this track" aria-label="More about ${esc(x.title)}">${INFO_ICON}</button>` : "")
+      + (x.video ? `<button type="button" data-psd-video="${esc(x.video)}" title="Video" aria-label="Video: ${esc(x.title)}">${VIDEO_ICON}</button>` : "")
       + (nLinks(x) > 1 || (nLinks(x) && !x.ytMusic) ? `<button type="button" data-psd-listen="${esc(x.trackId || "")}" data-ytm="${esc(x.ytMusic || "")}" title="Listen on…" aria-label="Listen to ${esc(x.title)} on…" aria-haspopup="menu">${LISTEN_ICON}</button>`
         : x.ytMusic ? `<a href="https://music.youtube.com/watch?v=${esc(x.ytMusic)}" target="_blank" rel="noopener" title="YouTube Music" aria-label="${esc(x.title)} on YouTube Music">${YTMUSIC_ICON}</a>` : "")
       + (x.post ? `<a href="${esc(x.post)}" title="Read the post" aria-label="Read the post about ${esc(x.title)}">${POST_ICON}</a>` : "");
