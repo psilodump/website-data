@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.58.0";
+const JS_VERSION = "1.59.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -456,6 +456,7 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-tracks li.psd-row { display: flex !important; align-items: center !important; gap: 4px !important; }
 .psd-tracks li.psd-row > button, .psd-tracks li.psd-row > .psd-off { flex: 1 1 auto !important; min-width: 0 !important; }
 .psd-tlinks { display: flex !important; gap: 2px !important; flex: 0 0 auto !important; justify-content: flex-end !important; align-self: flex-start !important; margin-top: 3px !important; }
+.psd-tcell { display: inline-flex !important; flex: 0 0 28px !important; width: 28px !important; height: 28px !important; justify-content: center !important; align-items: center !important; margin: 0 !important; }
 .psd-tinfo { display: flex !important; flex: 0 0 28px !important; width: 28px !important; justify-content: center !important; align-self: flex-start !important; margin-top: 3px !important; }
 .psd-tinfo button { display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 28px !important; height: 28px !important; border-radius: 6px !important; border: 0 !important; background: transparent !important; color: inherit !important; opacity: .55 !important; cursor: pointer !important; padding: 0 !important; }
 .psd-tinfo button:hover, .psd-tinfo button[aria-expanded="true"] { opacity: 1 !important; background: rgba(127,127,127,.18) !important; }
@@ -2361,7 +2362,9 @@ function trackListHtml(items, playable){
     return (x.more ? `<span class="psd-more-txt">${esc(x.more)}</span>` : "")
       + byName.map(g => `<span class="psd-perf"><span class="psd-perf-n">${esc(g.name)}</span>${g.roles.map(r => `<span class="psd-perf-i">${esc(r)}</span>`).join("")}</span>`).join("");
   };
-  const iconSlots = Math.max(0, ...items.map(x => (x.video ? 1 : 0) + (nLinks(x) ? 1 : 0) + (x.post ? 1 : 0)));
+  // fixed icon columns (video · listen · post), so the same icon is always in the same place on every row
+  const cols = [items.some(x => x.video) && "video", items.some(x => nLinks(x)) && "listen", items.some(x => x.post) && "post"].filter(Boolean);
+  const iconSlots = cols.length;
   const anyMore = items.some(x => moreHtml(x));
   let html = "", lastDisc = 0;
   items.forEach((x, i) => {
@@ -2371,10 +2374,12 @@ function trackListHtml(items, playable){
     const sub = [x.artist && x.artist.toLowerCase() !== "psilodump" ? "by " + esc(x.artist) : "", x.former.length ? "previously " + x.former.map(esc).join(", ") : "", x.note ? esc(x.note) : ""].filter(Boolean).join(" · ");
     const inner = `<span class="psd-n">${x.pos === null ? "" : (x.pos || i + 1)}</span><span class="psd-t">${esc(x.title)}${x.version ? ` <span class="psd-v">(${esc(x.version)})</span>` : ""}${x.year ? `<span class="psd-yr" title="Finished">(${esc(x.year)})</span>` : ""}${sub ? `<span class="psd-sub">${sub}</span>` : ""}${moreHtml(x) ? `<span class="psd-more">${moreHtml(x)}</span>` : ""}</span><span class="psd-d">${esc(x.duration)}</span>`;
     const info = anyMore ? `<span class="psd-tinfo">${moreHtml(x) ? `<button type="button" data-psd-more aria-expanded="false" title="More about this track" aria-label="More about ${esc(x.title)}">${INFO_ICON}</button>` : ""}</span>` : "";
-    const links = (x.video ? `<button type="button" data-psd-video="${esc(x.video)}" title="Video" aria-label="Video: ${esc(x.title)}">${VIDEO_ICON}</button>` : "")
-      + (nLinks(x) > 1 || (nLinks(x) && !x.ytMusic) ? `<button type="button" data-psd-listen="${esc(x.trackId || "")}" data-ytm="${esc(x.ytMusic || "")}" title="Listen on…" aria-label="Listen to ${esc(x.title)} on…" aria-haspopup="menu">${LISTEN_ICON}</button>`
-        : x.ytMusic ? `<a href="https://music.youtube.com/watch?v=${esc(x.ytMusic)}" target="_blank" rel="noopener" title="YouTube Music" aria-label="${esc(x.title)} on YouTube Music">${YTMUSIC_ICON}</a>` : "")
-      + (x.post ? `<a href="${esc(x.post)}" title="Read the post" aria-label="Read the post about ${esc(x.title)}">${POST_ICON}</a>` : "");
+    const cell = {
+      video: x.video ? `<button type="button" data-psd-video="${esc(x.video)}" title="Video" aria-label="Video: ${esc(x.title)}">${VIDEO_ICON}</button>` : "",
+      listen: nLinks(x) ? `<button type="button" data-psd-listen="${esc(x.trackId || "")}" data-ytm="${esc(x.ytMusic || "")}" title="Listen on…" aria-label="Listen to ${esc(x.title)} on…" aria-haspopup="menu">${LISTEN_ICON}</button>` : "",
+      post: x.post ? `<a href="${esc(x.post)}" title="Read the post" aria-label="Read the post about ${esc(x.title)}">${POST_ICON}</a>` : "",
+    };
+    const links = cols.map(c => `<span class="psd-tcell">${cell[c]}</span>`).join("");
     const body = playable && x.src ? `<button type="button" data-psd-track="${i}">${inner}</button>` : `<div class="psd-off">${inner}</div>`;
     html += `<li class="psd-row">${info}${body}${iconSlots ? `<span class="psd-tlinks" style="flex:0 0 ${iconSlots * 30}px;width:${iconSlots * 30}px">${links}</span>` : ""}</li>`;
   });
