@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.62.0";
+const JS_VERSION = "1.63.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -2026,7 +2026,13 @@ function initRelease(){
 
 function renderRelease(mount, rows){
   const key = (new URLSearchParams(location.search).get("r") || "").trim();
-  const r = key && rows.find(x => releaseKey(x).toLowerCase() === key.toLowerCase());
+  let r = key && rows.find(x => releaseKey(x).toLowerCase() === key.toLowerCase());
+  // ?r=<database id> also works (the old-address redirects use it); the address then shows the usual key
+  if (!r && /^\d+$/.test(key) && (r = rows.find(x => x["ID"] === key))) {
+    const q = new URLSearchParams(location.search); q.set("r", releaseKey(r));
+    history.replaceState(history.state, "", location.pathname + "?" + q.toString() + location.hash);
+    mount._psdShown = location.search;
+  }
   if (!r) {
     mount.innerHTML = `<div class="psd-rel"><nav class="psd-rel-nav"><a href="${CATALOGUE_PATH}">← Catalogue</a></nav>
       <h1 class="psd-rel-title">Release not found</h1>
@@ -2087,7 +2093,7 @@ function renderRelease(mount, rows){
   const albumId = bzAlbumId(r);
   const more = [];
   if (albumId) more.push(`<a href="${SITE}/album/${albumId}">Album page on psilodu.mp</a>`);
-  else if (r["Source"]) more.push(`<a href="${esc(normHref(expandPlatformUrl(r["Source"], "source")))}">Release page</a>`);
+  else if (r["Source"] && !(STATIC_SITE && /^(https?:\/\/)?(psilodu\.mp\/|[a-z0-9-]+$)/i.test(r["Source"]))) more.push(`<a href="${esc(normHref(expandPlatformUrl(r["Source"], "source")))}">Release page</a>`);
   String(r["Sources"] || "").split(MULTI_LINK_SEP).map(x => x.trim()).filter(u => u && !IA_RE.test(u))
     .forEach(u => { const h = normHref(u); more.push(`<a href="${esc(h)}" target="_blank" rel="noopener nofollow">${esc(h.replace(/^https?:\/\/(www\.)?/, "").split("/")[0])}</a>`); });
   if (MBID_RE.test(r["MusicBrainz"] || "")) more.push(`<a href="${MB_RG_URL}${esc(r["MusicBrainz"])}" target="_blank" rel="noopener">MusicBrainz</a>`);
@@ -2844,7 +2850,8 @@ function buildJsonLd(rows){
   // Prefer its psilodu.mp page; otherwise an anchor on the catalogue page.
   const used = new Set();
   const idOf = rows.map((r, i) => {
-    const page = expandPlatformUrl(r["Source"] || "", "source");
+    // on the static site every release has its page here (Bandzoogle's album pages are gone)
+    const page = STATIC_SITE ? "https://psilodu.mp" + RELEASE_PATH + "?r=" + encodeURIComponent(releaseKey(r)) : expandPlatformUrl(r["Source"] || "", "source");
     const key = String(r[CAT_COL] || (i + 1)).replace(/[^A-Za-z0-9._~-]+/g, "-");   // "DMTCD19/20" -> "DMTCD19-20"
     let id = /^https:\/\/psilodu\.mp\//.test(page) ? page : SITE + "/#release-" + key;
     if (used.has(id)) id += "-" + (i + 1);
@@ -3518,7 +3525,7 @@ function initPost(){
       ${String(p["Track IDs"] || "").split(",").some(id => tdata.byId[id]) ? `<section class="psd-rel-player psd-post-tracks" id="psd-player"></section>` : ""}
       ${cards.length ? `<div class="psd-post-cards">${cards.join("")}</div>` : ""}
       ${tags.length ? `<p class="psd-post-tags">${tags.map(t => { const per = pp && pp.byKey[personKey(t)]; return per && !per._self ? `<a class="person" href="${esc(personHref(per))}">${esc(t)}</a>` : `<a href="${NEWS_PATH}#tag=${encodeURIComponent(t)}">${esc(t)}</a>`; }).join("")}</p>` : ""}
-      ${p["Old URL"] ? `<p class="psd-post-old"><a href="${esc(String(p["Old URL"]).replace(/^http:/, "https:"))}"${/476\.digital/.test(p["Old URL"]) ? ' target="_blank" rel="noopener"' : ""}>${/476\.digital/.test(p["Old URL"]) ? "Originally in The X-Dump news archive" : "This post on the old blog"}</a></p>` : ""}
+      ${p["Old URL"] && !STATIC_SITE ? `<p class="psd-post-old"><a href="${esc(String(p["Old URL"]).replace(/^http:/, "https:"))}"${/476\.digital/.test(p["Old URL"]) ? ' target="_blank" rel="noopener"' : ""}>${/476\.digital/.test(p["Old URL"]) ? "Originally in The X-Dump news archive" : "This post on the old blog"}</a></p>` : ""}
     </div>`;
     if (!document.getElementById("rel-lightbox")) mount.insertAdjacentHTML("beforeend", `<div id="rel-lightbox" class="rel-modal-overlay"><img id="rel-lightbox-img" class="rel-lightbox-img" src="" alt=""></div>`);
     moveModalsToBody();
