@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.61.0";
+const JS_VERSION = "1.62.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -1807,7 +1807,15 @@ function assignReleaseKeys(rows){
   });
 }
 // On another site (476.digital) every page link goes to psilodu.mp, where the release pages, players and gigs are.
-const SITE_BASE = /(^|\.)psilodu\.mp$/i.test(location.hostname) ? "" : "https://psilodu.mp";
+// The static site that replaces Bandzoogle (Astro on statichost.eu, 2026-10-22) marks itself with <html data-psd-site>:
+// its links stay on it (also on its preview address), and the audio not moved to Bunny yet streams from
+// psilodump.bandzoogle.com, which keeps serving the files while the Bandzoogle account is paid ("maintenance mode").
+// Bandzoogle's album pages can't be read from another site (no CORS), so there releases without our own track list
+// audio use the Spotify / Apple / YouTube player, and Bandzoogle files play with gaps (gapless needs CORS).
+const STATIC_SITE = document.documentElement.hasAttribute("data-psd-site");
+const SITE_BASE = STATIC_SITE || /(^|\.)psilodu\.mp$/i.test(location.hostname) ? "" : "https://psilodu.mp";
+const BZ_BASE = STATIC_SITE ? "https://psilodump.bandzoogle.com" : "";
+const bzSrc = id => BZ_BASE + "/player/tracks/" + id + ".mp3";
 const releaseHref = r => SITE_BASE + RELEASE_PATH + "?r=" + encodeURIComponent(releaseKey(r));
 
 // The Bandzoogle album number in Source ("3319229" or a psilodu.mp/album/... address), or "".
@@ -1821,6 +1829,7 @@ function moreLinks(r){
   return out;
 }
 function bzAlbumId(r){
+  if (STATIC_SITE) return "";
   const s = String(r["Source"] || "").trim();
   if (/^\d+$/.test(s)) return s;
   const m = s.match(/psilodu\.mp\/album\/(\d+)/i);
@@ -1946,7 +1955,7 @@ function releaseTrackItems(list){
         if (rx && !list.some(p => personKey(p.Name) === personKey(rx) && /remix/i.test(p.Role || ""))) list.unshift({ Name: rx, Role: "remix", "Person ID": (d.personIdByKey || {})[personKey(rx)] || "" });
         return list;
       })(),
-      src: row.Media ? mediaSrc(row.Media) : bz ? (site ? "https://" + site : "") + "/player/tracks/" + bz + ".mp3" : "",
+      src: row.Media ? mediaSrc(row.Media) : bz ? (site ? "https://" + site + "/player/tracks/" + bz + ".mp3" : bzSrc(bz)) : "",
       trackId: t.ID, ytMusic: row["YouTube Music"] || "",
       year: String(t.Finished || "").slice(0, 4),        // tiny "(2006)" after the title (the user's check on Finished)
     };
@@ -2278,6 +2287,7 @@ function renderPlayer(box, r, albumId){
 // Bandzoogle's own album track list (releases without our list, or without track pages in it).
 // A Bandzoogle album's tracks: /go/albums/<n>/tracks (all of them), else the album page (first 20).
 function bzAlbumTracks(albumId){
+  if (STATIC_SITE) return Promise.reject(new Error("Bandzoogle albums can't be read from this site"));
   const readTracks = html => [...new DOMParser().parseFromString(html, "text/html")
     .querySelectorAll("li.track-list-item a[data-dest]")].map(a => ({ id: a.getAttribute("data-id"), title: a.getAttribute("data-title") || "", duration: a.getAttribute("data-duration") || "", src: a.getAttribute("data-dest") })).filter(t => t.src);
   const getTracks = url => fetch(url).then(res => { if (!res.ok) throw new Error("HTTP " + res.status); return res.text(); })
@@ -2326,7 +2336,7 @@ function shuffleItems(){
       if ((data.partsIn[t.ID] || []).some(x => /track\/\d+/.test((data.byId[x.part] || {}).Source || ""))) return;
       const r = firstRel[t.ID];
       items.push({ title: t.Title || "(untitled)", version: t.Version || "", artist: t.Artist || "", former: [], duration: secToTime(t.Length), disc: 1, pos: null, heading: "",
-        note: r ? "on " + r[TITLE_COL] : "", src: "/player/tracks/" + bz + ".mp3", trackId: t.ID, ytMusic: "", video: "", cover: r ? (r._thumbUrl || "") : "" });
+        note: r ? "on " + r[TITLE_COL] : "", src: bzSrc(bz), trackId: t.ID, ytMusic: "", video: "", cover: r ? (r._thumbUrl || "") : "" });
     });
     for (let i = items.length - 1; i > 0; i--) { const j = randomInt(i + 1); [items[i], items[j]] = [items[j], items[i]]; }
     return items;
@@ -3107,7 +3117,7 @@ function initToday(){
         return { title: t.Title || "(untitled)", version: t.Version || "", artist: t.Artist || "", former: String(t["Former Titles"] || "").split(" | ").filter(Boolean),
           duration: secToTime(t.Length), disc: 1, pos: null, heading,
           note: [how + ago(date).replace(/^ · /, ", "), rels.length ? "on " + rels.map(r => r[TITLE_COL]).join(", ") : (t.Released ? "" : "unreleased")].filter(Boolean).join(" · "),
-          src: bz ? "/player/tracks/" + bz + ".mp3" : "", trackId: t.ID, ytMusic: "", video: ((data.videosByTrack[t.ID] || [])[0] || {})["Video ID"] || "" };
+          src: bz ? bzSrc(bz) : "", trackId: t.ID, ytMusic: "", video: ((data.videosByTrack[t.ID] || [])[0] || {})["Video ID"] || "" };
       });
       const vids = day.vids.slice().sort((a, b) => String(a.Published).localeCompare(String(b.Published))).map(v => {
         const t = data.byId[v["Track ID"]], r = relById[v["Release ID"]];
@@ -3294,7 +3304,7 @@ function renderGig(mount, gigs, data, pp){
   });
   // With start times and a live recording, the setlist is the player: each row jumps into the recording.
   const cues = bz && setItems.some(x => x.start != null);
-  if (cues) setItems.forEach(x => { if (x.start != null) x.src = "/player/tracks/" + bz + ".mp3"; });
+  if (cues) setItems.forEach(x => { if (x.start != null) x.src = bzSrc(bz); });
   mount.innerHTML = `
   <div class="psd-rel psd-gig">
     <nav class="psd-rel-nav"><a href="${GIGS_PATH}">← All gigs</a>
@@ -3319,7 +3329,7 @@ function renderGig(mount, gigs, data, pp){
   document.title = (g.Event || "Gig") + " · " + String(g.Date).slice(0, 4) + " | psilodump";
   appendInTheNews(mount.querySelector(".psd-gig"), p => p["Gig ID"] === g.ID);
   if (cues) buildTrackPlayer(document.getElementById("psd-player"), { [TITLE_COL]: g.Event }, setItems, "");
-  else if (bz) buildTrackPlayer(document.getElementById("psd-player"), { [TITLE_COL]: g.Event }, [{ title: "Live at " + (g.Event || "the gig"), version: "", artist: "", former: [], duration: "", disc: 1, pos: 1, heading: "", note: "Live recording", src: "/player/tracks/" + bz + ".mp3", trackId: "", ytMusic: "", video: "" }], "");
+  else if (bz) buildTrackPlayer(document.getElementById("psd-player"), { [TITLE_COL]: g.Event }, [{ title: "Live at " + (g.Event || "the gig"), version: "", artist: "", former: [], duration: "", disc: 1, pos: 1, heading: "", note: "Live recording", src: bzSrc(bz), trackId: "", ytMusic: "", video: "" }], "");
 }
 
 // --- NEWS: feed (<div id="psd-news">) and one post (<div id="psd-post"> on /post?p=<key>) from posts.csv ---
@@ -3519,7 +3529,7 @@ function initPost(){
       const items = String(p["Track IDs"] || "").split(",").map(id => tdata.byId[id]).filter(Boolean).map((t, k) => {
         const bz = (String(t.Source || "").match(/track\/(\d+)/) || [])[1];
         return { title: t.Title || "(untitled)", version: t.Version || "", artist: t.Artist || "", former: String(t["Former Titles"] || "").split(" | ").filter(Boolean), duration: secToTime(t.Length), disc: 1, pos: k + 1, heading: "",
-          note: t.Description || "", src: bz ? "/player/tracks/" + bz + ".mp3" : "", trackId: t.ID, ytMusic: (String(t.YouTube || "").match(/music\.youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/) || [])[1] || "", video: ((tdata.videosByTrack[t.ID] || [])[0] || {})["Video ID"] || "" };
+          note: t.Description || "", src: bz ? bzSrc(bz) : "", trackId: t.ID, ytMusic: (String(t.YouTube || "").match(/music\.youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/) || [])[1] || "", video: ((tdata.videosByTrack[t.ID] || [])[0] || {})["Video ID"] || "" };
       });
       if (items.some(x => x.src)) buildTrackPlayer(box, { [TITLE_COL]: p.Title }, items, ""); else box.innerHTML = trackListHtml(items, false);
     }
@@ -3629,7 +3639,7 @@ function initPerson(){
       return { title: t.Title || "(untitled)", version: t.Version || "", artist: t.Artist || "", former: String(t["Former Titles"] || "").split(" | ").filter(Boolean),
         duration: secToTime(t.Length), disc: 1, pos: null, heading,
         note: [t.Finished, t.Released ? "" : "unreleased", t.Description, partNote(t, data, ""), rr.length ? "on " + rr.map(r => r[TITLE_COL]).join(", ") : ""].filter(Boolean).join(" · "),
-        src: bz ? "/player/tracks/" + bz + ".mp3" : "", trackId: t.ID, cover: (rr.find(r => r._thumbUrl) || {})._thumbUrl || "" };
+        src: bz ? bzSrc(bz) : "", trackId: t.ID, cover: (rr.find(r => r._thumbUrl) || {})._thumbUrl || "" };
     });
     const tagged = posts.filter(x => String(x.Tags || "").split(/\s*,\s*/).some(t => pp.byKey[personKey(t)] === p));
     const vids = (data.videos || []).filter(v => namesPerson(v["Made By"], p));
@@ -3697,7 +3707,7 @@ function appCard(a, extra){
     <h3>${esc(a.Title)}${a.Artist && !/^various artists$/i.test(a.Artist) ? ` <small>by ${esc(a.Artist)}</small>` : ""}</h3>
     <div class="meta">${esc([String(a.Date).slice(0, 4), a.Label, a["Cat#"], a.Formats].filter(Boolean).join(" · "))}</div>
     ${tracks ? `<div class="meta app-tracks">with ${tracks}</div>` : ""}${a.Note ? `<div class="meta">${linkify(a.Note)}</div>` : ""}${extra || ""}
-    ${/^\d+$/.test(a.Album || "") ? `<div class="act"><button type="button" class="psd-app-listen" data-psd-appplay="${esc(a.ID)}">${PLAY_ICON}<span>Listen to the whole release</span></button></div>` : ""}
+    ${!STATIC_SITE && /^\d+$/.test(a.Album || "") ? `<div class="act"><button type="button" class="psd-app-listen" data-psd-appplay="${esc(a.ID)}">${PLAY_ICON}<span>Listen to the whole release</span></button></div>` : ""}
     ${links.length ? `<div class="meta">${links.join(" · ")}</div>` : ""}</figure>`;
 }
 function initAppearances(){
@@ -3920,7 +3930,7 @@ function buildRemixesPage(mount, rows, data){
     const rels = onRelease[t.ID] || [];
     return { title: t.Title || "(untitled)", version: t.Version || "", artist: t.Artist || "", former: [], duration: secToTime(t.Length), disc: 1, pos: null, heading,
       note: [date(t), t.Description, rels.length ? "on " + rels.map(r => r[TITLE_COL]).join(", ") : ""].filter(Boolean).join(" · "),
-      src: bz ? "/player/tracks/" + bz + ".mp3" : "", trackId: t.ID, ytMusic: ytm, video: ((data.videosByTrack[t.ID] || [])[0] || {})["Video ID"] || "", post: (data._postByTrack || {})[t.ID] || "" };
+      src: bz ? bzSrc(bz) : "", trackId: t.ID, ytMusic: ytm, video: ((data.videosByTrack[t.ID] || [])[0] || {})["Video ID"] || "", post: (data._postByTrack || {})[t.ID] || "" };
     }); };
   const views = { mine: { label: "psilodump remixes", items: listFor(isPsilodumpRemix) }, others: { label: "Remixes of psilodump", items: listFor(isRemixOfPsilodump) } };
   const st = mount._psdRemix = { by: /(^|[#&])by=others(&|$)/.test(location.hash) ? "others" : "mine" };
@@ -4024,7 +4034,7 @@ function buildTracksPage(mount, rows, data){
       return { title: t.Title || "(untitled)", version: t.Version || "", artist: t.Artist || "",
         former: String(t["Former Titles"] || "").split(" | ").filter(Boolean), duration: secToTime(t.Length), disc: 1, pos: null, heading,
         note: [t.Finished, released ? "" : "unreleased", LOST_TEXT[t.Lost] || "", t.Description, partNote(t, data, ""), rels.length ? "on " + rels.map(r => r[TITLE_COL]).join(", ") : ""].filter(Boolean).join(" · "),
-        src: bz ? "/player/tracks/" + bz + ".mp3" : "", trackId: t.ID, ytMusic: ytm, video: ((data.videosByTrack[t.ID] || [])[0] || {})["Video ID"] || "",
+        src: bz ? bzSrc(bz) : "", trackId: t.ID, ytMusic: ytm, video: ((data.videosByTrack[t.ID] || [])[0] || {})["Video ID"] || "",
         post: (data._postByTrack || {})[t.ID] || "", cover: (rels.find(r => r._thumbUrl) || {})._thumbUrl || "" };
     });
     mount.querySelector(".psd-rcount").textContent = `${items.length} track${items.length === 1 ? "" : "s"} · ${items.filter(x => x.src).length} playable here`;
