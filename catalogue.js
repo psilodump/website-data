@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.63.0";
+const JS_VERSION = "1.63.1";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -2012,6 +2012,7 @@ function initRelease(){
   // (<html aria-busy>); the old page must not render the next address. turbo:render
   // / turbo:load call this again once the new page is there.
   if (document.documentElement.hasAttribute("aria-busy")) return;
+  pathToQuery(RELEASE_PATH, "r");
   if (location.pathname.replace(/\/+$/, "") !== RELEASE_PATH) return;
   mount._psdShown = location.search;
   ensureStyles();
@@ -2024,6 +2025,13 @@ function initRelease(){
     });
 }
 
+// /release/<key or id> (also /gig/…, /post/…) → /release?r=<…>: statichost's redirects can't carry a query string, so
+// the old-address redirects point at /release/<id>, which the host serves from the release page (a 200 rewrite);
+// the address is turned into the usual form before the page reads it.
+function pathToQuery(path, name){
+  const m = location.pathname.match(new RegExp("^" + path + "/([^/]+)/?$"));
+  if (m) history.replaceState(history.state, "", path + "?" + name + "=" + m[1] + location.hash);
+}
 function renderRelease(mount, rows){
   const key = (new URLSearchParams(location.search).get("r") || "").trim();
   let r = key && rows.find(x => releaseKey(x).toLowerCase() === key.toLowerCase());
@@ -3247,6 +3255,7 @@ function initGig(){
   const mount = document.getElementById("psd-gig");
   if (!mount || mount._psdShown === location.search) return;
   if (document.documentElement.hasAttribute("aria-busy")) return;
+  pathToQuery(GIG_PATH, "g");
   if (location.pathname.replace(/\/+$/, "") !== GIG_PATH) return;
   mount._psdShown = location.search;
   ensureStyles();
@@ -3503,6 +3512,7 @@ function initPost(){
   const mount = document.getElementById("psd-post");
   if (!mount || mount._psdShown === location.search) return;
   if (document.documentElement.hasAttribute("aria-busy")) return;
+  pathToQuery(POST_PATH, "p");
   if (location.pathname.replace(/\/+$/, "") !== POST_PATH) return;
   mount._psdShown = location.search;
   ensureStyles();
