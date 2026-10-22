@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.64.0";
+const JS_VERSION = "1.65.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -1817,7 +1817,26 @@ const STATIC_SITE = document.documentElement.hasAttribute("data-psd-site");
 const SITE_BASE = STATIC_SITE || /(^|\.)psilodu\.mp$/i.test(location.hostname) ? "" : "https://psilodu.mp";
 const BZ_BASE = STATIC_SITE ? "https://psilodump.bandzoogle.com" : "";
 const bzSrc = id => BZ_BASE + "/player/tracks/" + id + ".mp3";
-const releaseHref = r => SITE_BASE + RELEASE_PATH + "?r=" + encodeURIComponent(releaseKey(r));
+// Clean page addresses (2026-10-22): /release/476DIGI038, /gig/<key>, /post/<key>, /person/<key>, /label/<key> on the
+// static site (and in links to it from 476.digital); on Bandzoogle the old ?r= / ?g= / ?p= / ?l= form. The pages
+// read both, and on the static site an old ?r= address is tidied into the clean one.
+const CLEAN_URLS = STATIC_SITE || !!SITE_BASE;
+const pageHref = (path, name, key) => SITE_BASE + path + (CLEAN_URLS ? "/" + encodeURIComponent(key) : "?" + name + "=" + encodeURIComponent(key));
+const onPage = path => { const p = location.pathname.replace(/\/+$/, ""); return p === path || p.startsWith(path + "/"); };
+const pageId = () => location.pathname + location.search;
+function pageKey(path, name){
+  const m = location.pathname.match(new RegExp("^" + path + "/([^/]+)/?$"));
+  if (m) { try { return decodeURIComponent(m[1]); } catch (e) { return m[1]; } }
+  return new URLSearchParams(location.search).get(name) || "";
+}
+function tidyPageUrl(path, name){
+  if (!STATIC_SITE || location.pathname.replace(/\/+$/, "") !== path) return;
+  const q = new URLSearchParams(location.search), k = q.get(name);
+  if (!k) return;
+  q.delete(name);
+  history.replaceState(history.state, "", path + "/" + encodeURIComponent(k) + (q.toString() ? "?" + q.toString() : "") + location.hash);
+}
+const releaseHref = r => pageHref(RELEASE_PATH, "r", releaseKey(r));
 
 // The Bandzoogle album number in Source ("3319229" or a psilodu.mp/album/... address), or "".
 // Links beyond the stores, for the Links pop-up: the release page here, other sources, Discogs, MusicBrainz.
@@ -2008,14 +2027,14 @@ function loadCatalogue(){
 
 function initRelease(){
   const mount = document.getElementById("psd-release");
-  if (!mount || mount._psdShown === location.search) return;
+  if (!mount || mount._psdShown === pageId()) return;
   // During a Turbo visit the address changes before the new page is swapped in
   // (<html aria-busy>); the old page must not render the next address. turbo:render
   // / turbo:load call this again once the new page is there.
   if (document.documentElement.hasAttribute("aria-busy")) return;
-  pathToQuery(RELEASE_PATH, "r");
-  if (location.pathname.replace(/\/+$/, "") !== RELEASE_PATH) return;
-  mount._psdShown = location.search;
+  tidyPageUrl(RELEASE_PATH, "r");
+  if (!onPage(RELEASE_PATH)) return;
+  mount._psdShown = pageId();
   ensureStyles();
   mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading release…</div>`;
   loadCatalogue()
@@ -2026,21 +2045,16 @@ function initRelease(){
     });
 }
 
-// /release/<key or id> (also /gig/…, /post/…) → /release?r=<…>: statichost's redirects can't carry a query string, so
-// the old-address redirects point at /release/<id>, which the host serves from the release page (a 200 rewrite);
-// the address is turned into the usual form before the page reads it.
-function pathToQuery(path, name){
-  const m = location.pathname.match(new RegExp("^" + path + "/([^/]+)/?$"));
-  if (m) history.replaceState(history.state, "", path + "?" + name + "=" + m[1] + location.hash);
-}
 function renderRelease(mount, rows){
-  const key = (new URLSearchParams(location.search).get("r") || "").trim();
+  const key = pageKey(RELEASE_PATH, "r").trim();
   let r = key && rows.find(x => releaseKey(x).toLowerCase() === key.toLowerCase());
   // ?r=<database id> also works (the old-address redirects use it); the address then shows the usual key
   if (!r && /^\d+$/.test(key) && (r = rows.find(x => x["ID"] === key))) {
-    const q = new URLSearchParams(location.search); q.set("r", releaseKey(r));
-    history.replaceState(history.state, "", location.pathname + "?" + q.toString() + location.hash);
-    mount._psdShown = location.search;
+    const q = new URLSearchParams(location.search); q.delete("r");
+    const clean = STATIC_SITE ? RELEASE_PATH + "/" + encodeURIComponent(releaseKey(r)) + (q.toString() ? "?" + q.toString() : "")
+                              : RELEASE_PATH + "?" + (q.set("r", releaseKey(r)), q.toString());
+    history.replaceState(history.state, "", clean + location.hash);
+    mount._psdShown = pageId();
   }
   if (!r) {
     mount.innerHTML = `<div class="psd-rel"><nav class="psd-rel-nav"><a href="${CATALOGUE_PATH}">← Catalogue</a></nav>
@@ -2860,7 +2874,7 @@ function buildJsonLd(rows){
   const used = new Set();
   const idOf = rows.map((r, i) => {
     // on the static site every release has its page here (Bandzoogle's album pages are gone)
-    const page = STATIC_SITE ? "https://psilodu.mp" + RELEASE_PATH + "?r=" + encodeURIComponent(releaseKey(r)) : expandPlatformUrl(r["Source"] || "", "source");
+    const page = STATIC_SITE ? "https://psilodu.mp" + RELEASE_PATH + "/" + encodeURIComponent(releaseKey(r)) : expandPlatformUrl(r["Source"] || "", "source");
     const key = String(r[CAT_COL] || (i + 1)).replace(/[^A-Za-z0-9._~-]+/g, "-");   // "DMTCD19/20" -> "DMTCD19-20"
     let id = /^https:\/\/psilodu\.mp\//.test(page) ? page : SITE + "/#release-" + key;
     if (used.has(id)) id += "-" + (i + 1);
@@ -3190,7 +3204,7 @@ function loadGigs(){
   }
   return cat._gigPromise;
 }
-const gigHref = g => SITE_BASE + GIG_PATH + "?g=" + encodeURIComponent(g._key);
+const gigHref = g => pageHref(GIG_PATH, "g", g._key);
 const gigPlace = g => [g.Venue, g.City, g.Country].filter(Boolean).join(", ");
 function gigDateText(d){
   const m = String(d || "").match(/^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?/);
@@ -3254,18 +3268,18 @@ function initGigsList(){
 
 function initGig(){
   const mount = document.getElementById("psd-gig");
-  if (!mount || mount._psdShown === location.search) return;
+  if (!mount || mount._psdShown === pageId()) return;
   if (document.documentElement.hasAttribute("aria-busy")) return;
-  pathToQuery(GIG_PATH, "g");
-  if (location.pathname.replace(/\/+$/, "") !== GIG_PATH) return;
-  mount._psdShown = location.search;
+  tidyPageUrl(GIG_PATH, "g");
+  if (!onPage(GIG_PATH)) return;
+  mount._psdShown = pageId();
   ensureStyles();
   mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading gig…</div>`;
   Promise.all([loadCatalogue(), loadGigs(), loadPeople()]).then(([, { gigs, data }, pp]) => renderGig(mount, gigs, data, pp))
     .catch(err => { console.error("Failed to load gig:", err); mount.innerHTML = `<div class="psd-rel">Unable to load the gig right now. Please refresh the page.</div>`; });
 }
 function renderGig(mount, gigs, data, pp){
-  const key = (new URLSearchParams(location.search).get("g") || "").trim().toLowerCase();
+  const key = pageKey(GIG_PATH, "g").trim().toLowerCase();
   const i = gigs.findIndex(g => g._key.toLowerCase() === key || g.ID === key);
   if (i < 0) {
     mount.innerHTML = `<div class="psd-rel"><nav class="psd-rel-nav"><a href="${GIGS_PATH}">← All gigs</a></nav><h1 class="psd-rel-title">Gig not found</h1>
@@ -3381,7 +3395,7 @@ function loadPosts(){
   }
   return cat._postPromise;
 }
-const postHref = p => SITE_BASE + POST_PATH + "?p=" + encodeURIComponent(p._key);
+const postHref = p => pageHref(POST_PATH, "p", p._key);
 function postPlain(p){
   const s = String(p.Body || "");
   const t = p.Format === "html" ? s.replace(/<(script|style|iframe)[\s\S]*?<\/\1>/gi, " ").replace(/<br\s*\/?>|<\/p>/gi, " ").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
@@ -3511,15 +3525,15 @@ function initNews(){
 
 function initPost(){
   const mount = document.getElementById("psd-post");
-  if (!mount || mount._psdShown === location.search) return;
+  if (!mount || mount._psdShown === pageId()) return;
   if (document.documentElement.hasAttribute("aria-busy")) return;
-  pathToQuery(POST_PATH, "p");
-  if (location.pathname.replace(/\/+$/, "") !== POST_PATH) return;
-  mount._psdShown = location.search;
+  tidyPageUrl(POST_PATH, "p");
+  if (!onPage(POST_PATH)) return;
+  mount._psdShown = pageId();
   ensureStyles();
   mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading…</div>`;
   loadCatalogue().then(() => Promise.all([loadPosts(), loadPeople().catch(() => null), loadTrackData()])).then(([{ posts }, pp, tdata]) => {
-    const key = (new URLSearchParams(location.search).get("p") || "").trim().toLowerCase();
+    const key = pageKey(POST_PATH, "p").trim().toLowerCase();
     const i = posts.findIndex(p => p._key.toLowerCase() === key || p.ID === key);
     if (i < 0) { mount.innerHTML = `<div class="psd-rel"><nav class="psd-rel-nav"><a href="${NEWS_PATH}">← News</a></nav><h1 class="psd-rel-title">Post not found</h1></div>`; document.title = "Post not found | psilodump"; return; }
     const p = posts[i], newer = posts[i - 1], older = posts[i + 1];
@@ -3606,7 +3620,7 @@ function loadPeople(){
   }
   return cat._peoplePromise;
 }
-const personHref = p => SITE_BASE + PERSON_PATH + "?p=" + encodeURIComponent(p._key);
+const personHref = p => pageHref(PERSON_PATH, "p", p._key);
 // Does a credit text name this person? Whole words only ("Goto80 remix", "Methadump, psilodump").
 function namesPerson(text, p){
   const t = " " + String(text || "").toLowerCase().normalize("NFKC") + " ";
@@ -3618,14 +3632,15 @@ function namesPerson(text, p){
 
 function initPerson(){
   const mount = document.getElementById("psd-person");
-  if (!mount || mount._psdShown === location.search) return;
+  if (!mount || mount._psdShown === pageId()) return;
   if (document.documentElement.hasAttribute("aria-busy")) return;
-  if (location.pathname.replace(/\/+$/, "") !== PERSON_PATH) return;
-  mount._psdShown = location.search;
+  tidyPageUrl(PERSON_PATH, "p");
+  if (!onPage(PERSON_PATH)) return;
+  mount._psdShown = pageId();
   ensureStyles();
   mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading…</div>`;
   loadCatalogue().then(rows => Promise.all([loadPeople(), loadGigs(), loadTrackData(), loadPosts().catch(() => ({ posts: [] })), loadAppearances().catch(() => ({ apps: [] }))]).then(([pp, { gigs }, data, { posts }, { apps }]) => {
-    const key = (new URLSearchParams(location.search).get("p") || "").trim().toLowerCase();
+    const key = pageKey(PERSON_PATH, "p").trim().toLowerCase();
     const p = pp.people.find(x => x._key.toLowerCase() === key || x.ID === key) || pp.byKey[personKey(key)];
     if (!p) { mount.innerHTML = `<div class="psd-rel"><nav class="psd-rel-nav"><a href="${GIGS_PATH}">← Gigs</a></nav><h1 class="psd-rel-title">Not found</h1></div>`; document.title = "Not found | psilodump"; return; }
     const gigById = {}; gigs.forEach(g => { gigById[g.ID] = g; });
@@ -3844,7 +3859,7 @@ function appendRelated(box, r, rows){
 
 // --- LABELS: labels.csv → /label?l=<key> (one label: text, links, releases, editions, appearances), /label = all labels
 const LABEL_PATH = "/label";
-const labelHref = l => SITE_BASE + LABEL_PATH + "?l=" + encodeURIComponent(l._key);
+const labelHref = l => pageHref(LABEL_PATH, "l", l._key);
 function labelFor(name){ const c = window._psilodumpCat; return (c.labelByName || {})[normLabel(name).toLowerCase()] || null; }
 function labelKindText(l){
   // "netlabel" once: the years can say when ("netlabel 2005")
@@ -3852,17 +3867,18 @@ function labelKindText(l){
 }
 function initLabel(){
   const mount = document.getElementById("psd-label");
-  if (!mount || mount._psdShown === location.search) return;
+  if (!mount || mount._psdShown === pageId()) return;
   if (document.documentElement.hasAttribute("aria-busy")) return;
-  if (location.pathname.replace(/\/+$/, "") !== LABEL_PATH) return;
-  mount._psdShown = location.search;
+  tidyPageUrl(LABEL_PATH, "l");
+  if (!onPage(LABEL_PATH)) return;
+  mount._psdShown = pageId();
   ensureStyles();
   mount.innerHTML = `<div class="psd-rel psd-rel-loading">Loading…</div>`;
   loadCatalogue().then(rows => loadAppearances().catch(() => ({ apps: [] })).then(({ apps }) => {
     const cat = window._psilodumpCat;
     const labels = (cat.labels || []).filter(l => l.Name);
     const onLabel = l => rows.filter(r => r._labels.some(x => l._names.includes(normLabel(x))));
-    const key = (new URLSearchParams(location.search).get("l") || "").trim().toLowerCase();
+    const key = pageKey(LABEL_PATH, "l").trim().toLowerCase();
     if (!key) {          // all labels
       const sec = (title, list) => list.length ? `<section class="psd-innews"><h2>${title} <small>${list.length}</small></h2><ul class="psd-label-idx">${list.map(l => {
         const on = list => list.filter(x => String(x.Label || "").split(/\s*,\s*/).some(y => l._names.includes(normLabel(y)))).length;
@@ -4264,7 +4280,7 @@ new MutationObserver(() => {
   const mount = document.getElementById("psd-catalogue");
   if (mount && !mount.firstElementChild) { initApp(); return; }
   const rel = document.getElementById("psd-release");
-  if (rel && rel._psdShown !== location.search) { initRelease(); return; }
+  if (rel && rel._psdShown !== pageId()) { initRelease(); return; }
   const vp = document.getElementById("psd-videos-page");
   if (vp && !vp._psdShown) { initVideosPage(); return; }
   const rp = document.getElementById("psd-remixes-page");
@@ -4274,17 +4290,17 @@ new MutationObserver(() => {
   const tp = document.getElementById("psd-tracks-page");
   if (tp && !tp._psdShown) { initTracksPage(); return; }
   const lb = document.getElementById("psd-label");
-  if (lb && lb._psdShown !== location.search) { initLabel(); return; }
+  if (lb && lb._psdShown !== pageId()) { initLabel(); return; }
   const pe = document.getElementById("psd-person");
-  if (pe && pe._psdShown !== location.search) { initPerson(); return; }
+  if (pe && pe._psdShown !== pageId()) { initPerson(); return; }
   const nw = document.getElementById("psd-news");
   if (nw && !nw._psdShown) { initNews(); return; }
   const po = document.getElementById("psd-post");
-  if (po && po._psdShown !== location.search) { initPost(); return; }
+  if (po && po._psdShown !== pageId()) { initPost(); return; }
   const gl = document.getElementById("psd-gigs");
   if (gl && !gl._psdShown) { initGigsList(); return; }
   const gp = document.getElementById("psd-gig");
-  if (gp && gp._psdShown !== location.search) { initGig(); return; }
+  if (gp && gp._psdShown !== pageId()) { initGig(); return; }
   const td = document.getElementById("psd-today");
   if (td && !td._psdShown) { initToday(); return; }
   const ph = document.getElementById("psd-physical");
