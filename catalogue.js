@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.63.1";
+const JS_VERSION = "1.64.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -436,6 +436,7 @@ a.psd-rel-phys-btn:hover { background: var(--rel-deep, #2a2a2a) !important; colo
 .psd-app-card .app-tracks { font-style: italic !important; }
 .psd-nocover { position: absolute !important; inset: 0 !important; display: flex !important; flex-direction: column !important; justify-content: center !important; align-items: center !important; gap: 10% !important; padding: 12% !important; text-align: center !important; background: radial-gradient(circle at 50% 45%, #343434, #171717 72%) !important; color: #e4e4e4 !important; z-index: 1 !important; }
 .psd-nocover img { width: 62% !important; height: auto !important; opacity: .22 !important; object-fit: contain !important; position: static !important; transform: none !important; }
+.psd-nocover.mm img { width: 78% !important; opacity: .4 !important; }
 .psd-nocover b { font-size: 15px !important; line-height: 1.25 !important; letter-spacing: .02em !important; font-weight: 600 !important; overflow-wrap: anywhere !important; }
 .psd-rel-cover .psd-nocover b { font-size: 22px !important; }
 .psd-rel-cover { position: relative !important; }
@@ -3713,7 +3714,12 @@ function appLinkLabel(u){
   return { "discogs.com": "Discogs", "open.spotify.com": "Spotify", "music.apple.com": "Apple Music", "youtube.com": "YouTube", "soundcloud.com": "SoundCloud", "archive.org": "Internet Archive", "beatport.com": "Beatport", "mixcloud.com": "Mixcloud" }[host] || host;
 }
 // A release without artwork: the 476 logo (the one at the top of psilodu.mp), dimmed, with the title.
-function noCoverHtml(r){ return `<div class="psd-nocover"><img src="${ICON_BASE}476-logo.png" alt=""><b>${esc(r[TITLE_COL] || "")}</b></div>`; }
+// releases without artwork: the 476 logo dimmed + the title; micromusic releases get the micromusic logo (the label's
+// own trilingual logo, made light for the dark tiles; icons/micromusic-logo.png, from the user's EPS, 2026-10-22)
+function noCoverHtml(r){
+  const mm = /micromusic/i.test(r["Label"] || "");
+  return `<div class="psd-nocover${mm ? " mm" : ""}"><img src="${ICON_BASE}${mm ? "micromusic-logo.png" : "476-logo.png"}" alt=""><b>${esc(r[TITLE_COL] || "")}</b></div>`;
+}
 function appCard(a, extra){
   const tracks = a._tracks.map(({ r, t }) => esc(t ? t.Title + (t.Version ? " (" + t.Version + ")" : "") : r.Title)).join(", ");
   const links = [...(/^[0-9a-f-]{36}$/.test(a.MusicBrainz || "") ? [`<a href="https://musicbrainz.org/release-group/${esc(a.MusicBrainz)}" target="_blank" rel="noopener">MusicBrainz</a>`] : []),
