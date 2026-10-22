@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.60.0";
+const JS_VERSION = "1.61.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -678,6 +678,9 @@ const VIDEO_KINDS = { music_video: "Music video", tracker: "Tracker video", visu
 // Icons come from GitHub Pages like this script (jsDelivr's @main can serve an old commit
 // for hours, so a newly added icon would 404 there).
 const ICON_BASE = "https://psilodump.github.io/website-data/icons/";
+// Our own audio on Bunny (EU; 2026-10-22, replacing Bandzoogle's files release by release). tracklists.csv "Media" =
+// the path under this address; one setting, so moving to media.psilodu.mp later is a one-line change.
+const MEDIA_BASE = "https://psilodump-media.b-cdn.net/";
 
 const DATE_COL    = "Released";
 const CATDATE_COL = "Cat Date";
@@ -1918,6 +1921,14 @@ const secToTime = s => { s = parseInt(s, 10); return s > 0 ? Math.floor(s / 60) 
 
 // Our track list for a release as player items: title/version/artist/former titles, length (this
 // release's, else the track's), disc + heading, and the audio address when the track has a page.
+// A Media path → the file to play: an .m4a has three versions (AAC 256 kbps main, "-lo.m4a" AAC 96 kbps data saver,
+// ".mp3" MP3 192 kbps for browsers without AAC); an .mp3 (a netlabel original) is the only one.
+function mediaSrc(m){
+  if (!/\.m4a$/i.test(m)) return MEDIA_BASE + m;
+  const a = document.createElement("audio"), aac = !!(a.canPlayType && a.canPlayType('audio/mp4; codecs="mp4a.40.2"'));
+  const c = navigator.connection || {}, slow = !!c.saveData || /(^|-)2g$|^3g$/.test(c.effectiveType || "");
+  return MEDIA_BASE + (!aac ? m.replace(/\.m4a$/i, ".mp3") : slow ? m.replace(/\.m4a$/i, "-lo.m4a") : m);
+}
 function releaseTrackItems(list){
   return list.map(({ row, t }) => {
     // A release can print its own title for the track (a remaster renamed) and have its own upload.
@@ -1935,7 +1946,7 @@ function releaseTrackItems(list){
         if (rx && !list.some(p => personKey(p.Name) === personKey(rx) && /remix/i.test(p.Role || ""))) list.unshift({ Name: rx, Role: "remix", "Person ID": (d.personIdByKey || {})[personKey(rx)] || "" });
         return list;
       })(),
-      src: bz ? (site ? "https://" + site : "") + "/player/tracks/" + bz + ".mp3" : "",
+      src: row.Media ? mediaSrc(row.Media) : bz ? (site ? "https://" + site : "") + "/player/tracks/" + bz + ".mp3" : "",
       trackId: t.ID, ytMusic: row["YouTube Music"] || "",
       year: String(t.Finished || "").slice(0, 4),        // tiny "(2006)" after the title (the user's check on Finished)
     };
@@ -2465,7 +2476,8 @@ function buildTrackPlayer(box, r, tracks, albumId){
   sharedAudio();
   Object.defineProperty(p, "audio", { get: () => window._psdAudio });      // the <audio> element, or the gapless engine
   // Seamless releases (mixed through) play gapless where the browser can: our own files only (476.digital's can't be read)
-  p.seamless = r["Seamless"] === "1" && !p.cues && tracks.every(t => !t.src || t.src.charAt(0) === "/");
+  // gapless needs files the page may fetch: Bandzoogle's relative /player/… (S3 answers with CORS) or ours on Bunny
+  p.seamless = r["Seamless"] === "1" && !p.cues && tracks.every(t => !t.src || t.src.charAt(0) === "/" || t.src.startsWith(MEDIA_BASE));
   p.key = p.title + "|" + tracks.map(t => t.src + "@" + (t.start == null ? "" : t.start)).join("|");
   p.next = from => { for (let k = from; k < p.tracks.length; k++) if (p.tracks[k].src && !p.tracks[k].broken) return k; return -1; };
   const el = box.querySelector(".psd-player");
@@ -2549,7 +2561,10 @@ function gaplessEngine(){
   };
   const load = src => {
     if (!cache.has(src)) cache.set(src, fetch(src).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.arrayBuffer(); })
-      .then(ab => new Promise((ok, no) => ctx.decodeAudioData(ab, ok, no))).then(trim));
+      .then(ab => new Promise((ok, no) => ctx.decodeAudioData(ab, ok, no)))
+      // our own AAC files (Bunny) carry exact gapless info and decode to the master's length: never trim them; MP3s
+      // (Bandzoogle's, netlabel originals) keep their encoder padding and are trimmed
+      .then(b => /\.m4a(\?|$)/i.test(src) ? b : trim(b)));
     return cache.get(src);
   };
   const prune = () => { [...cache.keys()].forEach(k => { if (k !== E._src && k !== E.nextSrc) cache.delete(k); }); };
