@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.66.1";
+const JS_VERSION = "1.67.0";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -1609,10 +1609,12 @@ function renderRelease(mount, rows){
   const family = editionFamily(r, rows);
   // a word from a trailing "(…)" in the edition's own title — on every tab, whichever edition is open (v1.66.1: it used
   // to vanish when the open release's title had one too, so the tabs changed from page to page)
+  // the note on this edition's own reissue / remaster / expanded / version relation ("Vinyl"; admin: Related releases)
+  const edNote = x => [...new Set((window._psilodumpCat.relations || []).filter(l => l["Release ID"] === x["ID"] && EDITION_REL_KINDS.includes(l.Kind) && l.Note).map(l => l.Note.trim()))].join(" · ");
   const edWord = x => { const extra = String(x[TITLE_COL] || "").match(/\(([^)]+)\)\s*$/); return extra ? extra[1] : ""; };
   const tabs = family.length > 1 ? `<div class="psd-ed-tabs" role="tablist" aria-label="Editions"><span class="psd-ed-label">Editions</span>${family.map(x => {
       const sf = releaseSurface(x["Bg Color"], 0.85) || { bg: "#2a2a2a", text: "#ffffff" };
-      const bits = [edWord(x), x["Netlabel"] === "1" ? "netlabel" : "", x["Live"] === "1" ? "in stores" : ""].filter(Boolean).join(" · ");
+      const bits = [edNote(x), edWord(x), x["Netlabel"] === "1" ? "netlabel" : "", x["Live"] === "1" ? "in stores" : ""].filter(Boolean).join(" · ");
       return `<a class="psd-ed-tab${x === r ? " is-on" : ""}" role="tab" aria-selected="${x === r}" href="${esc(releaseHref(x))}" style="--ed-bg:${sf.bg};--ed-text:${sf.text}"${x === r ? ' aria-current="page"' : ""}>${x._thumbUrl ? `<img src="${esc(x._thumbUrl)}" alt="">` : '<span class="ph"></span>'}<span>${esc(edYear(x))}${bits ? ` <small>· ${esc(bits)}</small>` : ""}</span></a>`;
     }).join("")}</div>` : "";
   if (editions.length && family.length < 2) facts.push(["Other editions", editions.map(x => link(x, `${x[TITLE_COL]} (${edYear(x)}${edYear(x) === edYear(r) && x["Label"] ? ", " + x._labels.join(", ") : ""})`)).join(", ")]);
