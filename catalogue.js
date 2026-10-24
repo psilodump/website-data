@@ -4,7 +4,7 @@
 (function () {
 if (window.__psdCatalogue) { window.__psdCatalogue.init(); return; }
 
-const JS_VERSION = "1.66.0";
+const JS_VERSION = "1.66.1";
 const HTML_VERSION = "2.2.0";
 
 // Log version silently to Browser Console (F12) on every load
@@ -1607,7 +1607,9 @@ function renderRelease(mount, rows){
   const edYear = x => x._yearRel !== "Unknown" ? x._yearRel : x._yearCat;
   // edition tabs (the user's filing-cabinet idea): the selected tab has the card's colour and flows into it
   const family = editionFamily(r, rows);
-  const edWord = x => { const extra = String(x[TITLE_COL] || "").match(/\(([^)]+)\)\s*$/); return extra && !/\(([^)]+)\)\s*$/.test(title) ? extra[1] : ""; };
+  // a word from a trailing "(…)" in the edition's own title — on every tab, whichever edition is open (v1.66.1: it used
+  // to vanish when the open release's title had one too, so the tabs changed from page to page)
+  const edWord = x => { const extra = String(x[TITLE_COL] || "").match(/\(([^)]+)\)\s*$/); return extra ? extra[1] : ""; };
   const tabs = family.length > 1 ? `<div class="psd-ed-tabs" role="tablist" aria-label="Editions"><span class="psd-ed-label">Editions</span>${family.map(x => {
       const sf = releaseSurface(x["Bg Color"], 0.85) || { bg: "#2a2a2a", text: "#ffffff" };
       const bits = [edWord(x), x["Netlabel"] === "1" ? "netlabel" : "", x["Live"] === "1" ? "in stores" : ""].filter(Boolean).join(" · ");
